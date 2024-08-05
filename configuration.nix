@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, inputs, ... }:
 let
   home-manager = builtins.fetchTarball "https://github.com/nix-community/home-manager/archive/master.tar.gz";
 in
@@ -8,6 +8,23 @@ in
       # Include the results of the hardware scan.
       /etc/nixos/hardware-configuration.nix
     ];
+
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 1w";
+  };
+
+  nix.settings.auto-optimise-store = true;
+
+  # Support for generic programs
+  programs.nix-ld.enable = true;
+
+  # Dynamically populate /bin and /usr/bin
+  services.envfs.enable = true;
+
+  # Enable the Flakes feature and the accompanying new nix command-line tool
+  nix.settings.experimental-features = [ "nix-command" "flakes" "dynamic-derivations" ];
 
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
@@ -59,8 +76,10 @@ in
 
   # Configure keymap in X11
   services.xserver = {
-    layout = "us";
-    xkbVariant = "alt-intl";
+    xkb = {
+      layout = "us";
+      variant = "alt-intl";
+    };
   };
 
   # Configure console keymap
@@ -92,6 +111,9 @@ in
 
   # Enable docker
   virtualisation.docker.enable = true;
+  virtualisation.libvirtd.enable = true;
+
+  boot.kernelModules = [ "kvm-intel" ];
 
   # Fish needs to be installed as global program to be set as user shell
   programs.fish.enable = true;
@@ -99,11 +121,14 @@ in
   # For a KDE bug this need some patches to work on nix which are included in the program from nix
   programs.partition-manager.enable = true;
 
+  # Enable adb as root deamon to avoid messing with usb permissions
+  programs.adb.enable = true;
+
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.dreamingcodes = {
     isNormalUser = true;
     description = "DreamingCodes";
-    extraGroups = [ "networkmanager" "wheel" "docker" ];
+    extraGroups = [ "networkmanager" "wheel" "docker" "libvirtd" "kvm" "adbusers" ];
     shell = pkgs.fish;
   };
 
@@ -121,13 +146,18 @@ in
       prismlauncher
       steam
       btop
-      jetbrains.idea-ultimate
+      jetbrains-toolbox
       alacritty
       bun
       bintools
       rustup
       kdePackages.kleopatra
       gnupg
+      pinentry-qt
+      fzf
+      spotify
+      steam-run
+      tor-browser
     ];
     services = {
       kdeconnect = {
@@ -135,14 +165,18 @@ in
         indicator = true;
         package = pkgs.kdePackages.kdeconnect-kde;
       };
+      gpg-agent = {
+        enable = true;
+        pinentryPackage = pkgs.pinentry-qt;
+      };
     };
-    programs ={
+    programs = {
       git = {
         enable = true;
         userName = "DreamingCodes";
         userEmail = "me@dreaming.codes";
         signing = {
-          key = "294D2672488EAE23";
+          key = "1FE3A3F18110DDDD";
           signByDefault = true;
         };
       };
@@ -278,6 +312,8 @@ in
   # $ nix search wget
   environment.systemPackages = with pkgs; [
     fira-code-nerdfont
+    wget
+    inputs.kwin-effects-forceblur.packages.${pkgs.system}.default
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
