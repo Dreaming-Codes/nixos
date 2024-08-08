@@ -46,11 +46,18 @@
        inputs.kwin-effects-forceblur.packages.${pkgs.system}.default
        any-nix-shell
        inputs.nix-alien.packages.${system}.nix-alien
-       temurin-bin
        gcc
        openssl
        pkg-config
      ];
+
+     custom.misc.sdks = {
+       enable = true;
+       links = {
+         nodejs = pkgs.nodejs;
+         jdk = pkgs.temurin-bin;
+       };
+     };
 
      environment.variables = {
        PKG_CONFIG_PATH="${pkgs.openssl.dev}/lib/pkgconfig";
