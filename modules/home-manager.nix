@@ -24,6 +24,7 @@
          spotify
          steam-run
          tor-browser
+         jetbrains-toolbox
        ];
        services = {
          easyeffects.enable = true;
