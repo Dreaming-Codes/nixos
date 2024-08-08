@@ -13,6 +13,6 @@
          ./modules/home-manager.nix
          ./modules/systemPrograms.nix
          ./modules/starship.nix
-         ./libs/sdks.nix
+         ./misc/sdks.nix
        ];
    }
