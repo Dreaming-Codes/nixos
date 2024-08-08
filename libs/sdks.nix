@@ -12,7 +12,6 @@ let
 
   cfg = config.custom.misc.sdks;
 
-  # Adjust the directory to use /etc/nixos instead of home directory
   sdksDirectory = "/nixos/.sdks";
 in
 
@@ -42,7 +41,6 @@ in
 
   config = mkIf cfg.enable {
 
-    # Adjust the home.file to use environment.etc instead
     environment.etc = mapAttrs'
       (name: package: nameValuePair "${sdksDirectory}/${name}" { source = package; })
       cfg.links;
