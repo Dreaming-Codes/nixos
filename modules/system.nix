@@ -56,6 +56,7 @@
        links = {
          nodejs = pkgs.nodejs;
          jdk = pkgs.temurin-bin;
+         jdk17 = pkgs.temurin-bin-17;
        };
      };
 
