@@ -31,8 +31,6 @@
   security.sudo.wheelNeedsPassword = false;
   security.pam.services.login.enableKwallet = true;
 
-  boot.kernelModules = [ "kvm-intel" ];
-
   nixpkgs.config.allowUnfree = true;
   hardware.bluetooth.enable = true;
 
