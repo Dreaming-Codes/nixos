@@ -14,5 +14,7 @@
          ./modules/systemPrograms.nix
          ./modules/starship.nix
          ./misc/sdks.nix
+         ./modules/steam.nix
+         ./modules/optimization.nix
        ];
    }
