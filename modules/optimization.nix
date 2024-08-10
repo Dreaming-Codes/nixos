@@ -1,13 +1,12 @@
-{ config, pkgs, ... }:
-   {
-    garuda = {
-        performance-tweaks = {
-            cachyos-kernel = true;
-            enable = true;
-        };
-    };
-    chaotic.scx = {
+{ config, pkgs, ... }: {
+  garuda = {
+    performance-tweaks = {
+      cachyos-kernel = true;
       enable = true;
-      scheduler = "scx_rusty";
     };
-   }
+  };
+  chaotic.scx = {
+    enable = true;
+    scheduler = "scx_rusty";
+  };
+}

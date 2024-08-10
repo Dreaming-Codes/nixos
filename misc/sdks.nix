@@ -1,21 +1,13 @@
 { config, lib, pkgs, ... }:
 
 let
-  inherit (lib)
-    mapAttrs'
-    mkEnableOption
-    mkIf
-    mkOption
-    nameValuePair
-    types
-    ;
+  inherit (lib) mapAttrs' mkEnableOption mkIf mkOption nameValuePair types;
 
   cfg = config.custom.misc.sdks;
 
   sdksDirectory = "/nixos/.sdks";
-in
 
-{
+in {
 
   ###### interface
 
@@ -36,14 +28,12 @@ in
 
   };
 
-
   ###### implementation
 
   config = mkIf cfg.enable {
 
-    environment.etc = mapAttrs'
-      (name: package: nameValuePair "${sdksDirectory}/${name}" { source = package; })
-      cfg.links;
+    environment.etc = mapAttrs' (name: package:
+      nameValuePair "${sdksDirectory}/${name}" { source = package; }) cfg.links;
 
   };
 
