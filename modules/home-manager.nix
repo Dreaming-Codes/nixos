@@ -1,6 +1,7 @@
 { config, pkgs, lib, ... }: {
   home-manager.users.dreamingcodes = {
     home.stateVersion = "24.11";
+    programs.home-manager.enable = true;
 
     home.packages = with pkgs; [
       kdePackages.kate
@@ -51,7 +52,7 @@
           key = "1FE3A3F18110DDDD";
           signByDefault = true;
         };
-        extraConfig = lib.mkForce {
+        extraConfig = lib.mkDefault {
           core = { editor = "zed"; };
           init = { defaultBranch = "master"; };
           pull = { rebase = true; };
@@ -65,7 +66,6 @@
           any-nix-shell fish | source
         '';
         shellAliases = {
-          cat = "bat --paging=never";
           htop = "btop";
           shutdown = "systemctl poweroff";
         };
