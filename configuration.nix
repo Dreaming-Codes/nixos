@@ -12,7 +12,6 @@
          ./modules/user.nix
          ./modules/home-manager.nix
          ./modules/systemPrograms.nix
-         ./modules/starship.nix
          ./misc/sdks.nix
          ./modules/steam.nix
          ./modules/optimization.nix
