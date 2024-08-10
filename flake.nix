@@ -9,10 +9,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-alien.url = "github:thiagokokada/nix-alien";
+    garuda.url = "gitlab:garuda-linux/garuda-nix-subsystem/stable";
+    chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
   };
 
-  outputs = inputs@{ self, nixpkgs, ... }: {
-    nixosConfigurations.DreamingDesk = nixpkgs.lib.nixosSystem {
+  outputs = inputs@{ self, nixpkgs, garuda, chaotic, ... }: {
+    nixosConfigurations.DreamingDesk = garuda.lib.garudaSystem {
       system = "x86_64-linux";
       specialArgs = { inherit inputs; };
       modules = [

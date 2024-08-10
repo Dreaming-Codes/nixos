@@ -1,7 +1,7 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
    {
      home-manager.users.dreamingcodes = {
-       home.stateVersion = "18.09";
+       home.stateVersion = "24.11";
        home.packages = with pkgs; [
          kdePackages.kate
          zed-editor
@@ -10,7 +10,6 @@
          bitwarden
          vesktop
          prismlauncher
-         steam
          btop
          alacritty
          bun
@@ -22,7 +21,6 @@
          pinentry-qt
          fzf
          spotify
-         steam-run
          tor-browser
          jetbrains-toolbox
        ];
