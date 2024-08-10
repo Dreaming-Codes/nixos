@@ -1,10 +1,8 @@
 { config, pkgs, inputs, chaotic, ... }: {
   zramSwap.enable = true;
 
-  nix.gc = {
-    automatic = true;
-    dates = "weekly";
-    options = "--delete-older-than 1w";
+  programs.nh = {
+    flake = "/home/dreamingcodes/.nixos/";
   };
 
   nix.settings.auto-optimise-store = true;

@@ -4,6 +4,9 @@
       cachyos-kernel = true;
       enable = true;
     };
+    system = {
+      type = "dreamingized";
+    };
   };
   chaotic.scx = {
     enable = true;
