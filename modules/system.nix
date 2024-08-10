@@ -1,5 +1,7 @@
 { config, pkgs, inputs, ... }:
    {
+     zramSwap.enable = true;
+
      nix.gc = {
        automatic = true;
        dates = "weekly";
