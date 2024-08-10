@@ -4,6 +4,7 @@
      # Partition-manager does not work if not installed globally
      programs.partition-manager.enable = true;
      programs.nix-ld.enable = true;
+     programs.nix-ld.package = pkgs.nix-ld-rs;
      programs.nix-ld.libraries = with pkgs; [
        SDL
        SDL2
