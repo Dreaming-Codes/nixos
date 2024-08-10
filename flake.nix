@@ -21,7 +21,20 @@
     nixosConfigurations.DreamingDesk = garuda.lib.garudaSystem {
       system = "x86_64-linux";
       specialArgs = { inherit inputs; };
-      modules = [ ./configuration.nix ];
+      modules = [ ./configuration.nix
+        {
+            networking.hostName = "DreamingDesk";
+        }
+      ];
+    };
+    nixosConfigurations.DreamingBlade = garuda.lib.garudaSystem {
+      system = "x86_64-linux";
+      specialArgs = { inherit inputs; };
+      modules = [ ./configuration.nix
+        {
+            networking.hostName = "DreamingBlade";
+        }
+      ];
     };
   };
 }
