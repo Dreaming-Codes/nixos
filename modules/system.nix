@@ -1,4 +1,4 @@
-{ config, pkgs, inputs, ... }: {
+{ config, pkgs, inputs, chaotic, ... }: {
   zramSwap.enable = true;
 
   nix.gc = {
@@ -49,7 +49,24 @@
     gcc
     openssl
     pkg-config
+
+    # From https://gitlab.com/garuda-linux/garuda-nix-subsystem/-/blob/main/internal/modules/dr460nized/apps.nix?ref_type=heads
+    ffmpegthumbnailer
+    kdePackages.kdegraphics-thumbnailers
+    kdePackages.kimageformats
+    kdePackages.kio-admin
+    libinput-gestures
+    plasma-plugin-blurredwallpaper
+    resvg
+    sshfs
+    xdg-desktop-portal
   ];
+
+  # Add xdg-desktop-portal-gtk for Wayland GTK apps (font issues etc.)
+  xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+
+  # Allow GTK applications to show an appmenu on KDE
+  chaotic.appmenu-gtk3-module.enable = true;
 
   custom.misc.sdks = {
     enable = true;
@@ -62,6 +79,8 @@
 
   environment.variables = {
     PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig";
+    # Fix for some app that rely on env to choose audio driver
+    SDL_AUDIODRIVER = "pipewire";
   };
 
   system.stateVersion = "24.11";
