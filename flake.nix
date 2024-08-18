@@ -31,8 +31,13 @@
       system = "x86_64-linux";
       specialArgs = { inherit inputs; };
       modules = [ ./configuration.nix
+        ./hardware/razer-laptop.nix
         {
             networking.hostName = "DreamingBlade";
+            powerManagement = {
+                enable = true;
+                powertop.enable = true;
+            };
         }
       ];
     };
