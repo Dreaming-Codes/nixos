@@ -5,6 +5,7 @@
 
     home.packages = with pkgs; [
       kdePackages.kate
+      goldwarden
       zed-editor
       brave
       telegram-desktop
@@ -77,7 +78,10 @@
         extraOptions = [ "-al" "--icons" ];
       };
       bat = { enable = true; };
-      direnv = { enable = true; };
+      direnv = {
+        enable = true;
+        nix-direnv.enable = true;
+      };
       zoxide = {
         enable = true;
         options = [ "--cmd cd" ];
