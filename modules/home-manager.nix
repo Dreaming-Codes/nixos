@@ -6,7 +6,7 @@
     home.packages = with pkgs; [
       kdePackages.kate
       goldwarden
-      zed-editor
+      zed-editor_git
       brave
       telegram-desktop
       bitwarden
