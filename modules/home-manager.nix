@@ -10,6 +10,9 @@
       };
     };
 
+    home.sessionPath =
+      [ "/home/dreamingcodes/.local/share/JetBrains/Toolbox/scripts/" ];
+
     home.packages = with pkgs; [
       kdePackages.kate
       goldwarden
