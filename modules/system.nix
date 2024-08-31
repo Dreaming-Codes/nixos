@@ -1,9 +1,7 @@
 { config, pkgs, inputs, chaotic, ... }: {
   zramSwap.enable = true;
 
-  programs.nh = {
-    flake = "/home/dreamingcodes/.nixos/";
-  };
+  programs.nh = { flake = "/home/dreamingcodes/.nixos/"; };
 
   nix.settings.auto-optimise-store = true;
   nix.settings.experimental-features =
@@ -35,6 +33,8 @@
   hardware.bluetooth.enable = true;
 
   environment.sessionVariables = rec { ZELLIJ_AUTO_EXIT = "true"; };
+
+  programs.virt-manager.enable = true;
 
   environment.systemPackages = with pkgs; [
     fira-code-nerdfont
