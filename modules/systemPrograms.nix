@@ -61,6 +61,7 @@
     libjpeg
     libmikmod
     libogg
+    libpng
     libpng12
     libpulseaudio
     librsvg
@@ -117,6 +118,8 @@
     xorg.xcbutilrenderutil
     xorg.xcbutilwm
     xorg.xkeyboardconfig
+    xorg.libxkbfile
+    libbsd
     xz
     zlib
   ];
