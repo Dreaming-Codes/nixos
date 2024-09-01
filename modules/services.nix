@@ -1,6 +1,6 @@
 { config, pkgs, ... }: {
   services.envfs.enable = true;
-  services.xserver.enable = false;
+  services.xserver.enable = true;
 
   services.displayManager.sddm = {
     enable = true;
