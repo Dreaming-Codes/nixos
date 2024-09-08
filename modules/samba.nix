@@ -5,15 +5,14 @@
 
     openFirewall = true;
 
-    syncPasswordsByPam = true;
     # You will still need to set up the user accounts to begin with:
     # $ sudo smbpasswd -a yourusername
 
     # This adds to the [global] section:
-    extraConfig = ''
-      browseable = yes
-      smb encrypt = required
-    '';
+    #    extraConfig = ''
+    #      browseable = yes
+    #      smb encrypt = required
+    #    '';
 
     shares = {
       homes = {
@@ -21,6 +20,16 @@
           "no"; # note: each home will be browseable; the "homes" share will not.
         "read only" = "no";
         "guest ok" = "no";
+      };
+      public = {
+        path = "/mnt/Shares/Public";
+        browseable = "yes";
+        "read only" = "no";
+        "guest ok" = "yes";
+        "create mask" = "0644";
+        "directory mask" = "0755";
+        "force user" = "username";
+        "force group" = "groupname";
       };
     };
   };
@@ -34,7 +43,7 @@
   # and it makes connecting from a local Mac possible.
   services.avahi = {
     enable = true;
-    nssmdns = true;
+    nssmdns4 = true;
     publish = {
       enable = true;
       addresses = true;
