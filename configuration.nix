@@ -11,5 +11,6 @@
     ./modules/steam.nix
     ./modules/optimization.nix
     ./modules/samba.nix
+    ./secrets/github.nix
   ];
 }
