@@ -47,6 +47,8 @@
     pkg-config
     powertop
     kdePackages.kdialog
+    # Ark dep
+    unrar
 
     # From https://gitlab.com/garuda-linux/garuda-nix-subsystem/-/blob/main/internal/modules/dr460nized/apps.nix?ref_type=heads
     ffmpegthumbnailer
