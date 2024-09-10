@@ -1,5 +1,6 @@
 { config, pkgs, inputs, ... }: {
   imports = [
+    /etc/nixos/secrets/github.nix
     /etc/nixos/hardware-configuration.nix
     ./modules/networking.nix
     ./modules/services.nix
@@ -11,6 +12,5 @@
     ./modules/steam.nix
     ./modules/optimization.nix
     ./modules/samba.nix
-    ./secrets/github.nix
   ];
 }
