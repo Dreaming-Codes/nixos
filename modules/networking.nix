@@ -8,28 +8,16 @@
     } # KDE Connect
       ];
     allowedUDPPortRanges = [
-        # KDE Connect
-        {
-            from = 1714;
-            to = 1764;
-        },
-        # chromecast
-        {
-            from = 32768;
-            to = 60999;
-        }
-      ];
-    allowedUDPPortRanges = [
-        # KDE Connect
-        {
-            from = 1714;
-            to = 1764;
-        }
-        # chromecast
-        {
-            from = 32768;
-            to = 60999;
-        }
+      # KDE Connect
+      {
+        from = 1714;
+        to = 1764;
+      }
+      # chromecast
+      {
+        from = 32768;
+        to = 60999;
+      }
     ];
   };
 }
