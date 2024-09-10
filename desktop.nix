@@ -12,4 +12,6 @@
     serviceConfig = { ExecStart = "${pkgs.lact}/bin/lact daemon"; };
     enable = true;
   };
+
+  boot.kernelParams = [ "amdgpu.ppfeaturemask=0xFFF7FFFF" ];
 }
