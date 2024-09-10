@@ -24,8 +24,6 @@
       modules = [ ./configuration.nix
         {
             networking.hostName = "DreamingDesk";
-            services.xserver.enable = nixpkgs.lib.mkForce true;
-            services.displayManager.sddm.wayland.enable = nixpkgs.lib.mkForce false;
         }
       ];
     };
