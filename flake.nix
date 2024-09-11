@@ -15,29 +15,34 @@
       url = "github:nix-community/home-manager/release-23.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    vfio = {
+      url = "github:j-brn/nixos-vfio";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = inputs@{ self, nixpkgs, garuda, chaotic, ... }: {
+  outputs = inputs@{ self, nixpkgs, garuda, chaotic, vfio, ... }: {
     nixosConfigurations.DreamingDesk = garuda.lib.garudaSystem {
       system = "x86_64-linux";
       specialArgs = { inherit inputs; };
-      modules = [ ./configuration.nix
+      modules = [
+        vfio.nixosModules.vfio
+        ./configuration.nix
         ./desktop.nix
-        {
-            networking.hostName = "DreamingDesk";
-        }
+        { networking.hostName = "DreamingDesk"; }
       ];
     };
     nixosConfigurations.DreamingBlade = garuda.lib.garudaSystem {
       system = "x86_64-linux";
       specialArgs = { inherit inputs; };
-      modules = [ ./configuration.nix
+      modules = [
+        ./configuration.nix
         {
-            networking.hostName = "DreamingBlade";
-            powerManagement = {
-                enable = true;
-                powertop.enable = true;
-            };
+          networking.hostName = "DreamingBlade";
+          powerManagement = {
+            enable = true;
+            powertop.enable = true;
+          };
         }
       ];
     };
