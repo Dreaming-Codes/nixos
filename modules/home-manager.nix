@@ -30,7 +30,7 @@
       rustup
       kdePackages.kleopatra
       gnupg
-      pinentry-qt
+      kwalletcli
       fzf
       spotify
       tor-browser
@@ -45,7 +45,9 @@
       };
       gpg-agent = {
         enable = true;
-        pinentryPackage = pkgs.pinentry-qt;
+        pinentryPackage = pkgs.kwalletcli;
+        extraConfig =
+          "pinentry-program ${pkgs.kwalletcli}/bin/pinentry-kwallet";
       };
     };
     programs = {
