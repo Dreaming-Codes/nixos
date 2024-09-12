@@ -3,7 +3,6 @@
     # amd gpu utility
     lact
     looking-glass-client
-    scream
   ];
 
   systemd.services.lact = {
@@ -16,29 +15,7 @@
 
   systemd.tmpfiles.rules = [
     "f /dev/shm/looking-glass 0660 dreamingcodes kvm -"
-    "f /dev/shm/scream 0660 dreamingcodes kvm -"
   ];
-
-  systemd.user.services.scream-ivshmem = {
-    enable = true;
-    description = "Scream IVSHMEM";
-    serviceConfig = {
-      ExecStart = "${pkgs.scream}/bin/scream-ivshmem-pulse /dev/shm/scream";
-      Restart = "always";
-    };
-    wantedBy = [ "multi-user.target" ];
-    requires = [ "pipewire.service" ];
-  };
-
-  virtualisation = {
-    vfio = {
-      enable = true;
-      IOMMUType = "intel";
-      blacklistNvidia = true;
-      devices = [ "10de:1b81" "10de:10f0" ];
-    };
-    kvmfr = { enable = false; };
-  };
 
   boot.kernelParams = [
     "pcie_acs_override=downstream"

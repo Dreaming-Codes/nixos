@@ -15,18 +15,13 @@
       url = "github:nix-community/home-manager/release-23.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    vfio = {
-      url = "github:j-brn/nixos-vfio";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
-  outputs = inputs@{ self, nixpkgs, garuda, chaotic, vfio, ... }: {
+  outputs = inputs@{ self, nixpkgs, garuda, chaotic, ... }: {
     nixosConfigurations.DreamingDesk = garuda.lib.garudaSystem {
       system = "x86_64-linux";
       specialArgs = { inherit inputs; };
       modules = [
-        vfio.nixosModules.vfio
         ./configuration.nix
         ./desktop.nix
         { networking.hostName = "DreamingDesk"; }
