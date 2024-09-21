@@ -10,8 +10,10 @@
       };
     };
 
-    home.sessionPath =
-      [ "/home/dreamingcodes/.local/share/JetBrains/Toolbox/scripts/" ];
+    home.sessionPath = [
+      "/home/dreamingcodes/.local/share/JetBrains/Toolbox/scripts/"
+      "/home/dreamingcodes/.cargo/bin"
+    ];
 
     home.packages = with pkgs; [
       kdePackages.kate
