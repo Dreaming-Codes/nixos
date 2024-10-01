@@ -32,6 +32,7 @@
       specialArgs = { inherit inputs; };
       modules = [
         ./configuration.nix
+        ./laptop.nix
         {
           networking.hostName = "DreamingBlade";
           powerManagement = {
