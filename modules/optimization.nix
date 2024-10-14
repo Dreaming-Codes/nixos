@@ -4,12 +4,10 @@
       cachyos-kernel = true;
       enable = true;
     };
-    system = {
-      type = "dreamingized";
-    };
+    system = { type = "dreamingized"; };
   };
   chaotic.scx = {
-    enable = true;
-    scheduler = "scx_rusty";
+    # enable = true;
+    # scheduler = "scx_rusty"; BROKEN
   };
 }
