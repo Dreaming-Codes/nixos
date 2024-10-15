@@ -55,6 +55,8 @@
 
     # Nix LSP
     nil
+    # Nix fmt
+    nixfmt
 
     # For rust cross compilation
     cargo-cross
