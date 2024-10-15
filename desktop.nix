@@ -13,9 +13,12 @@
     enable = true;
   };
 
-  systemd.tmpfiles.rules = [
-    "f /dev/shm/looking-glass 0660 dreamingcodes kvm -"
-  ];
+  systemd.tmpfiles.rules =
+    [ "f /dev/shm/looking-glass 0660 dreamingcodes kvm -" ];
+
+  services.udev.extraRules = ''
+    ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x8086", ATTR{device}=="0x06ed", ATTR{power/wakeup}="disabled"
+  '';
 
   boot.kernelParams = [
     "pcie_acs_override=downstream"
