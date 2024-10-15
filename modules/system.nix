@@ -58,9 +58,6 @@
     # Nix fmt
     nixfmt
 
-    # For rust cross compilation
-    cargo-cross
-
     # From https://gitlab.com/garuda-linux/garuda-nix-subsystem/-/blob/main/internal/modules/dr460nized/apps.nix?ref_type=heads
     ffmpegthumbnailer
     kdePackages.kdegraphics-thumbnailers
