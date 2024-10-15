@@ -53,6 +53,9 @@
     bottles
     appimage-run
 
+    # Nix LSP
+    nil
+
     # For rust cross compilation
     cargo-cross
 
