@@ -21,7 +21,7 @@
       zed-editor_git
       brave
       telegram-desktop
-      bitwarden
+      keyguard
       vesktop
       prismlauncher
       btop
