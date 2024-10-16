@@ -53,6 +53,9 @@
     bottles
     appimage-run
 
+    distrobox
+    boxbuddy
+
     # Nix LSP
     nil
     # Nix fmt
