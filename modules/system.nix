@@ -59,7 +59,7 @@
     # Nix LSP
     nil
     # Nix fmt
-    nixfmt
+    nixfmt-classic
 
     # From https://gitlab.com/garuda-linux/garuda-nix-subsystem/-/blob/main/internal/modules/dr460nized/apps.nix?ref_type=heads
     ffmpegthumbnailer

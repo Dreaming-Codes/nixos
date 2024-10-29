@@ -14,7 +14,7 @@
     #      smb encrypt = required
     #    '';
 
-    shares = {
+    settings = {
       homes = {
         browseable =
           "no"; # note: each home will be browseable; the "homes" share will not.
