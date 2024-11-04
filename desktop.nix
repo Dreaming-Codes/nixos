@@ -2,8 +2,25 @@
   environment.systemPackages = with pkgs; [
     # amd gpu utility
     lact
+    # amd encoders/decoders
+    amf
     looking-glass-client
   ];
+
+  # Additional kernel modules needed for virtualization
+  boot.initrd.availableKernelModules = [ "vfio_pci" "vfio" "vfio_iommu_type1" "ahci" "usb_storage" "sd_mod" "amdgpu" ];
+  # Blacklist nvidia gpu driver to prevent use
+  boot.blacklistedKernelModules = ["nouveau"];
+
+  hardware.graphics = {
+    # Mesa
+    enable = true;
+
+    enable32Bit = true;
+
+    extraPackages = with pkgs; [ rocmPackages.clr.icd amdvlk ];
+    extraPackages32 = with pkgs; [ driversi686Linux.amdvlk ];
+  };
 
   systemd.services.lact = {
     description = "AMDGPU Control Daemon";
@@ -13,8 +30,16 @@
     enable = true;
   };
 
-  systemd.tmpfiles.rules =
-    [ "f /dev/shm/looking-glass 0660 dreamingcodes kvm -" ];
+  # Fix for AMDGPU
+  systemd.tmpfiles.rules = let
+    rocmEnv = pkgs.symlinkJoin {
+      name = "rocm-combined";
+      paths = with pkgs.rocmPackages; [ rocblas hipblas clr ];
+    };
+  in [
+    "L+    /opt/rocm   -    -    -     -    ${rocmEnv}"
+    "f /dev/shm/looking-glass 0660 dreamingcodes kvm -"
+  ];
 
   services.udev.extraRules = ''
     ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x8086", ATTR{device}=="0x06ed", ATTR{power/wakeup}="disabled"
