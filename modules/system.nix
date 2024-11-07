@@ -54,6 +54,9 @@
     bottles
     appimage-run
 
+    # Java
+    zulu23
+
     # Zed
     zed-editor_git
 
