@@ -18,7 +18,6 @@
     home.packages = with pkgs; [
       kdePackages.kate
       goldwarden
-      zed-editor_git
       brave
       telegram-desktop
       keyguard
