@@ -21,7 +21,7 @@
       brave
       telegram-desktop
       keyguard
-      vesktop
+      equibop
       prismlauncher
       btop
       alacritty
