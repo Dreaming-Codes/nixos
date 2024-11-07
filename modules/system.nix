@@ -47,6 +47,7 @@
     pkg-config
     powertop
     kdePackages.kdialog
+    unzip
     # Ark dep
     unrar
     looking-glass-client
