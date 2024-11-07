@@ -22,6 +22,11 @@
     extraPackages32 = with pkgs; [ driversi686Linux.amdvlk ];
   };
 
+  environment.variables = {
+    # always prefer radv
+    AMD_VULKAN_ICD = "RADV"
+  };
+
   systemd.services.lact = {
     description = "AMDGPU Control Daemon";
     after = [ "multi-user.target" ];
