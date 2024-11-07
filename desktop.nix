@@ -8,9 +8,17 @@
   ];
 
   # Additional kernel modules needed for virtualization
-  boot.initrd.availableKernelModules = [ "vfio_pci" "vfio" "vfio_iommu_type1" "ahci" "usb_storage" "sd_mod" "amdgpu" ];
+  boot.initrd.availableKernelModules = [
+    "vfio_pci"
+    "vfio"
+    "vfio_iommu_type1"
+    "ahci"
+    "usb_storage"
+    "sd_mod"
+    "amdgpu"
+  ];
   # Blacklist nvidia gpu driver to prevent use
-  boot.blacklistedKernelModules = ["nouveau"];
+  boot.blacklistedKernelModules = [ "nouveau" ];
 
   hardware.graphics = {
     # Mesa
@@ -24,7 +32,7 @@
 
   environment.variables = {
     # always prefer radv
-    AMD_VULKAN_ICD = "RADV"
+    AMD_VULKAN_ICD = "RADV";
   };
 
   systemd.services.lact = {
