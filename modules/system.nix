@@ -53,6 +53,9 @@
     bottles
     appimage-run
 
+    # Zed
+    zed-editor_git
+
     distrobox
     boxbuddy
 
