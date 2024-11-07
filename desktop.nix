@@ -54,9 +54,15 @@
     "f /dev/shm/looking-glass 0660 dreamingcodes kvm -"
   ];
 
+  # 1. fix suspend
+  # 2. make xremap work
   services.udev.extraRules = ''
     ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x8086", ATTR{device}=="0x06ed", ATTR{power/wakeup}="disabled"
+    KERNEL=="uinput", GROUP="input", TAG+="uaccess"
   '';
+
+  # Allow input devices to be accessed by dreamingcodes user (needed for xremap)
+  users.users.dreamingcodes.extraGroups = [ "input" ];
 
   boot.kernelParams = [
     "pcie_acs_override=downstream"
