@@ -1,4 +1,4 @@
-{ config, pkgs, inputs, chaotic, ... }: {
+{ config, pkgs, pkgsStable, inputs, chaotic, ... }: {
   zramSwap.enable = true;
 
   programs.nh = { flake = "/home/dreamingcodes/.nixos/"; };
@@ -53,6 +53,8 @@
     looking-glass-client
     bottles
     appimage-run
+
+    pkgsStable.frida-tools
 
     # Java
     zulu23
