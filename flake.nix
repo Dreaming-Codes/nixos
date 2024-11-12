@@ -4,6 +4,7 @@
   inputs = {
     # NixOS official package source, using the nixos-unstable branch here
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs-stable.url = "github:NixOS/nixpkgs/24.05";
     kwin-effects-forceblur = {
       url = "github:taj-ny/kwin-effects-forceblur";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -17,30 +18,35 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, garuda, chaotic, ... }: {
-    nixosConfigurations.DreamingDesk = garuda.lib.garudaSystem {
+  outputs = inputs@{ self, nixpkgs, nixpkgs-stable, garuda, chaotic, ... }:
+    let
       system = "x86_64-linux";
-      specialArgs = { inherit inputs; };
-      modules = [
-        ./configuration.nix
-        ./desktop.nix
-        { networking.hostName = "DreamingDesk"; }
-      ];
+      pkgs = import nixpkgs { inherit system; };
+      pkgsStable = import nixpkgs-stable { inherit system; };
+    in {
+      nixosConfigurations.DreamingDesk = garuda.lib.garudaSystem {
+        system = "x86_64-linux";
+        specialArgs = { inherit inputs pkgsStable; };
+        modules = [
+          ./configuration.nix
+          ./desktop.nix
+          { networking.hostName = "DreamingDesk"; }
+        ];
+      };
+      nixosConfigurations.DreamingBlade = garuda.lib.garudaSystem {
+        system = "x86_64-linux";
+        specialArgs = { inherit inputs pkgsStable; };
+        modules = [
+          ./configuration.nix
+          ./laptop.nix
+          {
+            networking.hostName = "DreamingBlade";
+            powerManagement = {
+              enable = true;
+              powertop.enable = true;
+            };
+          }
+        ];
+      };
     };
-    nixosConfigurations.DreamingBlade = garuda.lib.garudaSystem {
-      system = "x86_64-linux";
-      specialArgs = { inherit inputs; };
-      modules = [
-        ./configuration.nix
-        ./laptop.nix
-        {
-          networking.hostName = "DreamingBlade";
-          powerManagement = {
-            enable = true;
-            powertop.enable = true;
-          };
-        }
-      ];
-    };
-  };
 }
