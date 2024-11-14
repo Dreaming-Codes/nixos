@@ -68,7 +68,7 @@
           signByDefault = true;
         };
         extraConfig = lib.mkForce {
-          core = { editor = "zed"; };
+          core = { editor = "zeditor"; };
           init = { defaultBranch = "master"; };
           pull = { rebase = true; };
           credential = {
