@@ -62,18 +62,24 @@
         enable = true;
         userName = "DreamingCodes";
         userEmail = "me@dreaming.codes";
+        package = pkgs.gitFull;
         signing = {
           key = "1FE3A3F18110DDDD";
           signByDefault = true;
         };
-        extraConfig = lib.mkDefault {
+        extraConfig = lib.mkForce {
           core = { editor = "zed"; };
           init = { defaultBranch = "master"; };
           pull = { rebase = true; };
+          credential = {
+            helper = [
+              "libsecret"
+              "${pkgs.git-credential-oauth}/bin/git-credential-oauth"
+            ];
+          };
         };
       };
       gitui.enable = true;
-      git-credential-oauth.enable = true;
       fish = {
         enable = true;
         interactiveShellInit = ''
