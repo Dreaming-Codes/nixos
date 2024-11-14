@@ -20,6 +20,8 @@
   # Blacklist nvidia gpu driver to prevent use
   boot.blacklistedKernelModules = [ "nouveau" ];
 
+  nixpkgs.config.rocmSupport = true;
+
   hardware.graphics = {
     # Mesa
     enable = true;
