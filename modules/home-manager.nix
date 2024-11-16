@@ -20,7 +20,7 @@
       goldwarden
       brave
       telegram-desktop
-      keyguard
+      bitwarden-desktop
       equibop
       prismlauncher
       btop
