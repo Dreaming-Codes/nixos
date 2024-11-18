@@ -32,8 +32,6 @@
   nixpkgs.config.allowUnfree = true;
   hardware.bluetooth.enable = true;
 
-  environment.sessionVariables = rec { ZELLIJ_AUTO_EXIT = "true"; };
-
   programs.virt-manager.enable = true;
 
   environment.systemPackages = with pkgs; [
