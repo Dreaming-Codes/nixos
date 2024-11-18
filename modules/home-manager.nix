@@ -52,11 +52,7 @@
       };
     };
     programs = {
-      zellij = {
-        enable = true;
-        enableBashIntegration = true;
-        enableFishIntegration = true;
-      };
+      zellij = { enable = true; };
       micro = lib.mkForce { enable = false; };
       git = {
         enable = true;
