@@ -29,6 +29,9 @@
   security.sudo.wheelNeedsPassword = false;
   security.pam.services.login.enableKwallet = true;
 
+  # Disable man page cache generation since it's very slow and fish enable it by default
+  documentation.man.generateCaches = false;
+
   nixpkgs.config.allowUnfree = true;
   hardware.bluetooth.enable = true;
 
