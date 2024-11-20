@@ -1,7 +1,10 @@
-{ config, pkgs, lib, ... }: {
+{ config, pkgs, lib, inputs, ... }: {
   home-manager.users.dreamingcodes = {
     home.stateVersion = "24.11";
     programs.home-manager.enable = true;
+
+    # Hint Electron apps to use Wayland:
+    home.sessionVariables.NIXOS_OZONE_WL = "1";
 
     dconf.settings = {
       "org/virt-manager/virt-manager/connections" = {
