@@ -57,6 +57,9 @@
 
     pkgsStable.frida-tools
 
+    # needed for browser widget
+    kdePackages.qtwebengine
+
     # Java
     zulu23
 
