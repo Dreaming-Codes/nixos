@@ -55,6 +55,8 @@
     bottles
     appimage-run
 
+    mullvad-browser
+
     pkgsStable.frida-tools
 
     # needed for browser widget
@@ -109,6 +111,8 @@
     # Fix for some app that rely on env to choose audio driver
     SDL_AUDIODRIVER = "pipewire";
   };
+
+  services.mullvad-vpn.enable = true;
 
   services.fwupd.enable = true;
 
