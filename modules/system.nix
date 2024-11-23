@@ -56,6 +56,7 @@
     appimage-run
 
     mullvad-browser
+    mullvad-vpn
 
     pkgsStable.frida-tools
 
