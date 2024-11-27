@@ -6,8 +6,9 @@
     };
     system = { type = "dreamingized"; };
   };
-  chaotic.scx = {
-    # enable = true;
-    # scheduler = "scx_rusty"; BROKEN
+  services.scx = {
+    enable = true;
+    scheduler = "scx_rusty";
+    package = pkgs.scx.rustscheds;
   };
 }
