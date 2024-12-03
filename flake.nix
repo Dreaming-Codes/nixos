@@ -24,7 +24,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixvim = {
-      url = "github:ahwxorg/nixvim-config";
+      url = "github:Dreaming-Codes/nixvim-config";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

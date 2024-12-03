@@ -51,7 +51,6 @@
       kdePackages.kleopatra
       gnupg
       kwalletcli
-      fzf
       spotify
       tor-browser
       jetbrains-toolbox
@@ -71,7 +70,23 @@
       };
     };
     programs = {
-      zellij = { enable = true; };
+      tmux = { 
+        enable = true;
+        clock24 = true;
+        keyMode = "vi";
+        newSession = true;
+        mouse = true;
+        extraConfig = ''
+          set -g allow-passthrough all
+        '';
+      };
+      lazygit = { enable = true; };
+      fzf = {
+        enable = true;
+        tmux = {
+          enableShellIntegration = true;
+        };
+      };
       micro = lib.mkForce { enable = false; };
       git = {
         enable = true;
@@ -94,7 +109,6 @@
           };
         };
       };
-      gitui.enable = true;
       fish = {
         enable = true;
         interactiveShellInit = ''
