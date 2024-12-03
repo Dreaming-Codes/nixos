@@ -18,7 +18,24 @@
       "/home/dreamingcodes/.cargo/bin"
     ];
 
+    programs.alacritty = {
+      enable = true;
+      settings = {
+        font = {
+          normal = {
+            family = "FiraCode Nerd Font Mono";
+            style = "Regular";
+          };
+          bold = {
+            family = "FiraCode Nerd Font Mono";
+            style = "Bold";
+          };
+        };
+      };
+    };
+
     home.packages = with pkgs; [
+      inputs.nixvim.packages.${pkgs.system}.default
       kdePackages.kate
       goldwarden
       brave
@@ -27,7 +44,6 @@
       equibop
       prismlauncher
       btop
-      alacritty
       bun
       nodejs
       bintools
