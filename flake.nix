@@ -23,9 +23,13 @@
       url = "github:nix-community/home-manager/release-23.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nixvim = {
+      url = "github:ahwxorg/nixvim-config";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = inputs@{ self, nixpkgs, nixpkgs-stable, garuda, chaotic, ... }:
+  outputs = inputs@{ self, nixpkgs, nixpkgs-stable, garuda, chaotic, nixvim, ... }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };

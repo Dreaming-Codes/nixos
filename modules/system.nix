@@ -37,8 +37,11 @@
 
   programs.virt-manager.enable = true;
 
-  environment.systemPackages = with pkgs; [
+  fonts.packages = with pkgs; [
     fira-code-nerdfont
+  ];
+
+  environment.systemPackages = with pkgs; [
     wget
     inputs.kwin-effects-forceblur.packages.${pkgs.system}.default
     any-nix-shell
