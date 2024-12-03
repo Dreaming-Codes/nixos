@@ -805,11 +805,11 @@
         "nixvim": "nixvim_2"
       },
       "locked": {
-        "lastModified": 1733259841,
-        "narHash": "sha256-GMa5N1VlLbHwiKQ3UoIyEg/etAceHYYI814nKEC36uU=",
+        "lastModified": 1733269657,
+        "narHash": "sha256-gwMygPl/K6TN/7TI/BR7wg1jMD2heLz/Sz1HGMZ/1pU=",
         "owner": "Dreaming-Codes",
         "repo": "nixvim-config",
-        "rev": "49d66660ffb3c9938dbb4ebb2148e2263d35dbb5",
+        "rev": "211f1c5f015b0d8d7c1db24a9e8954b6bb1390a6",
         "type": "github"
       },
       "original": {
