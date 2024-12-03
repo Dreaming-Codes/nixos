@@ -69,23 +69,17 @@
           "pinentry-program ${pkgs.kwalletcli}/bin/pinentry-kwallet";
       };
     };
+
+    home.file."./.config/zellij/config.kdl".source = ./zellij.kdl;
+
     programs = {
-      tmux = { 
+      zellij = {
         enable = true;
-        clock24 = true;
-        keyMode = "vi";
-        newSession = true;
-        mouse = true;
-        extraConfig = ''
-          set -g allow-passthrough all
-        '';
+        enableFishIntegration = true;
       };
       lazygit = { enable = true; };
       fzf = {
         enable = true;
-        tmux = {
-          enableShellIntegration = true;
-        };
       };
       micro = lib.mkForce { enable = false; };
       git = {
