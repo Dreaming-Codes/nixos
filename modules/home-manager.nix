@@ -5,6 +5,7 @@
 
     # Hint Electron apps to use Wayland:
     home.sessionVariables.NIXOS_OZONE_WL = "1";
+    home.sessionVariables.ZELLIJ_AUTO_EXIT = "1";
 
     dconf.settings = {
       "org/virt-manager/virt-manager/connections" = {
