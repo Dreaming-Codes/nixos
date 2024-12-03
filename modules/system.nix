@@ -42,6 +42,7 @@
   ];
 
   environment.systemPackages = with pkgs; [
+    wl-clipboard-rs
     wget
     inputs.kwin-effects-forceblur.packages.${pkgs.system}.default
     any-nix-shell
