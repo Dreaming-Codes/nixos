@@ -59,6 +59,8 @@
     bottles
     appimage-run
 
+    upscayl
+
     mullvad-browser
     mullvad-vpn
 
