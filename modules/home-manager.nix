@@ -36,7 +36,7 @@
     };
 
     home.packages = with pkgs; [
-      inputs.nixvim.packages.${pkgs.system}.default
+      inputs.Neve.packages.${pkgs.system}.default
       kdePackages.kate
       goldwarden
       brave
@@ -79,9 +79,7 @@
         enableFishIntegration = true;
       };
       lazygit = { enable = true; };
-      fzf = {
-        enable = true;
-      };
+      fzf = { enable = true; };
       micro = lib.mkForce { enable = false; };
       git = {
         enable = true;
@@ -108,7 +106,7 @@
         enable = true;
         interactiveShellInit = ''
           set fish_greeting # Disable greeting
-          any-nix-shell fish | source
+          #any-nix-shell fish --info-right | source https://github.com/haslersn/any-nix-shell/issues/39
         '';
         shellAliases = {
           htop = "btop";
