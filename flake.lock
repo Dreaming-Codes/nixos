@@ -9,11 +9,11 @@
         "nixvim": "nixvim"
       },
       "locked": {
-        "lastModified": 1733403092,
-        "narHash": "sha256-kUJbPMoTZ2HT4VQyDBlQ+PaYVURtbAnOtYKnYYHqWS0=",
+        "lastModified": 1733405682,
+        "narHash": "sha256-JUiha4hz4Vo15GX7ZSIxnM5TEWnAI/PELjOh5UDoX2Y=",
         "owner": "Dreaming-Codes",
         "repo": "Neve",
-        "rev": "b16c7a4abd20436897291caf333e3c0a96c83478",
+        "rev": "13834dba83bc7c9bb76578ae5880b0798d7b2bd4",
         "type": "github"
       },
       "original": {
