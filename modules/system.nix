@@ -37,9 +37,7 @@
 
   programs.virt-manager.enable = true;
 
-  fonts.packages = with pkgs; [
-    fira-code-nerdfont
-  ];
+  fonts.packages = with pkgs; [ fira-code-nerdfont ];
 
   environment.systemPackages = with pkgs; [
     wl-clipboard-rs
