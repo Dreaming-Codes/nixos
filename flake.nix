@@ -11,7 +11,7 @@
   inputs = {
     # NixOS official package source, using the nixos-unstable branch here
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixpkgs-stable.url = "github:NixOS/nixpkgs/24.05";
+    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
     kwin-effects-forceblur = {
       url = "github:taj-ny/kwin-effects-forceblur";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -23,13 +23,14 @@
       url = "github:nix-community/home-manager/release-23.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nixvim = {
-      url = "github:Dreaming-Codes/nixvim-config";
+    Neve = {
+      url = "github:Dreaming-Codes/Neve";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, nixpkgs-stable, garuda, chaotic, nixvim, ... }:
+  outputs =
+    inputs@{ self, nixpkgs, nixpkgs-stable, garuda, chaotic, Neve, ... }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
