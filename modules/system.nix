@@ -58,6 +58,7 @@
     appimage-run
 
     upscayl
+    stremio
 
     mullvad-browser
     mullvad-vpn
