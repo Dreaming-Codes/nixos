@@ -35,6 +35,11 @@
       };
     };
 
+    programs.obs-studio = {
+      enable = true;
+      plugins = with pkgs.obs-studio-plugins; [ obs-backgroundremoval ];
+    };
+
     home.packages = with pkgs; [
       inputs.Neve.packages.${pkgs.system}.default
       kdePackages.kate
