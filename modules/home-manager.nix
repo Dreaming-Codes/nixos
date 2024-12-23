@@ -84,6 +84,7 @@
         enableFishIntegration = true;
       };
       lazygit = { enable = true; };
+      gitui = { enable = true; };
       fzf = { enable = true; };
       micro = lib.mkForce { enable = false; };
       git = {
