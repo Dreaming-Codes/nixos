@@ -63,8 +63,6 @@
     mullvad-browser
     mullvad-vpn
 
-    gitui
-
     pkgsStable.frida-tools
 
     # needed for browser widget
