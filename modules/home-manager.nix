@@ -65,7 +65,7 @@
       easyeffects.enable = true;
       kdeconnect = {
         enable = true;
-        indicator = true;
+        indicator = false; # at time of writing there's a bug that make this fail
         package = pkgs.kdePackages.kdeconnect-kde;
       };
       gpg-agent = {
