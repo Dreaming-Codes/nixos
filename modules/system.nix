@@ -73,7 +73,7 @@
 
     # Zed
     zed-editor_git
-    helix
+    evil-helix
 
     distrobox
     boxbuddy
