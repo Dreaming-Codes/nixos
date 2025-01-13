@@ -27,10 +27,14 @@
       url = "github:Dreaming-Codes/Neve";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nix-your-shell = {
+      url = "github:MercuryTechnologies/nix-your-shell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
-    inputs@{ self, nixpkgs, nixpkgs-stable, garuda, chaotic, Neve, ... }:
+    inputs@{ self, nixpkgs, nixpkgs-stable, nix-your-shell, garuda, chaotic, Neve, ... }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
@@ -38,7 +42,7 @@
     in {
       nixosConfigurations.DreamingDesk = garuda.lib.garudaSystem {
         system = "x86_64-linux";
-        specialArgs = { inherit inputs pkgsStable; };
+        specialArgs = { inherit inputs pkgsStable nix-your-shell; };
         modules = [
           ./configuration.nix
           ./desktop.nix
@@ -47,7 +51,7 @@
       };
       nixosConfigurations.DreamingBlade = garuda.lib.garudaSystem {
         system = "x86_64-linux";
-        specialArgs = { inherit inputs pkgsStable; };
+        specialArgs = { inherit inputs pkgsStable nix-your-shell; };
         modules = [
           ./configuration.nix
           ./laptop.nix
