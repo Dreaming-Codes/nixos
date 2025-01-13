@@ -112,7 +112,7 @@
         enable = true;
         interactiveShellInit = ''
           set fish_greeting # Disable greeting
-          #any-nix-shell fish --info-right | source https://github.com/haslersn/any-nix-shell/issues/39
+          nix-your-shell fish | source
         '';
         shellAliases = {
           htop = "btop";

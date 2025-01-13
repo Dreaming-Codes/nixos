@@ -1,4 +1,4 @@
-{ config, pkgs, pkgsStable, inputs, chaotic, ... }: {
+{ config, pkgs, pkgsStable, nix-your-shell, inputs, chaotic, ... }: {
   zramSwap.enable = true;
 
   programs.nh = { flake = "/home/dreamingcodes/.nixos/"; };
@@ -39,6 +39,10 @@
 
   fonts.packages = with pkgs; [ fira-code-nerdfont ];
 
+  nixpkgs.overlays = [
+    nix-your-shell.overlays.default
+  ];
+
   environment.systemPackages = with pkgs; [
     wl-clipboard-rs
     wget
@@ -77,6 +81,8 @@
 
     distrobox
     boxbuddy
+
+    pkgs.nix-your-shell
 
     # Nix LSP
     nil
