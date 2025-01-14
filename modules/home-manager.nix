@@ -19,6 +19,19 @@
       "/home/dreamingcodes/.cargo/bin"
     ];
 
+    programs.helix = {
+      enable = true;
+      settings = {
+        theme = "material_darker";
+        editor = { line-number = "relative"; };
+      };
+      languages.language = [{
+        name = "nix";
+        auto-format = true;
+        formatter.command = "${pkgs.nixfmt}/bin/nixfmt";
+      }];
+    };
+
     programs.alacritty = {
       enable = true;
       settings = {
@@ -65,7 +78,8 @@
       easyeffects.enable = true;
       kdeconnect = {
         enable = true;
-        indicator = false; # at time of writing there's a bug that make this fail
+        indicator =
+          false; # at time of writing there's a bug that make this fail
         package = pkgs.kdePackages.kdeconnect-kde;
       };
       gpg-agent = {
