@@ -23,7 +23,14 @@
       enable = true;
       settings = {
         theme = "material_darker";
-        editor = { line-number = "relative"; };
+        editor = {
+          line-number = "relative";
+          cursor-shape = {
+            insert = "bar";
+            normal = "block";
+            select = "underline";
+          };
+        };
       };
       languages.language = [{
         name = "nix";
