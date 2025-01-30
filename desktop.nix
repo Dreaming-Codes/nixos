@@ -54,14 +54,14 @@
     enable = true;
   };
 
-  # Fix for AMDGPU
+  # Fix for AMDGPU - Disabled cause it fails to build as of 30/01/2025
   systemd.tmpfiles.rules = let
     rocmEnv = pkgs.symlinkJoin {
       name = "rocm-combined";
       paths = with pkgs.rocmPackages; [ rocblas hipblas clr ];
     };
   in [
-    "L+    /opt/rocm   -    -    -     -    ${rocmEnv}"
+    # "L+    /opt/rocm   -    -    -     -    ${rocmEnv}"
     "f /dev/shm/looking-glass 0660 dreamingcodes kvm -"
   ];
 
