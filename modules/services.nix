@@ -16,6 +16,9 @@
 
   services.printing.enable = true;
 
+  # Centralized storage for coredumps (coredumpctl list)
+  systemd.coredump.enable = true;
+
   services.pipewire = {
     enable = true;
     alsa.enable = true;
