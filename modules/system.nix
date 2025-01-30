@@ -39,9 +39,7 @@
 
   fonts.packages = with pkgs; [ fira-code-nerdfont ];
 
-  nixpkgs.overlays = [
-    nix-your-shell.overlays.default
-  ];
+  nixpkgs.overlays = [ nix-your-shell.overlays.default ];
 
   environment.systemPackages = with pkgs; [
     wl-clipboard-rs
@@ -76,7 +74,7 @@
     zulu23
 
     # Zed
-    zed-editor_git
+    zed-editor
 
     distrobox
     boxbuddy
