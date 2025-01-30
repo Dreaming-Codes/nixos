@@ -32,11 +32,25 @@
           };
         };
       };
-      languages.language = [{
-        name = "nix";
-        auto-format = true;
-        formatter.command = "${pkgs.nixfmt}/bin/nixfmt";
-      }];
+      languages = {
+        language-server = {
+          tailwindcss-ls = {
+            command = "tailwindcss-language-server";
+            args = [ "--stdio" ];
+          };
+        };
+        language = [
+          {
+            name = "nix";
+            auto-format = true;
+            formatter.command = "${pkgs.nixfmt}/bin/nixfmt";
+          }
+          {
+            name = "svelte";
+            language-servers = [ "svelteserver" "tailwindcss-ls" ];
+          }
+        ];
+      };
     };
 
     programs.alacritty = {
