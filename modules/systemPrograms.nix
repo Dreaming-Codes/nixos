@@ -3,7 +3,6 @@
   # Partition-manager does not work if not installed globally
   programs.partition-manager.enable = true;
   programs.nix-ld.enable = true;
-  programs.nix-ld.package = pkgs.nix-ld-rs;
   programs.fish.shellInit = lib.mkForce "";
   programs.nix-ld.libraries = with pkgs; [
     SDL
@@ -37,6 +36,7 @@
     gdk-pixbuf
     glew110
     glib
+    libcef
     gmp
     gst_all_1.gst-plugins-base
     gst_all_1.gst-plugins-ugly
