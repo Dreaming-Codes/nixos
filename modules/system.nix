@@ -90,6 +90,8 @@
 
     pkgs.nix-your-shell
 
+    jdt-language-server
+
     # Nix LSP
     nil
     # Nix fmt
