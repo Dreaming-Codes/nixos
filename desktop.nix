@@ -1,4 +1,4 @@
-{ pkgs, ... }: {
+{pkgs, ...}: {
   environment.systemPackages = with pkgs; [
     # amd gpu utility
     lact
@@ -27,7 +27,7 @@
     "amdgpu"
   ];
   # Blacklist nvidia gpu driver to prevent use
-  boot.blacklistedKernelModules = [ "nouveau" ];
+  boot.blacklistedKernelModules = ["nouveau"];
 
   nixpkgs.config.rocmSupport = true;
 
@@ -37,8 +37,8 @@
 
     enable32Bit = true;
 
-    extraPackages = with pkgs; [ rocmPackages.clr.icd amdvlk amf ];
-    extraPackages32 = with pkgs; [ driversi686Linux.amdvlk ];
+    extraPackages = with pkgs; [rocmPackages.clr.icd amdvlk amf];
+    extraPackages32 = with pkgs; [driversi686Linux.amdvlk];
   };
 
   environment.variables = {
@@ -48,9 +48,9 @@
 
   systemd.services.lact = {
     description = "AMDGPU Control Daemon";
-    after = [ "multi-user.target" ];
-    wantedBy = [ "multi-user.target" ];
-    serviceConfig = { ExecStart = "${pkgs.lact}/bin/lact daemon"; };
+    after = ["multi-user.target"];
+    wantedBy = ["multi-user.target"];
+    serviceConfig = {ExecStart = "${pkgs.lact}/bin/lact daemon";};
     enable = true;
   };
 
@@ -58,7 +58,7 @@
   systemd.tmpfiles.rules = let
     rocmEnv = pkgs.symlinkJoin {
       name = "rocm-combined";
-      paths = with pkgs.rocmPackages; [ rocblas hipblas clr ];
+      paths = with pkgs.rocmPackages; [rocblas hipblas clr];
     };
   in [
     # "L+    /opt/rocm   -    -    -     -    ${rocmEnv}"
@@ -73,7 +73,7 @@
   '';
 
   # Allow input devices to be accessed by dreamingcodes user (needed for xremap)
-  users.users.dreamingcodes.extraGroups = [ "input" ];
+  users.users.dreamingcodes.extraGroups = ["input"];
 
   boot.kernelParams = [
     "pcie_acs_override=downstream"

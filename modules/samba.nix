@@ -1,5 +1,8 @@
-{ config, pkgs, ... }: {
-
+{
+  config,
+  pkgs,
+  ...
+}: {
   services.samba = {
     enable = true;
 
@@ -16,8 +19,7 @@
 
     settings = {
       homes = {
-        browseable =
-          "no"; # note: each home will be browseable; the "homes" share will not.
+        browseable = "no"; # note: each home will be browseable; the "homes" share will not.
         "read only" = "no";
         "guest ok" = "no";
       };
@@ -35,7 +37,7 @@
   };
 
   # To make SMB mounting easier on the command line
-  environment.systemPackages = with pkgs; [ cifs-utils ];
+  environment.systemPackages = with pkgs; [cifs-utils];
 
   # mDNS
   #
@@ -66,5 +68,4 @@
       '';
     };
   };
-
 }

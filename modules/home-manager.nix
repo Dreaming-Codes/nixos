@@ -1,4 +1,10 @@
-{ config, pkgs, lib, inputs, ... }: {
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
+}: {
   home-manager.users.dreamingcodes = {
     home.stateVersion = "24.11";
     programs.home-manager.enable = true;
@@ -9,8 +15,8 @@
 
     dconf.settings = {
       "org/virt-manager/virt-manager/connections" = {
-        autoconnect = [ "qemu:///system" ];
-        uris = [ "qemu:///system" ];
+        autoconnect = ["qemu:///system"];
+        uris = ["qemu:///system"];
       };
     };
 
@@ -37,7 +43,7 @@
         language-server = {
           tailwindcss-ls = {
             command = "tailwindcss-language-server";
-            args = [ "--stdio" ];
+            args = ["--stdio"];
           };
         };
         language = [
@@ -48,7 +54,7 @@
           }
           {
             name = "svelte";
-            language-servers = [ "svelteserver" "tailwindcss-ls" ];
+            language-servers = ["svelteserver" "tailwindcss-ls"];
           }
         ];
       };
@@ -72,7 +78,7 @@
 
     programs.obs-studio = {
       enable = true;
-      plugins = with pkgs.obs-studio-plugins; [ obs-backgroundremoval ];
+      plugins = with pkgs.obs-studio-plugins; [obs-backgroundremoval];
     };
 
     home.packages = with pkgs; [
@@ -107,8 +113,7 @@
       gpg-agent = {
         enable = true;
         pinentryPackage = pkgs.kwalletcli;
-        extraConfig =
-          "pinentry-program ${pkgs.kwalletcli}/bin/pinentry-kwallet";
+        extraConfig = "pinentry-program ${pkgs.kwalletcli}/bin/pinentry-kwallet";
       };
     };
 
@@ -119,10 +124,10 @@
         enable = true;
         enableFishIntegration = true;
       };
-      lazygit = { enable = true; };
-      gitui = { enable = true; };
-      fzf = { enable = true; };
-      micro = lib.mkForce { enable = false; };
+      lazygit = {enable = true;};
+      gitui = {enable = true;};
+      fzf = {enable = true;};
+      micro = lib.mkForce {enable = false;};
       git = {
         enable = true;
         userName = "DreamingCodes";
@@ -133,9 +138,9 @@
           signByDefault = true;
         };
         extraConfig = lib.mkForce {
-          core = { editor = "zeditor"; };
-          init = { defaultBranch = "master"; };
-          pull = { rebase = true; };
+          core = {editor = "zeditor";};
+          init = {defaultBranch = "master";};
+          pull = {rebase = true;};
           credential = {
             helper = [
               "libsecret"
@@ -155,19 +160,19 @@
           shutdown = "systemctl poweroff";
         };
       };
-      bash = { enable = true; };
+      bash = {enable = true;};
       eza = {
         enable = true;
-        extraOptions = [ "-al" "--icons" ];
+        extraOptions = ["-al" "--icons"];
       };
-      bat = { enable = true; };
+      bat = {enable = true;};
       direnv = {
         enable = true;
         nix-direnv.enable = true;
       };
       zoxide = {
         enable = true;
-        options = [ "--cmd cd" ];
+        options = ["--cmd cd"];
       };
     };
   };

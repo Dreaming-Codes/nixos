@@ -1,4 +1,9 @@
-{ config, pkgs, inputs, ... }: {
+{
+  config,
+  pkgs,
+  inputs,
+  ...
+}: {
   imports = [
     /etc/nixos/secrets/github.nix
     /etc/nixos/hardware-configuration.nix

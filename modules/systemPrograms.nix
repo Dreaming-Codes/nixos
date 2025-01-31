@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }: {
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}: {
   programs.fish.enable = true;
   # Partition-manager does not work if not installed globally
   programs.partition-manager.enable = true;
