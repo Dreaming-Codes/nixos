@@ -1,5 +1,10 @@
-{ pkgs, lib, config, ... }: {
-  environment.systemPackages = with pkgs; [ nrfutil ];
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}: {
+  environment.systemPackages = with pkgs; [nrfutil];
   nixpkgs.config.segger-jlink.acceptLicense = true;
   services = {
     udev = {
@@ -18,9 +23,9 @@
   # Enable cuda support for the dGPU on the laptop
   nixpkgs.config.cudaSupport = true;
 
-  users = { users.dreamingcodes = { extraGroups = [ "wireshark" ]; }; };
+  users = {users.dreamingcodes = {extraGroups = ["wireshark"];};};
 
-  boot.kernelModules = [ "kvm-amd" ];
+  boot.kernelModules = ["kvm-amd"];
   boot.kernelParams = ["nvidia.NVreg_EnableGpuFirmware=0"];
 
   ### Nvidia STUFF
@@ -32,7 +37,6 @@
   services.xserver.videoDrivers = ["nvidia"];
 
   hardware.nvidia = {
-
     # Modesetting is required.
     modesetting.enable = true;
 
@@ -65,8 +69,8 @@
 
   hardware.nvidia.prime = {
     offload = {
-        enable = true;
-        enableOffloadCmd = true;
+      enable = true;
+      enableOffloadCmd = true;
     };
     nvidiaBusId = "PCI:1:0:0";
     amdgpuBusId = "PCI:4:0:0";
@@ -74,7 +78,7 @@
 
   specialisation = {
     no-gpu.configuration = {
-      system.nixos.tags = [ "no-gpu" ];
+      system.nixos.tags = ["no-gpu"];
       boot.extraModprobeConfig = ''
         blacklist nouveau
         options nouveau modeset=0
@@ -89,10 +93,10 @@
         # Remove NVIDIA VGA/3D controller devices
         ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x03[0-9]*", ATTR{power/control}="auto", ATTR{remove}="1"
       '';
-      boot.blacklistedKernelModules = [ "nouveau" "nvidia" "nvidia_drm" "nvidia_modeset" ];
+      boot.blacklistedKernelModules = ["nouveau" "nvidia" "nvidia_drm" "nvidia_modeset"];
     };
     performance.configuration = {
-      system.nixos.tags = [ "performance" ];
+      system.nixos.tags = ["performance"];
       hardware.nvidia = {
         powerManagement.finegrained = lib.mkForce false;
         prime.offload.enable = lib.mkForce false;
@@ -101,7 +105,7 @@
       };
     };
     reverse.configuration = {
-      system.nixos.tags = [ "reverse" ];
+      system.nixos.tags = ["reverse"];
       hardware.nvidia = {
         powerManagement.finegrained = lib.mkForce false;
         prime.offload.enable = lib.mkForce false;

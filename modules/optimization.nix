@@ -1,10 +1,14 @@
-{ config, pkgs, ... }: {
+{
+  config,
+  pkgs,
+  ...
+}: {
   garuda = {
     performance-tweaks = {
       cachyos-kernel = true;
       enable = true;
     };
-    system = { type = "dreamingized"; };
+    system = {type = "dreamingized";};
   };
   services.scx = {
     enable = true;

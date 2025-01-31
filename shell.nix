@@ -1,3 +1,2 @@
-{ pkgs ? import <nixpkgs> { } }:
-
-pkgs.mkShell { packages = [ pkgs.nil pkgs.nixd pkgs.nixfmt ]; }
+{pkgs ? import <nixpkgs> {}}:
+pkgs.mkShell {packages = [pkgs.nil pkgs.nixd pkgs.nixfmt];}

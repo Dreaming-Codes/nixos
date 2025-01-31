@@ -1,11 +1,18 @@
-{ config, pkgs, pkgsStable, nix-your-shell, inputs, chaotic, ... }: {
+{
+  config,
+  pkgs,
+  pkgsStable,
+  nix-your-shell,
+  inputs,
+  chaotic,
+  ...
+}: {
   zramSwap.enable = true;
 
-  programs.nh = { flake = "/home/dreamingcodes/.nixos/"; };
+  programs.nh = {flake = "/home/dreamingcodes/.nixos/";};
 
   nix.settings.auto-optimise-store = true;
-  nix.settings.experimental-features =
-    [ "nix-command" "flakes" "dynamic-derivations" ];
+  nix.settings.experimental-features = ["nix-command" "flakes" "dynamic-derivations"];
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
@@ -37,9 +44,9 @@
 
   programs.virt-manager.enable = true;
 
-  fonts.packages = with pkgs; [ nerd-fonts.fira-code ];
+  fonts.packages = with pkgs; [nerd-fonts.fira-code];
 
-  nixpkgs.overlays = [ nix-your-shell.overlays.default ];
+  nixpkgs.overlays = [nix-your-shell.overlays.default];
 
   environment.systemPackages = with pkgs; [
     wl-clipboard-rs
@@ -104,7 +111,7 @@
   ];
 
   # Add xdg-desktop-portal-gtk for Wayland GTK apps (font issues etc.)
-  xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+  xdg.portal.extraPortals = [pkgs.xdg-desktop-portal-gtk];
 
   # Allow GTK applications to show an appmenu on KDE
   chaotic.appmenu-gtk3-module.enable = true;

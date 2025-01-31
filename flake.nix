@@ -2,7 +2,7 @@
   description = "NixOS system flake";
 
   nixConfig = {
-    extra-substituters = [ "https://chaotic-nyx.cachix.org" ];
+    extra-substituters = ["https://chaotic-nyx.cachix.org"];
     extra-trusted-public-keys = [
       "chaotic-nyx.cachix.org-1:HfnXSw4pj95iI/n17rIDy40agHj12WfF+Gqk6SonIT8="
     ];
@@ -33,36 +33,43 @@
     };
   };
 
-  outputs =
-    inputs@{ self, nixpkgs, nixpkgs-stable, nix-your-shell, garuda, chaotic, Neve, ... }:
-    let
+  outputs = inputs @ {
+    self,
+    nixpkgs,
+    nixpkgs-stable,
+    nix-your-shell,
+    garuda,
+    chaotic,
+    Neve,
+    ...
+  }: let
+    system = "x86_64-linux";
+    pkgs = import nixpkgs {inherit system;};
+    pkgsStable = import nixpkgs-stable {inherit system;};
+  in {
+    nixosConfigurations.DreamingDesk = garuda.lib.garudaSystem {
       system = "x86_64-linux";
-      pkgs = import nixpkgs { inherit system; };
-      pkgsStable = import nixpkgs-stable { inherit system; };
-    in {
-      nixosConfigurations.DreamingDesk = garuda.lib.garudaSystem {
-        system = "x86_64-linux";
-        specialArgs = { inherit inputs pkgsStable nix-your-shell; };
-        modules = [
-          ./configuration.nix
-          ./desktop.nix
-          { networking.hostName = "DreamingDesk"; }
-        ];
-      };
-      nixosConfigurations.DreamingBlade = garuda.lib.garudaSystem {
-        system = "x86_64-linux";
-        specialArgs = { inherit inputs pkgsStable nix-your-shell; };
-        modules = [
-          ./configuration.nix
-          ./laptop.nix
-          {
-            networking.hostName = "DreamingBlade";
-            powerManagement = {
-              enable = true;
-              powertop.enable = true;
-            };
-          }
-        ];
-      };
+      specialArgs = {inherit inputs pkgsStable nix-your-shell;};
+      modules = [
+        ./configuration.nix
+        ./desktop.nix
+        {networking.hostName = "DreamingDesk";}
+      ];
     };
+    nixosConfigurations.DreamingBlade = garuda.lib.garudaSystem {
+      system = "x86_64-linux";
+      specialArgs = {inherit inputs pkgsStable nix-your-shell;};
+      modules = [
+        ./configuration.nix
+        ./laptop.nix
+        {
+          networking.hostName = "DreamingBlade";
+          powerManagement = {
+            enable = true;
+            powertop.enable = true;
+          };
+        }
+      ];
+    };
+  };
 }
