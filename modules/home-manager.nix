@@ -25,6 +25,7 @@
         theme = "material_darker";
         editor = {
           line-number = "relative";
+          indent-guides.render = true;
           cursor-shape = {
             insert = "bar";
             normal = "block";
@@ -43,7 +44,7 @@
           {
             name = "nix";
             auto-format = true;
-            formatter.command = "${pkgs.nixfmt}/bin/nixfmt";
+            formatter.command = "${pkgs.alejandra}/bin/alejandra";
           }
           {
             name = "svelte";
