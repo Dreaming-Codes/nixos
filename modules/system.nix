@@ -24,7 +24,7 @@
     LC_TIME = "it_IT.UTF-8";
   };
 
-  hardware.pulseaudio.enable = false;
+  services.pulseaudio.enable = false;
   security.rtkit.enable = true;
   security.sudo.wheelNeedsPassword = false;
   security.pam.services.login.enableKwallet = true;
@@ -37,7 +37,7 @@
 
   programs.virt-manager.enable = true;
 
-  fonts.packages = with pkgs; [ fira-code-nerdfont ];
+  fonts.packages = with pkgs; [ nerd-fonts.fira-code ];
 
   nixpkgs.overlays = [ nix-your-shell.overlays.default ];
 
@@ -58,6 +58,8 @@
     looking-glass-client
     bottles
     appimage-run
+
+    lldb
 
     upscayl
     stremio
@@ -84,7 +86,7 @@
     # Nix LSP
     nil
     # Nix fmt
-    nixfmt-classic
+    alejandra
 
     ffmpeg
     mpv
