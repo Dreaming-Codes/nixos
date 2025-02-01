@@ -4,7 +4,7 @@
   pkgsStable,
   nix-your-shell,
   inputs,
-  chaotic,
+  lib,
   ...
 }: {
   zramSwap.enable = true;
@@ -133,6 +133,7 @@
     PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig";
     # Fix for some app that rely on env to choose audio driver
     SDL_AUDIODRIVER = "pipewire";
+    EDITOR = lib.mkForce "hx";
   };
 
   services.mullvad-vpn.enable = true;

@@ -117,12 +117,30 @@
       };
     };
 
-    home.file."./.config/zellij/config.kdl".source = ./zellij.kdl;
+    home.file."./.config/zellij" = {
+      source = ./zellij;
+      recursive = true;
+    };
+
+    home.file."./.config/wezterm" = {
+      source = ./wezterm;
+      recursive = true;
+    };
+
+    home.file."./.config/yazelix" = {
+      source = builtins.fetchGit {
+        url = "https://github.com/Dreaming-Codes/yazelix";
+        rev = "da9875c2b1bdf45c276cae6989c233526a47c166";
+      };
+    };
 
     programs = {
       zellij = {
         enable = true;
         enableFishIntegration = true;
+      };
+      wezterm = {
+        enable = true;
       };
       lazygit = {enable = true;};
       gitui = {enable = true;};
@@ -160,10 +178,19 @@
           shutdown = "systemctl poweroff";
         };
       };
+      yazi = {
+        enable = true;
+        enableNushellIntegration = true;
+      };
+      starship = {
+        enable = true;
+        enableNushellIntegration = true;
+      };
       nushell = {
         enable = true;
         extraConfig = ''
-          ${pkgs.nix-your-shell.generate-config "nu"}
+          $env.config.show_banner = false
+          source ${pkgs.nix-your-shell.generate-config "nu"}
         '';
       };
       carapace = {
@@ -179,6 +206,7 @@
       bat = {enable = true;};
       direnv = {
         enable = true;
+        enableNushellIntegration = true;
         nix-direnv.enable = true;
       };
       zoxide = {
