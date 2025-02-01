@@ -7,6 +7,6 @@
     isNormalUser = true;
     description = "DreamingCodes";
     extraGroups = ["networkmanager" "wheel" "docker" "libvirtd" "kvm" "adbusers"];
-    shell = pkgs.fish;
+    shell = pkgs.nushell;
   };
 }
