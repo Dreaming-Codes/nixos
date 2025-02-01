@@ -160,6 +160,17 @@
           shutdown = "systemctl poweroff";
         };
       };
+      nushell = {
+        enable = true;
+        extraConfig = ''
+          ${pkgs.nix-your-shell.generate-config "nu"}
+        '';
+      };
+      carapace = {
+        enable = true;
+        enableNushellIntegration = true;
+        enableFishIntegration = true;
+      };
       bash = {enable = true;};
       eza = {
         enable = true;
