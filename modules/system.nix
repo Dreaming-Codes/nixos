@@ -66,6 +66,8 @@
     bottles
     appimage-run
 
+    nushell
+
     lldb
 
     upscayl
