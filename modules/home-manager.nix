@@ -25,41 +25,6 @@
       "/home/dreamingcodes/.cargo/bin"
     ];
 
-    programs.helix = {
-      enable = true;
-      settings = {
-        theme = "material_darker";
-        editor = {
-          line-number = "relative";
-          indent-guides.render = true;
-          cursor-shape = {
-            insert = "bar";
-            normal = "block";
-            select = "underline";
-          };
-        };
-      };
-      languages = {
-        language-server = {
-          tailwindcss-ls = {
-            command = "tailwindcss-language-server";
-            args = ["--stdio"];
-          };
-        };
-        language = [
-          {
-            name = "nix";
-            auto-format = true;
-            formatter.command = "${pkgs.alejandra}/bin/alejandra";
-          }
-          {
-            name = "svelte";
-            language-servers = ["svelteserver" "tailwindcss-ls"];
-          }
-        ];
-      };
-    };
-
     programs.obs-studio = {
       enable = true;
       plugins = with pkgs.obs-studio-plugins; [obs-backgroundremoval];
@@ -111,12 +76,20 @@
       recursive = true;
     };
 
+    home.file."./.config/helix" = {
+      source = ./helix;
+      recursive = true;
+    };
+
     programs = {
       zellij = {
         enable = true;
         enableFishIntegration = true;
       };
       wezterm = {
+        enable = true;
+      };
+      helix = {
         enable = true;
       };
       lazygit = {enable = true;};
