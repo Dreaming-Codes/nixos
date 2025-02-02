@@ -11,6 +11,13 @@
 
   programs.nh = {flake = "/home/dreamingcodes/.nixos/";};
 
+  programs.bash = {
+    interactiveShellInit = lib.mkForce ''
+      # do nothing
+      true
+    '';
+  };
+
   nix.settings.auto-optimise-store = true;
   nix.settings.experimental-features = ["nix-command" "flakes" "dynamic-derivations"];
 
@@ -134,6 +141,7 @@
     # Fix for some app that rely on env to choose audio driver
     SDL_AUDIODRIVER = "pipewire";
     EDITOR = lib.mkForce "hx";
+    VISUAL = lib.mkForce "hx";
   };
 
   services.mullvad-vpn.enable = true;
