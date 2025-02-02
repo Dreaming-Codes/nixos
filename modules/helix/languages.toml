@@ -1,0 +1,14 @@
+[[language]]
+auto-format = true
+name = "nix"
+
+[language.formatter]
+command = "/nix/store/9gzgviip82ddfvv9dhs1k6am1h45b540-alejandra-3.1.0/bin/alejandra"
+
+[[language]]
+language-servers = ["svelteserver", "tailwindcss-ls"]
+name = "svelte"
+
+[language-server.tailwindcss-ls]
+args = ["--stdio"]
+command = "tailwindcss-language-server"
