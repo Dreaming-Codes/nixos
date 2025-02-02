@@ -60,22 +60,6 @@
       };
     };
 
-    programs.alacritty = {
-      enable = true;
-      settings = {
-        font = {
-          normal = {
-            family = "FiraCode Nerd Font Mono";
-            style = "Regular";
-          };
-          bold = {
-            family = "FiraCode Nerd Font Mono";
-            style = "Bold";
-          };
-        };
-      };
-    };
-
     programs.obs-studio = {
       enable = true;
       plugins = with pkgs.obs-studio-plugins; [obs-backgroundremoval];
