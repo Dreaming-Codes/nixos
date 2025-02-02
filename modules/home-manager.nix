@@ -111,13 +111,6 @@
       recursive = true;
     };
 
-    home.file."./.config/yazelix" = {
-      source = builtins.fetchGit {
-        url = "https://github.com/Dreaming-Codes/yazelix";
-        rev = "da9875c2b1bdf45c276cae6989c233526a47c166";
-      };
-    };
-
     programs = {
       zellij = {
         enable = true;
@@ -245,7 +238,6 @@
         extraConfig = ''
           $env.config.show_banner = false
           source ${pkgs.nix-your-shell.generate-config "nu"}
-          alias hxy = zellij -l welcome --config-dir ~/.config/yazelix/zellij options --layout-dir ~/.config/yazelix/zellij/layouts
 
           def start_zellij [] {
             if 'ZELLIJ' not-in ($env | columns) {
