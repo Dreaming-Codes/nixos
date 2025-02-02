@@ -261,6 +261,7 @@
         extraConfig = ''
           $env.config.show_banner = false
           source ${pkgs.nix-your-shell.generate-config "nu"}
+          alias hxy = zellij -l welcome --config-dir ~/.config/yazelix/zellij options --layout-dir ~/.config/yazelix/zellij/layouts
 
           def start_zellij [] {
             if 'ZELLIJ' not-in ($env | columns) {
