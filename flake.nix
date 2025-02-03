@@ -4,6 +4,7 @@
   nixConfig = {
     extra-substituters = [
       "https://chaotic-nyx.cachix.org"
+      "https://nix-mirror.freetls.fastly.net"
       "https://anyrun.cachix.org"
     ];
     extra-trusted-public-keys = [
@@ -42,6 +43,10 @@
     anyrunfufexan = {
       # this add uwsm_app switch back to original when this reaches upstream
       url = "github:fufexan/anyrun/launch-prefix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    ashell = {
+      url = "github:MalpenZibo/ashell";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
