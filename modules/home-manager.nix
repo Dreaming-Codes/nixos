@@ -10,9 +10,12 @@
     programs.home-manager.enable = true;
 
     # Hint Electron apps to use Wayland:
-    home.sessionVariables.NIXOS_OZONE_WL = "1";
-    home.sessionVariables.ZELLIJ_AUTO_EXIT = "true";
-
+    home.sessionVariables = {
+      EDITOR = "hx";
+      VISUAL = "hx";
+      NIXOS_OZONE_WL = "1";
+      ZELLIJ_AUTO_EXIT = "true";
+    };
     dconf.settings = {
       "org/virt-manager/virt-manager/connections" = {
         autoconnect = ["qemu:///system"];
@@ -28,6 +31,37 @@
     programs.obs-studio = {
       enable = true;
       plugins = with pkgs.obs-studio-plugins; [obs-backgroundremoval];
+    };
+
+    wayland.windowManager.hyprland = {
+      enable = true;
+      systemd.enable = false;
+      settings = {
+        "$mod" = "SUPER";
+        bindm = [
+          "$mod, mouse:272, movewindow"
+          "$mod, mouse:273, resizewindow"
+        ];
+        bind =
+          [
+            "$mod, W, exec, brave"
+            "$mod, SPACE, exec, wezterm"
+            ", Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m active"
+            "SHIFT, Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m region"
+          ]
+          ++ (
+            # workspaces
+            builtins.concatLists (builtins.genList (
+                i: let
+                  ws = i + 1;
+                in [
+                  "$mod, code:1${toString i}, workspace, ${toString ws}"
+                  "$mod SHIFT, code:1${toString 1}, movetoworkspace, ${toString ws}"
+                ]
+              )
+              9)
+          );
+      };
     };
 
     home.packages = with pkgs; [
