@@ -42,6 +42,30 @@
       systemd.enable = false;
       settings = {
         "$mod" = "SUPER";
+        exec-once = [
+          "ashell"
+          "${pkgs.kwallet-pam}/libexec/pam_kwallet_init"
+        ];
+        monitor = [
+          "HDMI-A-1, highres, 0x0, 1"
+          "DP-1, 3440x1440@144, 1920x0, 1"
+          "DP-2, highres, 5360x0, 1"
+        ];
+        workspace = [
+          "1, persistent:true, monitor:DP-1"
+          "2, persistent:true, monitor:DP-1"
+          "3, persistent:true, monitor:DP-1"
+          "4, persistent:true, monitor:DP-2"
+          "5, persistent:true, monitor:DP-2"
+          "6, persistent:true, monitor:DP-2"
+          "7, persistent:true, monitor:HDMI-A-1"
+          "8, persistent:true, monitor:HDMI-A-1"
+          "9, persistent:true, monitor:HDMI-A-1"
+        ];
+        input = {
+          kb_layout = "us";
+          kb_variant = "intl";
+        };
         windowrulev2 = [
           "opacity 0.0 override, class:^(xwaylandvideobridge)$"
           "noanim, class:^(xwaylandvideobridge)$"
@@ -80,6 +104,7 @@
 
     home.packages = with pkgs; [
       inputs.Neve.packages.${pkgs.system}.default
+      inputs.ashell.defaultPackage.${pkgs.system}
       kdePackages.kate
       goldwarden
       brave
@@ -128,6 +153,8 @@
       source = ./helix;
       recursive = true;
     };
+
+    home.file."./.config/ashell.yml".source = ./ashell.yml;
 
     programs = {
       anyrun = {
