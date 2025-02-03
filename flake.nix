@@ -2,9 +2,13 @@
   description = "NixOS system flake";
 
   nixConfig = {
-    extra-substituters = ["https://chaotic-nyx.cachix.org"];
+    extra-substituters = [
+      "https://chaotic-nyx.cachix.org"
+      "https://anyrun.cachix.org"
+    ];
     extra-trusted-public-keys = [
       "chaotic-nyx.cachix.org-1:HfnXSw4pj95iI/n17rIDy40agHj12WfF+Gqk6SonIT8="
+      "anyrun.cachix.org-1:pqBobmOjI7nKlsUMV25u9QHa9btJK65/C8vnO3p346s="
     ];
   };
 
@@ -29,6 +33,15 @@
     };
     nix-your-shell = {
       url = "github:MercuryTechnologies/nix-your-shell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    anyrun = {
+      url = "github:anyrun-org/anyrun";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    anyrunfufexan = {
+      # this add uwsm_app switch back to original when this reaches upstream
+      url = "github:fufexan/anyrun/launch-prefix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
