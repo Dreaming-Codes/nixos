@@ -13,6 +13,13 @@
   services.desktopManager.plasma6.enable = true;
   environment.plasma6.excludePackages = with pkgs.kdePackages; [konsole];
 
+  programs.hyprland = {
+    enable = true;
+    withUWSM = true;
+  };
+  programs.hyprlock.enable = true;
+  services.hypridle.enable = true;
+
   services.xserver.xkb = {
     layout = "us";
     variant = "alt-intl";
