@@ -120,7 +120,6 @@
       kdePackages.kleopatra
       gnupg
       kwalletcli
-      spotify
       tor-browser
       jetbrains-toolbox
     ];

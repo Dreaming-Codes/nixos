@@ -80,6 +80,9 @@
     upscayl
     stremio
 
+    psst
+    ncspot
+
     mullvad-browser
     mullvad-vpn
 
