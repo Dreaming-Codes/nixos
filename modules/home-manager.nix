@@ -96,6 +96,7 @@
             "$mod, Q, killactive"
             "$mod, TAB, overview:toggle, all"
             "$mod, T, exec, telegram-desktop"
+            "$mod, O, togglefloating"
           ]
           ++ (
             # workspaces
@@ -104,7 +105,7 @@
                   ws = i + 1;
                 in [
                   "$mod, code:1${toString i}, workspace, ${toString ws}"
-                  "$mod SHIFT, code:1${toString 1}, movetoworkspace, ${toString ws}"
+                  "$mod SHIFT, code:1${toString i}, movetoworkspace, ${toString ws}"
                 ]
               )
               9)
