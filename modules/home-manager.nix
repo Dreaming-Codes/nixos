@@ -95,6 +95,7 @@
             "$mod, X, exec, anyrun"
             "$mod, Q, killactive"
             "$mod, TAB, overview:toggle, all"
+            "$mod, T, exec, telegram-desktop"
           ]
           ++ (
             # workspaces
