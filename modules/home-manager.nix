@@ -40,8 +40,16 @@
     wayland.windowManager.hyprland = {
       enable = true;
       systemd.enable = false;
+      plugins = [
+        pkgs.hyprlandPlugins.hyprspace
+      ];
       settings = {
         "$mod" = "SUPER";
+        plugin = {
+          overview = {
+            showNewWorkspace = false;
+          };
+        };
         exec-once = [
           "ashell"
           "${pkgs.kwallet-pam}/libexec/pam_kwallet_init"
@@ -86,6 +94,7 @@
             "SHIFT, Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m region"
             "$mod, X, exec, anyrun"
             "$mod, Q, killactive"
+            "$mod, TAB, overview:toggle, all"
           ]
           ++ (
             # workspaces
