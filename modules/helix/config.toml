@@ -17,3 +17,6 @@ y = ":sh zellij run -c -f -x 10% -y 10% --width 80% --height 80% -- bash ~/.conf
 v = ":sh zellij run -c -f -x 10% -y 10% --width 80% --height 80% -- bash ~/.config/helix/yazi-picker.sh vsplit"
 # Open the file(s) in a horizontal pane
 h = ":sh zellij run -c -f -x 10% -y 10% --width 80% --height 80% -- bash ~/.config/helix/yazi-picker.sh hsplit"
+
+[keys.insert]
+C-space = "completion"

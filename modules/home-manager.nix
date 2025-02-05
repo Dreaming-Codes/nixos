@@ -114,7 +114,6 @@
     };
 
     home.packages = with pkgs; [
-      inputs.Neve.packages.${pkgs.system}.default
       inputs.ashell.defaultPackage.${pkgs.system}
       kdePackages.kate
       goldwarden
@@ -278,7 +277,7 @@
           signByDefault = true;
         };
         extraConfig = lib.mkForce {
-          core = {editor = "zeditor";};
+          core = {editor = "hx";};
           init = {defaultBranch = "master";};
           pull = {rebase = true;};
           credential = {

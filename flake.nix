@@ -28,10 +28,6 @@
       url = "github:nix-community/home-manager/release-23.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    Neve = {
-      url = "github:Dreaming-Codes/Neve";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     nix-your-shell = {
       url = "github:MercuryTechnologies/nix-your-shell";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -58,7 +54,6 @@
     nix-your-shell,
     garuda,
     chaotic,
-    Neve,
     ...
   }: let
     system = "x86_64-linux";
