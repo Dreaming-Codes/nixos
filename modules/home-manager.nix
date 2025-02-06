@@ -44,8 +44,9 @@
         enable = true;
         enableXdgAutostart = true;
       };
-      package = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland;
-      portalPackage = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
+      # Those are both null since it's installed by the nixos module
+      package = null;
+      portalPackage = null;
       plugins = with inputs.hyprland-plugins.packages.${pkgs.system}; [
         inputs.hyprtasking.packages.${pkgs.system}.hyprtasking
       ];
