@@ -122,7 +122,6 @@
       brave
       telegram-desktop
       bitwarden-desktop
-      equibop
       prismlauncher
       btop
       bun
