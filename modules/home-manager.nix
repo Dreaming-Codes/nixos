@@ -18,6 +18,7 @@
       EDITOR = "hx";
       VISUAL = "hx";
       NIXOS_OZONE_WL = "1";
+      QT_QPA_PLATFORMTHEME = "kde";
       ZELLIJ_AUTO_EXIT = "true";
     };
     dconf.settings = {
