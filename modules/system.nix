@@ -73,6 +73,11 @@
     bottles
     appimage-run
 
+    (discord.override {
+      withOpenASAR = true;
+      withVencord = true;
+    })
+
     nushell
 
     lldb
