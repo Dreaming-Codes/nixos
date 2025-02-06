@@ -17,7 +17,8 @@
     SDL2_ttf
     SDL_image
     SDL_mixer
-    SDL_ttf
+    # there's a CVE attached to this package temporarly disabling until solved
+    # SDL_ttf
     alsa-lib
     at-spi2-atk
     at-spi2-core

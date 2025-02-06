@@ -12,8 +12,8 @@
   programs.nh = {flake = "/home/dreamingcodes/.nixos/";};
 
   programs.bash = {
+    # do nothing
     interactiveShellInit = lib.mkForce ''
-      # do nothing
       true
     '';
   };
@@ -76,6 +76,9 @@
     nushell
 
     lldb
+
+    # Not sure what caused this but now this is needed to make bash work
+    bashInteractive
 
     upscayl
     stremio

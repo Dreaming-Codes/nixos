@@ -39,20 +39,21 @@
 
     wayland.windowManager.hyprland = {
       enable = true;
-      systemd.enable = false;
-      plugins = [
-        pkgs.hyprlandPlugins.hyprspace
+      systemd.enable = true;
+      package = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland;
+      portalPackage = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
+      plugins = with inputs.hyprland-plugins.packages.${pkgs.system}; [
+        inputs.hyprtasking.packages.${pkgs.system}.hyprtasking
       ];
       settings = {
         "$mod" = "SUPER";
         plugin = {
-          overview = {
-            showNewWorkspace = false;
+          hyprtasking = {
+            layout = "linear";
           };
         };
         exec-once = [
           "ashell"
-          "${pkgs.kwallet-pam}/libexec/pam_kwallet_init"
         ];
         monitor = [
           "HDMI-A-1, highres, 0x0, 1"
@@ -94,7 +95,7 @@
             "SHIFT, Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m region"
             "$mod, X, exec, anyrun"
             "$mod, Q, killactive"
-            "$mod, TAB, overview:toggle, all"
+            "$mod, TAB, hyprtasking:toggle, all"
             "$mod, T, exec, telegram-desktop"
             "$mod, O, togglefloating"
           ]
@@ -169,7 +170,7 @@
       anyrun = {
         enable = true;
         extraConfigFiles = {
-          "uwsm_app.ron".text = ''
+          "applications.ron".text = ''
             Config(
               desktop_actions: false,
               max_entries: 5,
@@ -245,7 +246,7 @@
           hidePluginInfo = true;
           closeOnClick = true;
           plugins = with inputs.anyrun.packages.${pkgs.system}; [
-            inputs.anyrunfufexan.packages.${pkgs.system}.uwsm_app
+            applications
             randr
             rink
             shell
