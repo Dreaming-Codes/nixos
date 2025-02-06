@@ -132,8 +132,25 @@
     xdg-desktop-portal
   ];
 
-  # Add xdg-desktop-portal-gtk for Wayland GTK apps (font issues etc.)
-  xdg.portal.extraPortals = [pkgs.xdg-desktop-portal-gtk];
+  xdg.portal = {
+    xdgOpenUsePortal = true;
+    enable = true;
+
+    config = {
+      hyprland = {
+        default = ["hyprland" "gtk" "kde"];
+        "org.freedesktop.impl.portal.FileChooser" = "kde";
+        "org.freedesktop.impl.portal.OpenURI" = "kde";
+      };
+    };
+
+    extraPortals = with pkgs; [
+      inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland
+      # Add xdg-desktop-portal-gtk for Wayland GTK apps (font issues etc.)
+      xdg-desktop-portal-gtk
+      xdg-desktop-portal-kde
+    ];
+  };
 
   # Allow GTK applications to show an appmenu on KDE
   chaotic.appmenu-gtk3-module.enable = true;
