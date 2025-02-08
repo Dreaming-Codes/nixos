@@ -42,12 +42,15 @@
     gdk-pixbuf
     glew110
     glib
+    libgcc
+    libepoxy
     libcef
     gmp
     gst_all_1.gst-plugins-base
     gst_all_1.gst-plugins-ugly
     gst_all_1.gstreamer
     gtk2
+    gtk3
     harfbuzz
     icu
     keyutils.lib
