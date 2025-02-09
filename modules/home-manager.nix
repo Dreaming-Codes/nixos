@@ -59,6 +59,7 @@
         };
         exec-once = [
           "ashell"
+          "dunst"
         ];
         monitor = [
           "HDMI-A-1, highres, 0x0, 1"
