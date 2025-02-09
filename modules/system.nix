@@ -73,6 +73,8 @@
     bottles
     appimage-run
 
+    dunst
+
     (discord.override {
       withOpenASAR = true;
       withVencord = true;
