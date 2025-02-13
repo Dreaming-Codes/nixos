@@ -5,6 +5,7 @@
     # amd encoders/decoders
     amf
     looking-glass-client
+    via
   ];
 
   services.sunshine = {
@@ -61,15 +62,18 @@
       paths = with pkgs.rocmPackages; [rocblas hipblas clr];
     };
   in [
-    # "L+    /opt/rocm   -    -    -     -    ${rocmEnv}"
+    "L+    /opt/rocm   -    -    -     -    ${rocmEnv}"
     "f /dev/shm/looking-glass 0660 dreamingcodes kvm -"
   ];
 
+  hardware.keyboard.qmk.enable = true;
+  services.udev.packages = [pkgs.via];
   # 1. fix suspend
   # 2. make xremap work
   services.udev.extraRules = ''
     ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x8086", ATTR{device}=="0x06ed", ATTR{power/wakeup}="disabled"
     KERNEL=="uinput", GROUP="input", TAG+="uaccess"
+    SUBSYSTEM=="input", ATTRS{idVendor}=="3434", ATTRS{idProduct}=="0660", MODE="0660", TAG+="uaccess"
   '';
 
   # Allow input devices to be accessed by dreamingcodes user (needed for xremap)
