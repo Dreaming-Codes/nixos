@@ -296,6 +296,7 @@
       };
       fish = {
         enable = true;
+        generateCompletions = false;
         interactiveShellInit = ''
           set fish_greeting # Disable greeting
           nix-your-shell fish | source
