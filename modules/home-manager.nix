@@ -57,10 +57,6 @@
             layout = "linear";
           };
         };
-        exec-once = [
-          "ashell"
-          "dunst"
-        ];
         monitor = [
           "HDMI-A-1, highres, 0x0, 1"
           "DP-1, 3440x1440@144, 1920x0, 1"
@@ -104,6 +100,7 @@
             "$mod, TAB, hyprtasking:toggle, all"
             "$mod, T, exec, telegram-desktop"
             "$mod, O, togglefloating"
+            "$mod, C, exec, clipcat-menu"
           ]
           ++ (
             # workspaces
@@ -120,7 +117,62 @@
       };
     };
 
-    home.packages = with pkgs; [
+    systemd.user.services.clipcat = {
+      Unit = {
+        Description = "Clipcat Daemon";
+        PartOf = ["hyprland-session.target"];
+        After = ["hyprland-session.target"];
+      };
+      Install = {
+        WantedBy = ["hyprland-session.target"];
+      };
+      Service = {
+        ExecStartPre = "/run/current-system/sw/bin/rm -f %t/clipcat/grpc.sock";
+        ExecStart = "/run/current-system/sw/bin/clipcatd --no-daemon --replace";
+        Restart = "on-failure";
+        Type = "simple";
+      };
+    };
+
+    systemd.user.services.ashell = {
+      Unit = {
+        Description = "Ashell shell";
+        PartOf = ["hyprland-session.target"];
+        After = ["hyprland-session.target"];
+      };
+      Install = {
+        WantedBy = ["hyprland-session.target"];
+      };
+      Service = {
+        ExecStart = "${inputs.ashell.defaultPackage.${pkgs.system}}/bin/ashell";
+        Restart = "on-failure";
+        Type = "simple";
+      };
+    };
+
+    systemd.user.services.dunst = {
+      Unit = {
+        Description = "Dunst Notification Daemon";
+        PartOf = ["hyprland-session.target"];
+        After = ["hyprland-session.target"];
+      };
+      Install = {
+        WantedBy = ["hyprland-session.target"];
+      };
+      Service = {
+        ExecStart = "/run/current-system/sw/bin/dunst";
+        Restart = "on-failure";
+        Type = "simple";
+      };
+    };
+
+    home.packages = with pkgs; let
+      anyrun = inputs.anyrun.packages.${pkgs.system}.default;
+      anyrunStdin = inputs.anyrun.packages.${pkgs.system}.stdin;
+      dmenuWrapper = pkgs.writeShellScriptBin "dmenu" ''
+        exec ${anyrun}/bin/anyrun --show-results-immediately true --plugins ${anyrunStdin}/lib/libstdin.so "$@"
+      '';
+    in [
       inputs.ashell.defaultPackage.${pkgs.system}
       kdePackages.kate
       goldwarden
@@ -138,6 +190,7 @@
       kwalletcli
       tor-browser
       jetbrains-toolbox
+      dmenuWrapper
     ];
     services = {
       easyeffects.enable = true;
@@ -169,6 +222,11 @@
       recursive = true;
     };
 
+    home.file."./.config/clipcat" = {
+      source = ./clipcat;
+      recursive = true;
+    };
+
     home.file."./.config/ashell.yml".source = ./ashell.yml;
 
     programs = {
@@ -192,6 +250,13 @@
             Config(
               prefi: ":dp",
               max_entries: 5,
+            )
+          '';
+
+          "stdin.ron".text = ''
+            Config(
+              allow_invalid: true,
+              max_entries: 20
             )
           '';
         };

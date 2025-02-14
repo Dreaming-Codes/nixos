@@ -74,6 +74,7 @@
     appimage-run
 
     dunst
+    clipcat
 
     (discord.override {
       withOpenASAR = true;
