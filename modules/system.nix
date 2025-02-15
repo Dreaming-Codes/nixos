@@ -73,6 +73,8 @@
     bottles
     appimage-run
 
+    fish
+
     dunst
     clipcat
 
