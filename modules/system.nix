@@ -55,6 +55,8 @@
 
   nixpkgs.overlays = [nix-your-shell.overlays.default];
 
+  programs.fish.enable = true;
+
   environment.systemPackages = with pkgs; [
     wl-clipboard-rs
     wget
@@ -72,8 +74,6 @@
     looking-glass-client
     bottles
     appimage-run
-
-    fish
 
     dunst
     clipcat
