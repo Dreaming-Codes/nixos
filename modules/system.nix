@@ -106,6 +106,7 @@
 
     # Java
     zulu23
+    kotlin
 
     # Zed
     zed-editor
@@ -165,7 +166,9 @@
     links = {
       nodejs = pkgs.nodejs;
       jdk = pkgs.temurin-bin;
+      kotlin = pkgs.kotlin;
       jdk17 = pkgs.temurin-bin-17;
+      jdk23 = pkgs.zulu23;
     };
   };
 
