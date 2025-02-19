@@ -48,7 +48,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     ashell = {
-      url = "github:MalpenZibo/ashell";
+      url = "github:Dreaming-Codes/ashell";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
