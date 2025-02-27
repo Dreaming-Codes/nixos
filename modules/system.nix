@@ -75,6 +75,8 @@
     bottles
     appimage-run
 
+    (callPackage ./davinci-resolve.nix {})
+
     dunst
     clipcat
 
