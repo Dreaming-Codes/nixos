@@ -15,11 +15,11 @@ render = true
 # Yazi integration
 [keys.normal.C-y]
 # Open the file(s) in the current window
-y = ":sh zellij run -c -f -x 10%% -y 10%% --width 80%% --height 80%% -- bash ~/.config/helix/yazi-picker.sh open %{buffer_name}"
+y = ":sh zellij run -c -f -x 10%% -y 10%% --width 80%% --height 80%% -- bash ~/.config/helix/yazi-picker.sh open \"%{buffer_name}\""
 # Open the file(s) in a vertical pane
-v = ":sh zellij run -c -f -x 10%% -y 10%% --width 80%% --height 80%% -- bash ~/.config/helix/yazi-picker.sh vsplit %{buffer_name}"
+v = ":sh zellij run -c -f -x 10%% -y 10%% --width 80%% --height 80%% -- bash ~/.config/helix/yazi-picker.sh vsplit \"%{buffer_name}\""
 # Open the file(s) in a horizontal pane
-h = ":sh zellij run -c -f -x 10%% -y 10%% --width 80%% --height 80%% -- bash ~/.config/helix/yazi-picker.sh hsplit %{buffer_name}"
+h = ":sh zellij run -c -f -x 10%% -y 10%% --width 80%% --height 80%% -- bash ~/.config/helix/yazi-picker.sh hsplit \"%{buffer_name}\""
 
 [keys.insert]
 C-space = "completion"
