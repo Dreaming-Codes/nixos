@@ -100,7 +100,6 @@
 
     mullvad-browser
     mullvad-vpn
-
     pkgsStable.frida-tools
 
     # needed for browser widget
@@ -156,7 +155,7 @@
       inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland
       # Add xdg-desktop-portal-gtk for Wayland GTK apps (font issues etc.)
       xdg-desktop-portal-gtk
-      xdg-desktop-portal-kde
+      kdePackages.xdg-desktop-portal-kde
     ];
   };
 
