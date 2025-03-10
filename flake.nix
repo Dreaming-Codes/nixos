@@ -41,6 +41,10 @@
       url = "github:nix-community/home-manager/release-23.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    razer-laptop-controller = {
+      url = "github:JosuGZ/razer-laptop-control-no-dkms";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nix-your-shell = {
       url = "github:MercuryTechnologies/nix-your-shell";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -63,6 +67,7 @@
     nixpkgs,
     nixpkgs-stable,
     nix-your-shell,
+    razer-laptop-controller,
     garuda,
     chaotic,
     ...
@@ -85,6 +90,7 @@
       specialArgs = {inherit inputs pkgsStable nix-your-shell;};
       modules = [
         ./configuration.nix
+        razer-laptop-controller.nixosModules.default
         ./laptop.nix
         {
           networking.hostName = "DreamingBlade";

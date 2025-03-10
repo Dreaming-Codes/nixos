@@ -18,6 +18,7 @@
     package = pkgs.wireshark;
   };
 
+  services.razer-laptop-control.enable = true;
   # Enable rocm support for the iGPU on the laptop
   nixpkgs.config.rocmSupport = true;
   # Enable cuda support for the dGPU on the laptop
@@ -25,8 +26,8 @@
 
   users = {users.dreamingcodes = {extraGroups = ["wireshark"];};};
 
-  boot.kernelModules = ["kvm-amd"];
-  boot.kernelParams = ["nvidia.NVreg_EnableGpuFirmware=0"];
+  boot.kernelModules = [ "kvm-amd" ];
+  # boot.kernelParams = ["nvidia.NVreg_EnableGpuFirmware=0"];
 
   ### Nvidia STUFF
   hardware.graphics = {
@@ -34,7 +35,7 @@
   };
 
   # Load nvidia driver for Xorg and Wayland
-  services.xserver.videoDrivers = ["nvidia"];
+  services.xserver.videoDrivers = ["nvidia" "amdgpu" ];
 
   hardware.nvidia = {
     # Modesetting is required.
@@ -57,7 +58,7 @@
     # https://github.com/NVIDIA/open-gpu-kernel-modules#compatible-gpus
     # Only available from driver 515.43.04+
     # Currently alpha-quality/buggy, so false is currently the recommended setting.
-    open = true;
+    open = false;
 
     # Enable the Nvidia settings menu,
     # accessible via `nvidia-settings`.
