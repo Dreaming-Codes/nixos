@@ -137,6 +137,8 @@
     resvg
     sshfs
     xdg-desktop-portal
+
+    uutils-coreutils-noprefix
   ];
 
   xdg.portal = {
