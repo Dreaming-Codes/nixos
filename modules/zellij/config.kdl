@@ -1,4 +1,5 @@
 // If you'd like to override the default keybindings completely, be sure to change "keybinds" to "keybinds clear-defaults=true"
+show_startup_tips false
 ui {
     pane_frames {
         hide_session_name false
