@@ -75,6 +75,8 @@
     bottles
     appimage-run
 
+    godot
+
     (callPackage ./davinci-resolve.nix {})
 
     dunst
