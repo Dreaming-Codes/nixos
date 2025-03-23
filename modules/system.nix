@@ -77,6 +77,8 @@
 
     godot
 
+    lurk
+
     (callPackage ./davinci-resolve.nix {})
 
     dunst
