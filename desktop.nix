@@ -17,6 +17,27 @@
   services.avahi.publish.enable = true;
   services.avahi.publish.userServices = true;
 
+  home-manager.users.dreamingcodes = {
+    settings = {
+      monitor = [
+        "HDMI-A-1, highres, 0x0, 1"
+        "DP-1, 3440x1440@144, 1920x0, 1"
+        "DP-2, highres, 5360x0, 1"
+      ];
+      workspace = [
+        "1, persistent:true, default:true, monitor:DP-1"
+        "2, persistent:true, monitor:DP-1"
+        "3, persistent:true, monitor:DP-1"
+        "4, persistent:true, default:true, monitor:DP-2"
+        "5, persistent:true, monitor:DP-2"
+        "6, persistent:true, monitor:DP-2"
+        "7, persistent:true, default:true, monitor:HDMI-A-1"
+        "8, persistent:true, monitor:HDMI-A-1"
+        "9, persistent:true, monitor:HDMI-A-1"
+      ];
+    };
+  };
+
   # Additional kernel modules needed for virtualization
   boot.initrd.availableKernelModules = [
     "vfio_pci"
