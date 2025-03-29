@@ -60,6 +60,10 @@
           kb_layout = "us";
           kb_variant = "intl";
         };
+        general = {
+          gaps_out = 0;
+          gaps_in = 0;
+        };
         windowrulev2 = [
           "opacity 0.0 override, class:^(xwaylandvideobridge)$"
           "noanim, class:^(xwaylandvideobridge)$"
