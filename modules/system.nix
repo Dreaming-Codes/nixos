@@ -83,6 +83,7 @@
 
     dunst
     clipcat
+    playerctl
 
     (discord.override {
       withOpenASAR = true;

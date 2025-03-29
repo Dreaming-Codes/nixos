@@ -88,6 +88,7 @@
             "$mod, T, exec, telegram-desktop"
             "$mod, O, togglefloating"
             "$mod, C, exec, clipcat-menu"
+            "$mod, L, exec, hyprlock"
           ]
           ++ (
             # workspaces
@@ -211,6 +212,11 @@
 
     home.file."./.config/clipcat" = {
       source = ./clipcat;
+      recursive = true;
+    };
+
+    home.file."./.config/hypr" = {
+      source = ./hypr;
       recursive = true;
     };
 
