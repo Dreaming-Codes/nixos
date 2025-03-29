@@ -1,4 +1,4 @@
-theme = "material_darker"
+theme = "transparent"
 [editor]
 line-number = "relative"
 [editor.cursor-shape]
