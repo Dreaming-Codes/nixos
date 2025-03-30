@@ -63,6 +63,11 @@
           gaps_out = 0;
           gaps_in = 0;
         };
+        gestures = {
+          workspace_swipe = true;
+          workspace_swipe_min_fingers = true;
+          workspace_swipe_forever = true;
+        };
         windowrulev2 = [
           "opacity 0.0 override, class:^(xwaylandvideobridge)$"
           "noanim, class:^(xwaylandvideobridge)$"
