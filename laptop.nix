@@ -40,7 +40,7 @@
   users = {users.dreamingcodes = {extraGroups = ["wireshark"];};};
 
   boot.kernelModules = ["kvm-amd"];
-  # boot.kernelParams = ["nvidia.NVreg_EnableGpuFirmware=0"];
+  boot.kernelParams = ["nvidia.NVreg_PreserveVideoMemoryAllocations=1"];
 
   ### Nvidia STUFF
   hardware.graphics = {
