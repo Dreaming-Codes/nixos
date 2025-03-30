@@ -84,6 +84,7 @@
     dunst
     clipcat
     playerctl
+    brightnessctl
 
     (discord.override {
       withOpenASAR = true;
