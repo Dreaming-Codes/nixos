@@ -21,6 +21,9 @@
   home-manager.users.dreamingcodes = {
     wayland.windowManager.hyprland = {
       settings = {
+        bindl = [
+          ",switch:off:Lid Switch, exec, hyprlock --immediate"
+        ];
         env = [
           "AQ_DRM_DEVICES,/dev/dri/card0:/dev/dri/card1"
         ];
