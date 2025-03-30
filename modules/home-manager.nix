@@ -55,9 +55,18 @@
             layout = "linear";
           };
         };
+        device = [
+          {
+            name = "cda3-touchpad";
+            sensitivity = 0.25;
+          }
+        ];
         input = {
           kb_layout = "us";
           kb_variant = "intl";
+          touchpad = {
+            tap-and-drag = false;
+          };
         };
         general = {
           gaps_out = 0;
