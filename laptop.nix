@@ -18,6 +18,16 @@
     package = pkgs.wireshark;
   };
 
+  home-manager.users.dreamingcodes = {
+    wayland.windowManager.hyprland = {
+      settings = {
+        monitor = [
+          "eDP-1, 1920x1080@143.98, 0x0, 1"
+        ];
+      };
+    };
+  };
+
   services.razer-laptop-control.enable = true;
   # Enable rocm support for the iGPU on the laptop
   nixpkgs.config.rocmSupport = true;
@@ -26,7 +36,7 @@
 
   users = {users.dreamingcodes = {extraGroups = ["wireshark"];};};
 
-  boot.kernelModules = [ "kvm-amd" ];
+  boot.kernelModules = ["kvm-amd"];
   # boot.kernelParams = ["nvidia.NVreg_EnableGpuFirmware=0"];
 
   ### Nvidia STUFF
@@ -35,7 +45,7 @@
   };
 
   # Load nvidia driver for Xorg and Wayland
-  services.xserver.videoDrivers = ["nvidia" "amdgpu" ];
+  services.xserver.videoDrivers = ["nvidia" "amdgpu"];
 
   hardware.nvidia = {
     # Modesetting is required.
