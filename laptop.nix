@@ -21,6 +21,9 @@
   home-manager.users.dreamingcodes = {
     wayland.windowManager.hyprland = {
       settings = {
+        env = [
+          "AQ_DRM_DEVICES,/dev/dri/card0:/dev/dri/card1"
+        ];
         monitor = [
           "eDP-1, 1920x1080@60, 0x0, 1"
         ];
