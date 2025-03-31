@@ -18,7 +18,6 @@
       VISUAL = "hx";
       NIXOS_OZONE_WL = "1";
       QT_QPA_PLATFORMTHEME = "kde";
-      ZELLIJ_AUTO_EXIT = "true";
     };
     dconf.settings = {
       "org/virt-manager/virt-manager/connections" = {
@@ -362,6 +361,7 @@
       zellij = {
         enable = true;
         enableFishIntegration = true;
+        exitShellOnExit = false;
       };
       wezterm = {
         enable = true;
