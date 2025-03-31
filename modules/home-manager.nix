@@ -361,7 +361,7 @@
       zellij = {
         enable = true;
         enableFishIntegration = true;
-        exitShellOnExit = false;
+        exitShellOnExit = true;
       };
       wezterm = {
         enable = true;
