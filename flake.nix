@@ -30,10 +30,6 @@
       url = "github:raybbian/hyprtasking";
       inputs.hyprland.follows = "hyprland";
     };
-    kwin-effects-forceblur = {
-      url = "github:taj-ny/kwin-effects-forceblur";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     nix-alien.url = "github:thiagokokada/nix-alien";
     garuda.url = "gitlab:garuda-linux/garuda-nix-subsystem/stable";
     chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
