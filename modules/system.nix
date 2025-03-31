@@ -1,5 +1,4 @@
 {
-  config,
   pkgs,
   pkgsStable,
   nix-your-shell,
@@ -60,7 +59,6 @@
   environment.systemPackages = with pkgs; [
     wl-clipboard-rs
     wget
-    inputs.kwin-effects-forceblur.packages.${pkgs.system}.default
     any-nix-shell
     inputs.nix-alien.packages.${system}.nix-alien
     gcc
