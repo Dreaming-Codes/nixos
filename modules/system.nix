@@ -86,7 +86,7 @@
 
     (discord.override {
       withOpenASAR = true;
-      withVencord = true;
+      withMoonlight = true;
     })
 
     nushell
