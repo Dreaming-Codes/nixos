@@ -73,6 +73,8 @@
     bottles
     appimage-run
 
+    quickemu
+
     godot
 
     lurk
