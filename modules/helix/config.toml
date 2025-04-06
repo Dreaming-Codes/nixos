@@ -21,5 +21,10 @@ v = ":sh zellij run -c -f -x 10%% -y 10%% --width 80%% --height 80%% -- bash ~/.
 # Open the file(s) in a horizontal pane
 h = ":sh zellij run -c -f -x 10%% -y 10%% --width 80%% --height 80%% -- bash ~/.config/helix/yazi-picker.sh hsplit \"%{buffer_name}\""
 
+# Gitui integration
+[keys.normal.space.g]
+c = "changed_file_picker"
+g = ":sh zellij run -c -f -x 10%% -y 10%% --width 80%% --height 80%% -- gitui"
+
 [keys.insert]
 C-space = "completion"
