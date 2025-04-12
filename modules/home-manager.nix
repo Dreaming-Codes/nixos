@@ -8,10 +8,6 @@
     home.stateVersion = "24.11";
     programs.home-manager.enable = true;
 
-    imports = [
-      inputs.anyrun.homeManagerModules.default
-    ];
-
     # Hint Electron apps to use Wayland:
     home.sessionVariables = {
       EDITOR = "hx";
