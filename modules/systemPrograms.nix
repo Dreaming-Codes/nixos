@@ -42,6 +42,7 @@
     glew110
     glib
     libgcc
+    gcc
     libepoxy
     libcef
     gmp
