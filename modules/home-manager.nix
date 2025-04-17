@@ -97,6 +97,8 @@
             "$mod, O, togglefloating"
             "$mod, C, exec, clipcat-menu"
             "$mod, L, exec, hyprlock"
+            "$mod, comma, exec, wpaperctl previous"
+            "$mod, period, exec, wpaperctl next"
           ]
           ++ (
             # workspaces
@@ -110,6 +112,16 @@
               )
               9)
           );
+      };
+    };
+
+    services.wpaperd.enable = true;
+    services.wpaperd.settings = {
+      default = {
+        duration = "30m";
+        mode = "center";
+        sorting = "random";
+        path = "~/Pictures/wallpaper";
       };
     };
 
@@ -258,7 +270,12 @@
       recursive = true;
     };
 
-    home.file."./.config/ashell.yml".source = ./ashell.yml;
+    home.file."./Pictures/wallpaper" = {
+      source = ./wallpaper;
+      recursive = true;
+    };
+
+    home.file."./.config/ashell/config.toml".source = ./ashell.toml;
 
     programs = {
       anyrun = {
