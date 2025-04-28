@@ -72,6 +72,14 @@
     looking-glass-client
     bottles
     appimage-run
+    yaak
+
+    (vivaldi.override {
+      proprietaryCodecs = true;
+      enableWidevine = true;
+    })
+
+    gimp3-with-plugins
 
     quickemu
 
@@ -79,7 +87,9 @@
 
     lurk
 
-    (callPackage ./davinci-resolve.nix {})
+    (callPackage ./davinci-resolve.nix {
+      studioVariant = true;
+    })
 
     dunst
     clipcat
@@ -90,6 +100,8 @@
       withOpenASAR = true;
       withVencord = true;
     })
+
+    legcord
 
     nushell
 

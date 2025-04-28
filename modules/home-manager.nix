@@ -40,16 +40,8 @@
       # Those are both null since it's installed by the nixos module
       package = null;
       portalPackage = null;
-      plugins = with inputs.hyprland-plugins.packages.${pkgs.system}; [
-        inputs.hyprtasking.packages.${pkgs.system}.hyprtasking
-      ];
       settings = {
         "$mod" = "SUPER";
-        plugin = {
-          hyprtasking = {
-            layout = "linear";
-          };
-        };
         device = [
           {
             name = "cda3-touchpad";
@@ -86,13 +78,12 @@
         ];
         bind =
           [
-            "$mod, W, exec, brave"
+            "$mod, W, exec, vivaldi"
             "$mod, SPACE, exec, wezterm"
             ", Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m active"
             "SHIFT, Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m region"
             "$mod, X, exec, anyrun"
             "$mod, Q, killactive"
-            "$mod, TAB, hyprtasking:toggle, all"
             "$mod, T, exec, telegram-desktop"
             "$mod, O, togglefloating"
             "$mod, C, exec, clipcat-menu"
@@ -182,7 +173,7 @@
         WantedBy = ["hyprland-session.target"];
       };
       Service = {
-        ExecStart = "${inputs.ashell.defaultPackage.${pkgs.system}}/bin/ashell";
+        ExecStart = "${pkgs.ashell}/bin/ashell";
         Restart = "on-failure";
         Type = "simple";
       };
@@ -211,7 +202,7 @@
         exec ${anyrun}/bin/anyrun --show-results-immediately true --plugins ${anyrunStdin}/lib/libstdin.so "$@"
       '';
     in [
-      inputs.ashell.defaultPackage.${pkgs.system}
+      ashell
       kdePackages.kate
       goldwarden
       brave
@@ -366,7 +357,6 @@
           plugins = with inputs.anyrun.packages.${pkgs.system}; [
             applications
             randr
-            rink
             shell
             symbols
           ];
