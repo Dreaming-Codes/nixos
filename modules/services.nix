@@ -49,6 +49,9 @@
       onBoot = "ignore";
 
       qemu = {
+        package = pkgs.qemu_kvm.overrideAttrs (attrs: {
+          patches = attrs.patches ++ [./qemu-autoGenPatch.patch];
+        });
         swtpm.enable = true;
         ovmf.enable = true;
         ovmf.packages = [pkgs.OVMFFull.fd];

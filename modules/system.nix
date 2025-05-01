@@ -101,8 +101,6 @@
       withVencord = true;
     })
 
-    legcord
-
     nushell
 
     lldb
