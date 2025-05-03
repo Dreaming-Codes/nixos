@@ -72,5 +72,10 @@
         config.virtualisation.libvirtd.qemu.package
         + "/share/qemu/edk2-i386-vars.fd";
     };
+
+    # https://github.com/lixiaoliu666/pve-anti-detection-edk2-firmware-ovmf
+    "ovmf/OVMF_VARS_4M.ms.fd" = {
+      source = ./pvefirmware/OVMF_VARS_4M.ms.fd;
+    };
   };
 }
