@@ -50,6 +50,7 @@
 
       qemu = {
         package = pkgs.qemu_kvm.overrideAttrs (attrs: {
+          # https://github.com/lixiaoliu666/pve-anti-detection
           patches = attrs.patches ++ [./qemu-autoGenPatch.patch];
         });
         swtpm.enable = true;
