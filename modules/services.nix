@@ -54,29 +54,16 @@
           patches = attrs.patches ++ [./qemu-autoGenPatch.patch];
         });
         swtpm.enable = true;
-        ovmf.enable = true;
-        ovmf.packages = [pkgs.OVMFFull.fd];
+        ovmf.enable = false;
       };
     };
     spiceUSBRedirection.enable = true;
   };
 
   environment.etc = {
-    "ovmf/edk2-x86_64-secure-code.fd" = {
-      source =
-        config.virtualisation.libvirtd.qemu.package
-        + "/share/qemu/edk2-x86_64-secure-code.fd";
-    };
-
-    "ovmf/edk2-i386-vars.fd" = {
-      source =
-        config.virtualisation.libvirtd.qemu.package
-        + "/share/qemu/edk2-i386-vars.fd";
-    };
-
-    # https://github.com/lixiaoliu666/pve-anti-detection-edk2-firmware-ovmf
-    "ovmf/OVMF_VARS_4M.ms.fd" = {
-      source = ./pvefirmware/OVMF_VARS_4M.ms.fd;
+    # https://github.com/Scrut1ny/Hypervisor-Phantom
+    "ovmf" = {
+      source = ./ovmf;
     };
   };
 }

@@ -81,8 +81,6 @@
 
     gimp3-with-plugins
 
-    quickemu
-
     godot
 
     lurk

@@ -17,5 +17,6 @@
     ./modules/steam.nix
     ./modules/optimization.nix
     ./modules/samba.nix
+    ./modules/hypervisor-phantom.nix
   ];
 }
