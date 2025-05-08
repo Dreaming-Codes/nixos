@@ -23,6 +23,10 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
+  security.pki.certificateFiles = [
+    ./AdGuard_CLI_CA.pem
+  ];
+
   time.timeZone = "Europe/Rome";
   i18n.defaultLocale = "en_US.UTF-8";
   i18n.extraLocaleSettings = {
