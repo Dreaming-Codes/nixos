@@ -91,6 +91,7 @@
             "$mod, L, exec, hyprlock"
             "$mod, comma, exec, wpaperctl previous"
             "$mod, period, exec, wpaperctl next"
+            ", code:121, exec, amixer sset Capture toggle"
           ]
           ++ (
             # workspaces

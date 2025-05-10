@@ -96,6 +96,7 @@
     clipcat
     playerctl
     brightnessctl
+    alsa-utils
 
     (discord.override {
       withOpenASAR = true;
