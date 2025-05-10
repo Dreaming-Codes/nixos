@@ -97,6 +97,7 @@
     playerctl
     brightnessctl
     alsa-utils
+    libnotify
 
     (discord.override {
       withOpenASAR = true;
