@@ -4,7 +4,6 @@
     lact
     # amd encoders/decoders
     amf
-    looking-glass-client
     via
   ];
 
@@ -86,7 +85,6 @@
     };
   in [
     "L+    /opt/rocm   -    -    -     -    ${rocmEnv}"
-    "f /dev/shm/looking-glass 0660 dreamingcodes kvm -"
   ];
 
   hardware.keyboard.qmk.enable = true;
