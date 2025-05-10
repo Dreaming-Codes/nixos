@@ -73,7 +73,6 @@
     unzip
     # Ark dep
     unrar
-    looking-glass-client
     bottles
     appimage-run
     yaak
@@ -89,9 +88,9 @@
 
     lurk
 
-    (callPackage ./davinci-resolve.nix {
-      studioVariant = true;
-    })
+    # (callPackage ./davinci-resolve.nix {
+    #   studioVariant = true;
+    # })
 
     dunst
     clipcat

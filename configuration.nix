@@ -18,5 +18,6 @@
     ./modules/optimization.nix
     ./modules/samba.nix
     ./modules/hypervisor-phantom.nix
+    ./modules/virtualization
   ];
 }
