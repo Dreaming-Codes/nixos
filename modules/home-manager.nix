@@ -91,7 +91,7 @@
             "$mod, L, exec, hyprlock"
             "$mod, comma, exec, wpaperctl previous"
             "$mod, period, exec, wpaperctl next"
-            ", code:121, exec, amixer sset Capture toggle"
+            ", code:121, exec, toggleMic"
           ]
           ++ (
             # workspaces
@@ -203,6 +203,7 @@
       dmenuWrapper = pkgs.writeShellScriptBin "dmenu" ''
         exec ${anyrun}/bin/anyrun --show-results-immediately true --plugins ${anyrunStdin}/lib/libstdin.so "$@"
       '';
+      toggleMic = pkgs.writeShellScriptBin "toggleMic" ./mictoggle.sh;
     in [
       ashell
       kdePackages.kate
@@ -222,6 +223,7 @@
       tor-browser
       jetbrains-toolbox
       dmenuWrapper
+      toggleMic
     ];
     services = {
       easyeffects.enable = true;
