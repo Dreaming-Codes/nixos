@@ -89,6 +89,7 @@
             "$mod, O, togglefloating"
             "$mod, C, exec, clipcat-menu"
             "$mod, L, exec, hyprlock"
+            "$mod, F, fullscreen"
             "$mod, comma, exec, wpaperctl previous"
             "$mod, period, exec, wpaperctl next"
             ", code:121, exec, toggleMic"
