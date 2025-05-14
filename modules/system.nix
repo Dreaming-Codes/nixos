@@ -99,6 +99,7 @@
     alsa-utils
     libnotify
     mixxc
+    termscp
 
     (discord.override {
       withOpenASAR = true;
