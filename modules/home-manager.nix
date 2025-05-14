@@ -90,6 +90,7 @@
             "$mod, C, exec, clipcat-menu"
             "$mod, L, exec, hyprlock"
             "$mod, F, fullscreen"
+            "$mod, M, exec, toggleMixer"
             "$mod, comma, exec, wpaperctl previous"
             "$mod, period, exec, wpaperctl next"
             ", code:121, exec, toggleMic"
@@ -205,6 +206,7 @@
         exec ${anyrun}/bin/anyrun --show-results-immediately true --plugins ${anyrunStdin}/lib/libstdin.so "$@"
       '';
       toggleMic = pkgs.writeShellScriptBin "toggleMic" ./mictoggle.sh;
+      toggleMixer = pkgs.writeShellScriptBin "toggleMixer" ./mixer.sh;
     in [
       ashell
       kdePackages.kate
@@ -225,6 +227,7 @@
       jetbrains-toolbox
       dmenuWrapper
       toggleMic
+      toggleMixer
     ];
     services = {
       easyeffects.enable = true;
