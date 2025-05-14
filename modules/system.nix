@@ -98,6 +98,7 @@
     brightnessctl
     alsa-utils
     libnotify
+    mixxc
 
     (discord.override {
       withOpenASAR = true;
