@@ -5,6 +5,5 @@
 }: {
   imports = [
     ./pkg.nix
-    ./kvmfr.nix
   ];
 }
