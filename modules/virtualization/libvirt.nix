@@ -13,7 +13,6 @@
   };
 in {
   imports = [
-    inputs.nixos-vfio.nixosModules.vfio
     ./qemu
   ];
 
@@ -36,7 +35,6 @@ in {
 
   virtualisation.libvirtd = {
     enable = true;
-    clearEmulationCapabilities = false;
     qemu = {
       runAsRoot = true;
       swtpm.enable = true;
@@ -50,19 +48,6 @@ in {
         ]
       '';
     };
-    deviceACL = [
-      "/dev/null"
-      "/dev/full"
-      "/dev/zero"
-      "/dev/random"
-      "/dev/urandom"
-      "/dev/ptmx"
-      "/dev/kvm"
-      "/dev/kqemu"
-      "/dev/rtc"
-      "/dev/hpet"
-      "/dev/net/tun"
-    ];
   };
 
   environment.etc = {
