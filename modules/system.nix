@@ -87,6 +87,7 @@
     godot
 
     lurk
+    cartero
 
     # (callPackage ./davinci-resolve.nix {
     #   studioVariant = true;
