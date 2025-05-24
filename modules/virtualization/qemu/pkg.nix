@@ -2,7 +2,7 @@
   hypervisor-phantom_intel = {
     main = pkgs.fetchurl {
       url = "https://raw.githubusercontent.com/Scrut1ny/Hypervisor-Phantom/refs/heads/main/Hypervisor-Phantom/patches/QEMU/intel-qemu-9.2.3.patch";
-      hash = "sha256-Rs4piJaLCdUO/iQuzgzOKwp2fOU8QtLQgJx6Y6KazIg=";
+      hash = "sha256-ONxMuNicvwB0lE8uL3o8PIbONhRMbUZVkd7W2cE0pj4=";
     };
     libnfs6 = pkgs.fetchurl {
       url = "https://raw.githubusercontent.com/Scrut1ny/Hypervisor-Phantom/refs/heads/main/Hypervisor-Phantom/patches/QEMU/qemu-9.2.3-libnfs6.patch";
