@@ -2,6 +2,8 @@
   pkgs,
   pkgsStable,
   nix-your-shell,
+  niri,
+  hyprpanel,
   inputs,
   lib,
   ...
@@ -56,7 +58,7 @@
 
   fonts.packages = with pkgs; [nerd-fonts.fira-code];
 
-  nixpkgs.overlays = [nix-your-shell.overlays.default];
+  nixpkgs.overlays = [nix-your-shell.overlays.default niri.overlays.niri hyprpanel.overlay];
 
   programs.fish.enable = true;
 
@@ -80,6 +82,7 @@
     (vivaldi.override {
       proprietaryCodecs = true;
       enableWidevine = true;
+      commandLineArgs = ["--ozone-platfrom=wayland"];
     })
 
     gimp3-with-plugins
@@ -93,7 +96,6 @@
     #   studioVariant = true;
     # })
 
-    dunst
     clipcat
     playerctl
     brightnessctl
@@ -119,7 +121,10 @@
     stremio
 
     psst
-    ncspot
+    spotify-player
+    mission-center
+
+    xwayland-satellite
 
     mullvad-browser
     mullvad-vpn
@@ -142,6 +147,8 @@
 
     jdt-language-server
 
+    #kdl formatter
+    kdlfmt
     # Nix LSP
     nil
     # Nix fmt
