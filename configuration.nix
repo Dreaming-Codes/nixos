@@ -12,6 +12,7 @@
     ./modules/system.nix
     ./modules/user.nix
     ./modules/home-manager.nix
+    ./modules/niri-config.nix
     ./modules/systemPrograms.nix
     ./misc/sdks.nix
     ./modules/steam.nix

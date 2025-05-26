@@ -2,6 +2,8 @@
   pkgs,
   lib,
   inputs,
+  astal,
+  ags,
   ...
 }: {
   home-manager.users.dreamingcodes = {
@@ -167,9 +169,9 @@
       };
     };
 
-    systemd.user.services.ashell = {
+    systemd.user.services.hyprpanel = {
       Unit = {
-        Description = "Ashell shell";
+        Description = "Hyprpanel";
         PartOf = ["hyprland-session.target"];
         After = ["hyprland-session.target"];
       };
@@ -177,23 +179,7 @@
         WantedBy = ["hyprland-session.target"];
       };
       Service = {
-        ExecStart = "${pkgs.ashell}/bin/ashell";
-        Restart = "on-failure";
-        Type = "simple";
-      };
-    };
-
-    systemd.user.services.dunst = {
-      Unit = {
-        Description = "Dunst Notification Daemon";
-        PartOf = ["hyprland-session.target"];
-        After = ["hyprland-session.target"];
-      };
-      Install = {
-        WantedBy = ["hyprland-session.target"];
-      };
-      Service = {
-        ExecStart = "/run/current-system/sw/bin/dunst";
+        ExecStart = "${pkgs.hyprpanel}/bin/hyprpanel";
         Restart = "on-failure";
         Type = "simple";
       };
@@ -208,7 +194,9 @@
       toggleMic = pkgs.writeShellScriptBin "toggleMic" ./mictoggle.sh;
       toggleMixer = pkgs.writeShellScriptBin "toggleMixer" ./mixer.sh;
     in [
-      ashell
+      astal.packages.${system}.default
+      ags.packages.${system}.default
+      hyprpanel
       kdePackages.kate
       goldwarden
       brave
@@ -274,7 +262,10 @@
       recursive = true;
     };
 
-    home.file."./.config/ashell/config.toml".source = ./ashell.toml;
+    home.file."./.config/spotify-player" = {
+      source = ./spotify-player;
+      recursive = true;
+    };
 
     programs = {
       anyrun = {
