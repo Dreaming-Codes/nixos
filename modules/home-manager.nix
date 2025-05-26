@@ -27,6 +27,7 @@
     home.sessionPath = [
       "/home/dreamingcodes/.local/share/JetBrains/Toolbox/scripts/"
       "/home/dreamingcodes/.cargo/bin"
+      "/home/dreamingcodes/.bun/bin"
       "/home/dreamingcodes/.local/bin"
     ];
 
