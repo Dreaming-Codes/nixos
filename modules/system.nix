@@ -2,6 +2,7 @@
   pkgs,
   pkgsStable,
   nix-your-shell,
+  zen-browser,
   niri,
   hyprpanel,
   inputs,
@@ -84,6 +85,8 @@
       enableWidevine = true;
       commandLineArgs = ["--ozone-platfrom=wayland"];
     })
+
+    zen-browser.packages.${pkgs.system}.default
 
     gimp3-with-plugins
 
