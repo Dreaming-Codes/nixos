@@ -181,7 +181,7 @@
       };
       Service = {
         ExecStart = "${pkgs.hyprpanel}/bin/hyprpanel";
-        Restart = "on-failure";
+        Restart = "always";
         Type = "simple";
       };
     };
