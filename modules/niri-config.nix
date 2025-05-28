@@ -68,7 +68,7 @@ in {
         hotkey-overlay = {
           title = "Open browser";
         };
-        action.spawn = ["vivaldi"];
+        action.spawn = ["zen"];
       };
       "Mod+X" = {
         hotkey-overlay = {

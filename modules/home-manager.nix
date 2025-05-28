@@ -82,7 +82,7 @@
         ];
         bind =
           [
-            "$mod, W, exec, vivaldi"
+            "$mod, W, exec, zen"
             "$mod, SPACE, exec, wezterm"
             ", Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m active"
             "SHIFT, Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m region"

@@ -28,6 +28,10 @@
       url = "github:aylur/astal";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    zen-browser = {
+      url = "github:youwen5/zen-browser-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     ags = {
       url = "github:aylur/ags";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -70,6 +74,7 @@
     razer-laptop-controller,
     garuda,
     hyprpanel,
+    zen-browser,
     chaotic,
     niri,
     ags,
@@ -80,7 +85,7 @@
     pkgs = import nixpkgs {inherit system;};
     pkgsStable = import nixpkgs-stable {inherit system;};
 
-    specialArgs = {inherit inputs pkgsStable nix-your-shell niri astal ags hyprpanel;};
+    specialArgs = {inherit inputs pkgsStable nix-your-shell niri astal ags hyprpanel zen-browser;};
     commonModules = [
       ./configuration.nix
       niri.nixosModules.niri
