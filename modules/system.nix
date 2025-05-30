@@ -63,6 +63,11 @@
 
   programs.fish.enable = true;
 
+  programs.appimage = {
+    enable = true;
+    binfmt = true;
+  };
+
   environment.systemPackages = with pkgs; [
     wl-clipboard-rs
     wget
@@ -77,7 +82,6 @@
     # Ark dep
     unrar
     bottles
-    appimage-run
     yaak
 
     (vivaldi.override {
