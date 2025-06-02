@@ -3,6 +3,7 @@
   pkgsStable,
   nix-your-shell,
   zen-browser,
+  dolphin-overlay,
   niri,
   hyprpanel,
   inputs,
@@ -59,7 +60,7 @@
 
   fonts.packages = with pkgs; [nerd-fonts.fira-code];
 
-  nixpkgs.overlays = [nix-your-shell.overlays.default niri.overlays.niri hyprpanel.overlay];
+  nixpkgs.overlays = [nix-your-shell.overlays.default niri.overlays.niri hyprpanel.overlay dolphin-overlay.overlays.default];
 
   programs.fish.enable = true;
 
