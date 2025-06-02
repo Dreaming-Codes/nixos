@@ -23,6 +23,7 @@
     # NixOS official package source, using the nixos-unstable branch here
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
+    dolphin-overlay.url = "github:rumboon/dolphin-overlay";
     niri.url = "github:sodiboo/niri-flake";
     astal = {
       url = "github:aylur/astal";
@@ -78,6 +79,7 @@
     chaotic,
     niri,
     ags,
+    dolphin-overlay,
     astal,
     ...
   }: let
@@ -85,7 +87,7 @@
     pkgs = import nixpkgs {inherit system;};
     pkgsStable = import nixpkgs-stable {inherit system;};
 
-    specialArgs = {inherit inputs pkgsStable nix-your-shell niri astal ags hyprpanel zen-browser;};
+    specialArgs = {inherit inputs pkgsStable nix-your-shell niri astal ags hyprpanel zen-browser dolphin-overlay;};
     commonModules = [
       ./configuration.nix
       niri.nixosModules.niri
