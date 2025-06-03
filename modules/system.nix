@@ -1,6 +1,7 @@
 {
   pkgs,
   pkgsStable,
+  pkgsDreamingCodes,
   nix-your-shell,
   zen-browser,
   dolphin-overlay,
@@ -147,6 +148,8 @@
 
     # Zed
     zed-editor
+
+    pkgsDreamingCodes.expo-orbit
 
     distrobox
     boxbuddy
