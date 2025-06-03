@@ -75,6 +75,7 @@
           "maxsize 1 1, class:^(xwaylandvideobridge)$"
           "noblur, class:^(xwaylandvideobridge)$"
           "nofocus, class:^(xwaylandvideobridge)$"
+          "stayfocused, class:expo-orbit"
         ];
         bindm = [
           "$mod, mouse:272, movewindow"
