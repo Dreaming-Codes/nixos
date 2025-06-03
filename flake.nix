@@ -23,6 +23,7 @@
     # NixOS official package source, using the nixos-unstable branch here
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs-dreamingcodes.url = "github:Dreaming-Codes/nixpkgs/master";
     dolphin-overlay.url = "github:rumboon/dolphin-overlay";
     niri.url = "github:sodiboo/niri-flake";
     astal = {
@@ -71,6 +72,7 @@
     self,
     nixpkgs,
     nixpkgs-stable,
+    nixpkgs-dreamingcodes,
     nix-your-shell,
     razer-laptop-controller,
     garuda,
@@ -86,8 +88,9 @@
     system = "x86_64-linux";
     pkgs = import nixpkgs {inherit system;};
     pkgsStable = import nixpkgs-stable {inherit system;};
+    pkgsDreamingCodes = import nixpkgs-dreamingcodes {inherit system;};
 
-    specialArgs = {inherit inputs pkgsStable nix-your-shell niri astal ags hyprpanel zen-browser dolphin-overlay;};
+    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes nix-your-shell niri astal ags hyprpanel zen-browser dolphin-overlay;};
     commonModules = [
       ./configuration.nix
       niri.nixosModules.niri

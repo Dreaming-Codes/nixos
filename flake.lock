@@ -1202,6 +1202,22 @@
         "type": "github"
       }
     },
+    "nixpkgs-dreamingcodes": {
+      "locked": {
+        "lastModified": 1748970272,
+        "narHash": "sha256-e/tTlhQZCdP1itFLUOwzxtGul7pKZ8vlN8Vs91BtjcE=",
+        "owner": "Dreaming-Codes",
+        "repo": "nixpkgs",
+        "rev": "4ce15f6817adc876959f396c97b93a2bce249013",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Dreaming-Codes",
+        "ref": "master",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "nixpkgs-stable": {
       "locked": {
         "lastModified": 1748302896,
@@ -1466,6 +1482,7 @@
         "nix-alien": "nix-alien",
         "nix-your-shell": "nix-your-shell",
         "nixpkgs": "nixpkgs_10",
+        "nixpkgs-dreamingcodes": "nixpkgs-dreamingcodes",
         "nixpkgs-stable": "nixpkgs-stable_2",
         "razer-laptop-controller": "razer-laptop-controller",
         "zen-browser": "zen-browser"
