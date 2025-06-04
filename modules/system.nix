@@ -50,6 +50,14 @@
   security.rtkit.enable = true;
   security.sudo.wheelNeedsPassword = false;
   security.pam.services.login.enableKwallet = true;
+  security.pam.loginLimits = [
+    {
+      domain = "*";
+      type = "soft";
+      item = "nofile";
+      value = "10000";
+    }
+  ];
 
   # Disable man page cache generation since it's very slow and fish enable it by default
   documentation.man.generateCaches = false;
