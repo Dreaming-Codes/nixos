@@ -3,7 +3,6 @@
   pkgsStable,
   pkgsDreamingCodes,
   nix-your-shell,
-  zen-browser,
   dolphin-overlay,
   niri,
   hyprpanel,
@@ -94,13 +93,7 @@
     bottles
     yaak
 
-    (vivaldi.override {
-      proprietaryCodecs = true;
-      enableWidevine = true;
-      commandLineArgs = ["--ozone-platfrom=wayland"];
-    })
-
-    zen-browser.packages.${pkgs.system}.default
+    google-chrome
 
     gimp3-with-plugins
 

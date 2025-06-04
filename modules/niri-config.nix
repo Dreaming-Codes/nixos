@@ -68,7 +68,7 @@ in {
         hotkey-overlay = {
           title = "Open browser";
         };
-        action.spawn = ["zen"];
+        action.spawn = ["google-chrome-stable"];
       };
       "Mod+X" = {
         hotkey-overlay = {

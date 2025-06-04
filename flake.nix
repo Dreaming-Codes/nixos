@@ -30,10 +30,6 @@
       url = "github:aylur/astal";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    zen-browser = {
-      url = "github:youwen5/zen-browser-flake";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     ags = {
       url = "github:aylur/ags";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -77,7 +73,6 @@
     razer-laptop-controller,
     garuda,
     hyprpanel,
-    zen-browser,
     chaotic,
     niri,
     ags,
@@ -90,7 +85,7 @@
     pkgsStable = import nixpkgs-stable {inherit system;};
     pkgsDreamingCodes = import nixpkgs-dreamingcodes {inherit system;};
 
-    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes nix-your-shell niri astal ags hyprpanel zen-browser dolphin-overlay;};
+    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes nix-your-shell niri astal ags hyprpanel dolphin-overlay;};
     commonModules = [
       ./configuration.nix
       niri.nixosModules.niri
