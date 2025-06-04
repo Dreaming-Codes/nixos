@@ -83,7 +83,7 @@
         ];
         bind =
           [
-            "$mod, W, exec, zen"
+            "$mod, W, exec, google-chrome-stable"
             "$mod, SPACE, exec, wezterm"
             ", Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m active"
             "SHIFT, Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m region"
@@ -201,7 +201,6 @@
       hyprpanel
       kdePackages.kate
       goldwarden
-      brave
       telegram-desktop
       bitwarden-desktop
       prismlauncher
