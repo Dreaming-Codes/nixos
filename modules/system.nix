@@ -101,6 +101,8 @@
     lurk
     cartero
 
+    rustscan
+
     # (callPackage ./davinci-resolve.nix {
     #   studioVariant = true;
     # })
