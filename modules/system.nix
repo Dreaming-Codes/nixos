@@ -159,6 +159,8 @@
     jdt-language-server
     typescript-language-server
 
+    scrcpy
+
     #kdl formatter
     kdlfmt
     # Nix LSP
