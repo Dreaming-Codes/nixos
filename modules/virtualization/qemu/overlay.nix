@@ -2,11 +2,11 @@ self: super: let
   # Define local variables to avoid recursion
   hypervisor-phantom_intel = {
     main = super.fetchurl {
-      url = "https://raw.githubusercontent.com/Scrut1ny/Hypervisor-Phantom/refs/heads/main/Hypervisor-Phantom/patches/QEMU/intel-qemu-9.2.3.patch";
-      sha256 = "sha256-ONxMuNicvwB0lE8uL3o8PIbONhRMbUZVkd7W2cE0pj4=";
+      url = "https://raw.githubusercontent.com/Scrut1ny/Hypervisor-Phantom/refs/heads/main/Hypervisor-Phantom/patches/QEMU/intel-qemu-9.2.4.patch";
+      sha256 = "sha256-BV6TvEtY0EnGJuTSWB128FGGDdjiqmYXKKnfwIVtzYw=";
     };
     libnfs6 = super.fetchurl {
-      url = "https://raw.githubusercontent.com/Scrut1ny/Hypervisor-Phantom/refs/heads/main/Hypervisor-Phantom/patches/QEMU/qemu-9.2.3-libnfs6.patch";
+      url = "https://raw.githubusercontent.com/Scrut1ny/Hypervisor-Phantom/refs/heads/main/Hypervisor-Phantom/patches/QEMU/libnfs6-qemu-9.2.4.patch";
       sha256 = "sha256-HjZbgwWf7oOyvhJ4WKFQ996e9+3nVAjTPSzJfyTdF+4=";
     };
   };

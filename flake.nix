@@ -24,6 +24,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
     nixpkgs-dreamingcodes.url = "github:Dreaming-Codes/nixpkgs/master";
+    nixpkgs-gpu-screen-recorder-ui.url = "github:js6pak/nixpkgs/gpu-screen-recorder-ui/init";
     dolphin-overlay.url = "github:rumboon/dolphin-overlay";
     niri.url = "github:sodiboo/niri-flake";
     astal = {
@@ -51,10 +52,6 @@
       url = "github:JosuGZ/razer-laptop-control-no-dkms";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nix-your-shell = {
-      url = "github:MercuryTechnologies/nix-your-shell";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     anyrun = {
       url = "github:anyrun-org/anyrun";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -69,7 +66,6 @@
     nixpkgs,
     nixpkgs-stable,
     nixpkgs-dreamingcodes,
-    nix-your-shell,
     razer-laptop-controller,
     garuda,
     hyprpanel,
@@ -77,6 +73,7 @@
     niri,
     ags,
     dolphin-overlay,
+    nixpkgs-gpu-screen-recorder-ui,
     astal,
     ...
   }: let
@@ -84,8 +81,9 @@
     pkgs = import nixpkgs {inherit system;};
     pkgsStable = import nixpkgs-stable {inherit system;};
     pkgsDreamingCodes = import nixpkgs-dreamingcodes {inherit system;};
+    pkgsGpuScreenRecoderUi = import nixpkgs-gpu-screen-recorder-ui {inherit system;};
 
-    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes nix-your-shell niri astal ags hyprpanel dolphin-overlay;};
+    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi niri astal ags hyprpanel dolphin-overlay;};
     commonModules = [
       ./configuration.nix
       niri.nixosModules.niri
