@@ -157,6 +157,7 @@
     boxbuddy
 
     jdt-language-server
+    typescript-language-server
 
     #kdl formatter
     kdlfmt
