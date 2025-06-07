@@ -8,6 +8,7 @@
 }: {
   home-manager.users.dreamingcodes = {
     home.stateVersion = "24.11";
+    home.shell.enableShellIntegration = true;
     programs.home-manager.enable = true;
 
     # Hint Electron apps to use Wayland:
@@ -376,7 +377,10 @@
       };
       lazygit = {enable = true;};
       gitui = {enable = true;};
-      fzf = {enable = true;};
+      fzf = {
+        enable = true;
+        enableFishIntegration = true;
+      };
       micro = lib.mkForce {enable = false;};
       git = {
         enable = true;
@@ -399,12 +403,15 @@
           };
         };
       };
+      nix-your-shell = {
+        enable = true;
+        enableFishIntegration = true;
+      };
       fish = {
         enable = true;
         generateCompletions = false;
         interactiveShellInit = ''
           set fish_greeting # Disable greeting
-          nix-your-shell fish | source
         '';
         shellAliases = {
           htop = "btop";
@@ -413,7 +420,7 @@
       };
       yazi = {
         enable = true;
-        enableNushellIntegration = true;
+        enableFishIntegration = true;
       };
       starship = {
         enable = true;
@@ -489,47 +496,25 @@
           zig.symbol = " ";
         };
       };
-      nushell = {
-        enable = true;
-        extraConfig = ''
-          $env.config.show_banner = false
-          source ${pkgs.nix-your-shell.generate-config "nu"}
-
-          def start_zellij [] {
-            if 'ZELLIJ' not-in ($env | columns) {
-              if 'ZELLIJ_AUTO_ATTACH' in ($env | columns) and $env.ZELLIJ_AUTO_ATTACH == 'true' {
-                zellij attach -c
-              } else {
-                zellij
-              }
-
-              if 'ZELLIJ_AUTO_EXIT' in ($env | columns) and $env.ZELLIJ_AUTO_EXIT == 'true' {
-                exit
-              }
-            }
-          }
-
-          start_zellij
-        '';
-      };
       carapace = {
         enable = true;
-        enableNushellIntegration = true;
         enableFishIntegration = true;
       };
       bash = {enable = true;};
       eza = {
         enable = true;
+        enableFishIntegration = true;
         extraOptions = ["-al" "--icons"];
       };
       bat = {enable = true;};
       direnv = {
         enable = true;
-        enableNushellIntegration = true;
+        # enableFishIntegration = true;
         nix-direnv.enable = true;
       };
       zoxide = {
         enable = true;
+        enableFishIntegration = true;
         options = ["--cmd cd"];
       };
     };

@@ -2,7 +2,6 @@
   pkgs,
   pkgsStable,
   pkgsDreamingCodes,
-  nix-your-shell,
   dolphin-overlay,
   niri,
   hyprpanel,
@@ -68,7 +67,9 @@
 
   fonts.packages = with pkgs; [nerd-fonts.fira-code];
 
-  nixpkgs.overlays = [nix-your-shell.overlays.default niri.overlays.niri hyprpanel.overlay dolphin-overlay.overlays.default];
+  nixpkgs.overlays = [niri.overlays.niri hyprpanel.overlay dolphin-overlay.overlays.default];
+  systemd.user.services.gpu-screen-recorder.wantedBy = ["default.target"];
+  systemd.user.services.gpu-screen-recorder-ui.wantedBy = ["default.target"];
 
   programs.fish.enable = true;
 
@@ -122,8 +123,6 @@
       # withVencord = true;
     })
 
-    nushell
-
     lldb
 
     # Not sure what caused this but now this is needed to make bash work
@@ -156,8 +155,6 @@
 
     distrobox
     boxbuddy
-
-    pkgs.nix-your-shell
 
     jdt-language-server
 
