@@ -4,12 +4,20 @@
   inputs,
   astal,
   ags,
+  nix-index-database,
   ...
 }: {
+  home-manager.useGlobalPkgs = true;
+  home-manager.useUserPackages = true;
   home-manager.users.dreamingcodes = {
     home.stateVersion = "24.11";
     home.shell.enableShellIntegration = true;
     programs.home-manager.enable = true;
+
+    imports = [
+      nix-index-database.hmModules.nix-index
+    ];
+    programs.nix-index-database.comma.enable = true;
 
     # Hint Electron apps to use Wayland:
     home.sessionVariables = {
@@ -270,6 +278,9 @@
     };
 
     programs = {
+      pay-respects = {
+        enable = true;
+      };
       anyrun = {
         enable = true;
         extraConfigFiles = {
@@ -381,7 +392,6 @@
         enable = true;
         enableFishIntegration = true;
       };
-      micro = lib.mkForce {enable = false;};
       git = {
         enable = true;
         userName = "DreamingCodes";
@@ -391,7 +401,7 @@
           key = "1FE3A3F18110DDDD";
           signByDefault = true;
         };
-        extraConfig = lib.mkForce {
+        extraConfig = {
           core = {editor = "hx";};
           init = {defaultBranch = "master";};
           pull = {rebase = true;};

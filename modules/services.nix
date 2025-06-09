@@ -43,6 +43,8 @@
     alsa.support32Bit = true;
     pulse.enable = true;
     jack.enable = true;
+    systemWide = false;
+    wireplumber.enable = true;
   };
 
   virtualisation = {

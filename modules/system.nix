@@ -6,23 +6,8 @@
   niri,
   hyprpanel,
   inputs,
-  lib,
   ...
 }: {
-  zramSwap.enable = true;
-
-  programs.nh = {flake = "/home/dreamingcodes/.nixos/";};
-
-  programs.bash = {
-    # do nothing
-    interactiveShellInit = lib.mkForce ''
-      true
-    '';
-  };
-
-  nix.settings.auto-optimise-store = true;
-  nix.settings.experimental-features = ["nix-command" "flakes" "dynamic-derivations"];
-
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
@@ -60,8 +45,20 @@
   # Disable man page cache generation since it's very slow and fish enable it by default
   documentation.man.generateCaches = false;
 
-  nixpkgs.config.allowUnfree = true;
   hardware.bluetooth.enable = true;
+
+  services = {
+    acpid.enable = true;
+    power-profiles-daemon.enable = true;
+    avahi = {
+      enable = true;
+      nssmdns4 = true;
+      publish = {
+        enable = true;
+        userServices = true;
+      };
+    };
+  };
 
   programs.virt-manager.enable = true;
 

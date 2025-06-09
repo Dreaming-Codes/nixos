@@ -13,8 +13,6 @@
     capSysAdmin = true;
     openFirewall = true;
   };
-  services.avahi.publish.enable = true;
-  services.avahi.publish.userServices = true;
 
   home-manager.users.dreamingcodes = {
     wayland.windowManager.hyprland = {
