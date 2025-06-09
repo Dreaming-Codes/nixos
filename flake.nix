@@ -24,6 +24,10 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
     nixpkgs-dreamingcodes.url = "github:Dreaming-Codes/nixpkgs/master";
+    nix-index-database = {
+      url = "github:nix-community/nix-index-database";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nixpkgs-gpu-screen-recorder-ui.url = "github:js6pak/nixpkgs/gpu-screen-recorder-ui/init";
     dolphin-overlay.url = "github:rumboon/dolphin-overlay";
     niri.url = "github:sodiboo/niri-flake";
@@ -42,7 +46,6 @@
       inputs.hyprland.follows = "hyprland";
     };
     nix-alien.url = "github:thiagokokada/nix-alien";
-    garuda.url = "gitlab:garuda-linux/garuda-nix-subsystem/stable";
     chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
     home-manager = {
       url = "github:nix-community/home-manager";
@@ -67,13 +70,14 @@
     nixpkgs-stable,
     nixpkgs-dreamingcodes,
     razer-laptop-controller,
-    garuda,
+    home-manager,
     hyprpanel,
     chaotic,
     niri,
     ags,
     dolphin-overlay,
     nixpkgs-gpu-screen-recorder-ui,
+    nix-index-database,
     astal,
     ...
   }: let
@@ -83,13 +87,15 @@
     pkgsDreamingCodes = import nixpkgs-dreamingcodes {inherit system;};
     pkgsGpuScreenRecoderUi = import nixpkgs-gpu-screen-recorder-ui {inherit system;};
 
-    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi niri astal ags hyprpanel dolphin-overlay;};
+    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi niri astal ags hyprpanel dolphin-overlay home-manager nix-index-database;};
     commonModules = [
       ./configuration.nix
+      home-manager.nixosModules.home-manager
       niri.nixosModules.niri
+      chaotic.nixosModules.default
     ];
   in {
-    nixosConfigurations.DreamingDesk = garuda.lib.garudaSystem {
+    nixosConfigurations.DreamingDesk = nixpkgs.lib.nixosSystem {
       inherit specialArgs;
       system = "x86_64-linux";
       modules =
@@ -99,7 +105,7 @@
           {networking.hostName = "DreamingDesk";}
         ];
     };
-    nixosConfigurations.DreamingBlade = garuda.lib.garudaSystem {
+    nixosConfigurations.DreamingBlade = nixpkgs.lib.nixosSystem {
       inherit specialArgs;
       system = "x86_64-linux";
       modules =

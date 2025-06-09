@@ -1,9 +1,31 @@
-{
-  config,
-  pkgs,
-  ...
-}: {
-  networking.networkmanager.enable = true;
+{...}: {
+  networking = {
+    useDHCP = false;
+    wireless.iwd = {
+      enable = true;
+      settings = {
+        General.AddressRandomization = "once";
+        General.AddressRandomizationRange = "full";
+      };
+    };
+    networkmanager = {
+      enable = true;
+      unmanaged = ["lo" "docker0" "virbr0"];
+      wifi = {
+        backend = "iwd";
+        powersave = false;
+      };
+    };
+  };
+
+  hardware.wirelessRegulatoryDatabase = true;
+
+  boot.kernelModules = ["tcp_bbr"];
+  boot.kernel.sysctl = {
+    "net.core.default_qdisc" = "cake";
+    "net.ipv4.tcp_congestion_control" = "bbr";
+    "net.ipv4.tcp_fin_timeout" = 5;
+  };
 
   networking.firewall = {
     allowedTCPPortRanges = [

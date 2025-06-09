@@ -20,5 +20,9 @@
     ./modules/samba.nix
     ./modules/hypervisor-phantom.nix
     ./modules/virtualization
+    ./modules/nix.nix
+    ./modules/locales.nix
+    ./modules/hardware.nix
+    ./modules/boot.nix
   ];
 }

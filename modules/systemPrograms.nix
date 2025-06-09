@@ -1,13 +1,7 @@
-{
-  config,
-  pkgs,
-  lib,
-  ...
-}: {
+{pkgs, ...}: {
   # Partition-manager does not work if not installed globally
   programs.partition-manager.enable = true;
   programs.nix-ld.enable = true;
-  programs.fish.shellInit = lib.mkForce "";
   programs.nix-ld.libraries = with pkgs; [
     SDL
     SDL2
