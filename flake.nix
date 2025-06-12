@@ -22,6 +22,10 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
     nixpkgs-dreamingcodes.url = "github:Dreaming-Codes/nixpkgs/master";
+    rip2 = {
+      url = "github:MilesCranmer/rip2";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nix-index-database = {
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -67,6 +71,7 @@
     nixpkgs-stable,
     nixpkgs-dreamingcodes,
     razer-laptop-controller,
+    rip2,
     home-manager,
     hyprpanel,
     chaotic,
@@ -83,7 +88,7 @@
     pkgsDreamingCodes = import nixpkgs-dreamingcodes {inherit system;};
     pkgsGpuScreenRecoderUi = import nixpkgs-gpu-screen-recorder-ui {inherit system;};
 
-    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi astal ags hyprpanel dolphin-overlay home-manager nix-index-database;};
+    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi astal ags hyprpanel dolphin-overlay home-manager nix-index-database rip2;};
     commonModules = [
       ./configuration.nix
       home-manager.nixosModules.home-manager

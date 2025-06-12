@@ -276,12 +276,44 @@
         "type": "github"
       }
     },
+    "flake-compat_3": {
+      "locked": {
+        "lastModified": 1733328505,
+        "narHash": "sha256-NeCCThCEP3eCl2l/+27kNNK7QrwZB1IJCrXfrbv5oqU=",
+        "rev": "ff81ac966bb2cae68946d5ed5fc4994f96d0ffec",
+        "revCount": 69,
+        "type": "tarball",
+        "url": "https://api.flakehub.com/f/pinned/edolstra/flake-compat/1.1.0/01948eb7-9cba-704f-bbf3-3fa956735b52/source.tar.gz"
+      },
+      "original": {
+        "type": "tarball",
+        "url": "https://flakehub.com/f/edolstra/flake-compat/1.tar.gz"
+      }
+    },
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": [
           "anyrun",
           "nixpkgs"
         ]
+      },
+      "locked": {
+        "lastModified": 1743550720,
+        "narHash": "sha256-hIshGgKZCgWh6AYJpJmRgFdR3WUbkY04o82X05xqQiY=",
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "rev": "c621e8422220273271f52058f618c94e405bb0f5",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "type": "github"
+      }
+    },
+    "flake-parts_2": {
+      "inputs": {
+        "nixpkgs-lib": "nixpkgs-lib"
       },
       "locked": {
         "lastModified": 1743550720,
@@ -742,6 +774,24 @@
         "type": "github"
       }
     },
+    "naersk": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_8"
+      },
+      "locked": {
+        "lastModified": 1745925850,
+        "narHash": "sha256-cyAAMal0aPrlb1NgzMxZqeN1mAJ2pJseDhm2m6Um8T0=",
+        "owner": "nix-community",
+        "repo": "naersk",
+        "rev": "38bc60bbc157ae266d4a0c96671c6c742ee17a5f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "naersk",
+        "type": "github"
+      }
+    },
     "nix-alien": {
       "inputs": {
         "flake-compat": "flake-compat_2",
@@ -874,6 +924,21 @@
         "type": "github"
       }
     },
+    "nixpkgs-lib": {
+      "locked": {
+        "lastModified": 1743296961,
+        "narHash": "sha256-b1EdN3cULCqtorQ4QeWgLMrd5ZGOjLSLemfa00heasc=",
+        "owner": "nix-community",
+        "repo": "nixpkgs.lib",
+        "rev": "e4822aea2a6d1cdd36653c134cacfd64c97ff4fa",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "nixpkgs.lib",
+        "type": "github"
+      }
+    },
     "nixpkgs-stable": {
       "locked": {
         "lastModified": 1749488106,
@@ -985,6 +1050,22 @@
         "type": "github"
       }
     },
+    "nixpkgs_8": {
+      "locked": {
+        "lastModified": 1746269363,
+        "narHash": "sha256-Q0lKWway9OmZnkDTpAoAE9VLXHOHqCqdJ3N0tkSM99g=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "b6aef6c3553f849e1e6c08f1bcd3061df2b69fc4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixpkgs-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "pre-commit-hooks": {
       "inputs": {
         "flake-compat": "flake-compat",
@@ -1029,6 +1110,29 @@
         "type": "github"
       }
     },
+    "rip2": {
+      "inputs": {
+        "flake-compat": "flake-compat_3",
+        "flake-parts": "flake-parts_2",
+        "naersk": "naersk",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1746390094,
+        "narHash": "sha256-6ADzGtsjJ7IV7pOeEMGjSpNyK209bnSvd76u0QLwAMM=",
+        "owner": "MilesCranmer",
+        "repo": "rip2",
+        "rev": "417666a9108faefc5f03495782c12223acdb5b16",
+        "type": "github"
+      },
+      "original": {
+        "owner": "MilesCranmer",
+        "repo": "rip2",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "ags": "ags",
@@ -1047,7 +1151,8 @@
         "nixpkgs-dreamingcodes": "nixpkgs-dreamingcodes",
         "nixpkgs-gpu-screen-recorder-ui": "nixpkgs-gpu-screen-recorder-ui",
         "nixpkgs-stable": "nixpkgs-stable",
-        "razer-laptop-controller": "razer-laptop-controller"
+        "razer-laptop-controller": "razer-laptop-controller",
+        "rip2": "rip2"
       }
     },
     "rust-analyzer-src": {

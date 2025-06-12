@@ -3,6 +3,7 @@
   pkgsStable,
   pkgsDreamingCodes,
   dolphin-overlay,
+  rip2,
   hyprpanel,
   inputs,
   ...
@@ -148,6 +149,8 @@
     zed-editor
 
     pkgsDreamingCodes.expo-orbit
+
+    rip2.packages.${system}.default
 
     distrobox
     boxbuddy
