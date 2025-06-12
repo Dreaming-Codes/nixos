@@ -12,14 +12,12 @@
     ./modules/system.nix
     ./modules/user.nix
     ./modules/home-manager.nix
-    ./modules/niri-config.nix
     ./modules/systemPrograms.nix
     ./misc/sdks.nix
     ./modules/steam.nix
     ./modules/optimization.nix
     ./modules/samba.nix
     ./modules/hypervisor-phantom.nix
-    ./modules/virtualization
     ./modules/nix.nix
     ./modules/locales.nix
     ./modules/hardware.nix

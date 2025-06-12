@@ -6,14 +6,12 @@
       "https://chaotic-nyx.cachix.org"
       "https://nix-mirror.freetls.fastly.net"
       "https://anyrun.cachix.org"
-      "https://niri.cachix.org"
       "https://hyprland.cachix.org"
       "https://helix.cachix.org"
     ];
     extra-trusted-public-keys = [
       "chaotic-nyx.cachix.org-1:HfnXSw4pj95iI/n17rIDy40agHj12WfF+Gqk6SonIT8="
       "anyrun.cachix.org-1:pqBobmOjI7nKlsUMV25u9QHa9btJK65/C8vnO3p346s="
-      "niri.cachix.org-1:Wv0OmO7PsuocRKzfDoJ3mulSl7Z6oezYhGhR+3W2964="
       "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
       "helix.cachix.org-1:ejp9KQpR1FBI2onstMQ34yogDm4OgU2ru6lIwPvuCVs="
     ];
@@ -30,7 +28,6 @@
     };
     nixpkgs-gpu-screen-recorder-ui.url = "github:js6pak/nixpkgs/gpu-screen-recorder-ui/init";
     dolphin-overlay.url = "github:rumboon/dolphin-overlay";
-    niri.url = "github:sodiboo/niri-flake";
     astal = {
       url = "github:aylur/astal";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -73,7 +70,6 @@
     home-manager,
     hyprpanel,
     chaotic,
-    niri,
     ags,
     dolphin-overlay,
     nixpkgs-gpu-screen-recorder-ui,
@@ -87,11 +83,10 @@
     pkgsDreamingCodes = import nixpkgs-dreamingcodes {inherit system;};
     pkgsGpuScreenRecoderUi = import nixpkgs-gpu-screen-recorder-ui {inherit system;};
 
-    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi niri astal ags hyprpanel dolphin-overlay home-manager nix-index-database;};
+    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi astal ags hyprpanel dolphin-overlay home-manager nix-index-database;};
     commonModules = [
       ./configuration.nix
       home-manager.nixosModules.home-manager
-      niri.nixosModules.niri
       chaotic.nixosModules.default
     ];
   in {
@@ -102,6 +97,7 @@
         commonModules
         ++ [
           ./desktop.nix
+          ./modules/virtualization
           {networking.hostName = "DreamingDesk";}
         ];
     };
