@@ -3,7 +3,6 @@
   pkgsStable,
   pkgsDreamingCodes,
   dolphin-overlay,
-  niri,
   hyprpanel,
   inputs,
   ...
@@ -64,7 +63,7 @@
 
   fonts.packages = with pkgs; [nerd-fonts.fira-code];
 
-  nixpkgs.overlays = [niri.overlays.niri hyprpanel.overlay dolphin-overlay.overlays.default];
+  nixpkgs.overlays = [hyprpanel.overlay dolphin-overlay.overlays.default];
   systemd.user.services.gpu-screen-recorder.wantedBy = ["default.target"];
   systemd.user.services.gpu-screen-recorder-ui.wantedBy = ["default.target"];
 

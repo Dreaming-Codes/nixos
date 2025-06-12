@@ -14,11 +14,6 @@
   services.desktopManager.plasma6.enable = true;
   environment.plasma6.excludePackages = with pkgs.kdePackages; [konsole];
 
-  programs.niri = {
-    enable = true;
-    package = pkgs.niri-unstable;
-  };
-
   programs.hyprland = {
     enable = true;
     package = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland;
