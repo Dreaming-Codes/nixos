@@ -49,6 +49,10 @@
   hardware.bluetooth.enable = true;
 
   services = {
+    usbmuxd = {
+      enable = true;
+      package = pkgs.usbmuxd2;
+    };
     acpid.enable = true;
     power-profiles-daemon.enable = true;
     avahi = {
@@ -91,6 +95,9 @@
     unrar
     bottles
     yaak
+
+    libimobiledevice
+    ifuse
 
     google-chrome
 
