@@ -31,7 +31,8 @@
 
   services.pulseaudio.enable = false;
   security.rtkit.enable = true;
-  security.sudo.wheelNeedsPassword = false;
+  security.sudo-rs.enable = true;
+  security.sudo-rs.wheelNeedsPassword = false;
   security.pam.services.login.enableKwallet = true;
   security.pam.loginLimits = [
     {
