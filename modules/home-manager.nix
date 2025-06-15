@@ -98,7 +98,7 @@
             "SHIFT, Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m region"
             "$mod, X, exec, anyrun"
             "$mod, Q, killactive"
-            "$mod, T, exec, telegram-desktop"
+            "$mod, T, exec, Telegram"
             "$mod, O, togglefloating"
             "$mod, C, exec, clipcat-menu"
             "$mod, L, exec, hyprlock"
