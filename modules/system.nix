@@ -96,6 +96,8 @@
     bottles
     yaak
 
+    signal-desktop
+
     libimobiledevice
     ifuse
 

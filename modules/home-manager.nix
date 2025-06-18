@@ -99,6 +99,7 @@
             "$mod, X, exec, anyrun"
             "$mod, Q, killactive"
             "$mod, T, exec, Telegram"
+            "$mod, S, exec, signal-desktop"
             "$mod, O, togglefloating"
             "$mod, C, exec, clipcat-menu"
             "$mod, L, exec, hyprlock"
@@ -107,6 +108,28 @@
             "$mod, comma, exec, wpaperctl previous"
             "$mod, period, exec, wpaperctl next"
             ", code:121, exec, toggleMic"
+            # Move focus with arrow keys or hjkl
+            "$mod, left, movefocus, l"
+            "$mod SHIFT, H, movefocus, l"
+            "$mod, right, movefocus, r"
+            "$mod SHIFT, L, movefocus, r"
+            "$mod, up, movefocus, u"
+            "$mod SHIFT, K, movefocus, u"
+            "$mod, down, movefocus, d"
+            "$mod SHIFT, J, movefocus, d"
+            # Scroll workspaces with mouse
+            "$mod, mouse_down, workspace, e+1"
+            "$mod, mouse_up, workspace, e-1"
+            # Audio keys
+            # ", XF86AudioMute, exec, swayosd-client --output-volume mute-toggle"
+            # ", XF86AudioLowerVolume, exec, swayosd-client --output-volume lower"
+            # ", XF86AudioRaiseVolume, exec, swayosd-client --output-volume raise"
+            ", XF86AudioMicMute, exec, toggleMic"
+            ", XF86AudioPlay, exec, playerctl play-pause"
+            ", XF86AudioPrev, exec, playerctl previous"
+            ", XF86AudioNext, exec,playerctl next"
+            # ", XF86MonBrightnessDown, exec, swayosd-client --brightness lower"
+            # ", XF86MonBrightnessUp, exec, swayosd-client --brightness raise"
           ]
           ++ (
             # workspaces
@@ -429,6 +452,9 @@
           core = {editor = "hx";};
           init = {defaultBranch = "master";};
           pull = {rebase = true;};
+          push = {
+            autoSetupRemote = true;
+          };
           credential = {
             helper = [
               "libsecret"
