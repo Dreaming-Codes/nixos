@@ -92,6 +92,9 @@
         ];
         bind =
           [
+            #binds:scroll_event_delay might need to be set fo a smoother scrolling
+            "$mod, mouse_down, exec, hyprctl -q keyword cursor:zoom_factor $(hyprctl getoption cursor:zoom_factor | awk '/^float.*/ {print $2 * 1.2}')"
+            "$mod, mouse_up, exec, hyprctl -q keyword cursor:zoom_factor $(hyprctl getoption cursor:zoom_factor | awk '/^float.*/ {print $2 * 0.8}')"
             "$mod, W, exec, google-chrome-stable"
             "$mod, SPACE, exec, wezterm"
             ", Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m active"
@@ -117,9 +120,6 @@
             "$mod SHIFT, K, movefocus, u"
             "$mod, down, movefocus, d"
             "$mod SHIFT, J, movefocus, d"
-            # Scroll workspaces with mouse
-            "$mod, mouse_down, workspace, e+1"
-            "$mod, mouse_up, workspace, e-1"
             # Audio keys
             # ", XF86AudioMute, exec, swayosd-client --output-volume mute-toggle"
             # ", XF86AudioLowerVolume, exec, swayosd-client --output-volume lower"
