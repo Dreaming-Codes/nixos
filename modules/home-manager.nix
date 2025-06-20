@@ -67,6 +67,9 @@
           touchpad = {
             tap-and-drag = false;
           };
+          tablet = {
+            output = "current";
+          };
         };
         general = {
           gaps_out = 0;
