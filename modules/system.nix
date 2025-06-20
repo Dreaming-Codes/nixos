@@ -166,6 +166,7 @@
     boxbuddy
 
     jdt-language-server
+    kotlin-language-server
     typescript-language-server
 
     scrcpy
