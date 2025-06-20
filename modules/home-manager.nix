@@ -86,13 +86,15 @@
           "nofocus, class:^(xwaylandvideobridge)$"
           "stayfocused, class:expo-orbit"
         ];
+        binds = {
+          scroll_event_delay = 0;
+        };
         bindm = [
           "$mod, mouse:272, movewindow"
           "$mod, mouse:273, resizewindow"
         ];
         bind =
           [
-            #binds:scroll_event_delay might need to be set fo a smoother scrolling
             "$mod, mouse_down, exec, hyprctl -q keyword cursor:zoom_factor $(hyprctl getoption cursor:zoom_factor | awk '/^float.*/ {val = $2 * 1.2; if (val < 1) val=1; print val}')"
             "$mod, mouse_up, exec, hyprctl -q keyword cursor:zoom_factor $(hyprctl getoption cursor:zoom_factor | awk '/^float.*/ {val = $2 * 0.8; if (val < 1) val=1; print val}')"
             "$mod, W, exec, google-chrome-stable"
