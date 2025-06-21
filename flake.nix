@@ -22,6 +22,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
     nixpkgs-dreamingcodes.url = "github:Dreaming-Codes/nixpkgs/master";
+    somo.url = "github:theopfr/somo?dir=nix";
     rip2 = {
       url = "github:MilesCranmer/rip2";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -75,6 +76,7 @@
     home-manager,
     hyprpanel,
     chaotic,
+    somo,
     ags,
     dolphin-overlay,
     nixpkgs-gpu-screen-recorder-ui,
@@ -88,7 +90,7 @@
     pkgsDreamingCodes = import nixpkgs-dreamingcodes {inherit system;};
     pkgsGpuScreenRecoderUi = import nixpkgs-gpu-screen-recorder-ui {inherit system;};
 
-    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi astal ags hyprpanel dolphin-overlay home-manager nix-index-database rip2;};
+    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi astal ags hyprpanel dolphin-overlay home-manager nix-index-database rip2 somo;};
     commonModules = [
       ./configuration.nix
       home-manager.nixosModules.home-manager

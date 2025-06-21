@@ -4,6 +4,7 @@
   pkgsDreamingCodes,
   dolphin-overlay,
   rip2,
+  somo,
   hyprpanel,
   inputs,
   ...
@@ -161,6 +162,7 @@
     pkgsDreamingCodes.expo-orbit
 
     rip2.packages.${system}.default
+    somo.packages.${system}.default
 
     distrobox
     boxbuddy
