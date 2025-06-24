@@ -236,7 +236,6 @@
       astal.packages.${system}.default
       ags.packages.${system}.default
       hyprpanel
-      kdePackages.kate
       goldwarden
       telegram-desktop
       bitwarden-desktop
