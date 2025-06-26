@@ -171,6 +171,9 @@
     kotlin-language-server
     typescript-language-server
 
+    pwvucontrol
+    helvum
+
     scrcpy
 
     #kdl formatter
