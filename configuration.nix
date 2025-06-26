@@ -8,6 +8,7 @@
     /etc/nixos/secrets/github.nix
     /etc/nixos/hardware-configuration.nix
     ./modules/networking.nix
+    # ./modules/davinci-resolve.nix
     ./modules/services.nix
     ./modules/system.nix
     ./modules/user.nix

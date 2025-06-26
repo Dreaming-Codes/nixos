@@ -39,6 +39,9 @@
 
       # https://github.com/NixOS/nix/issues/8890#issuecomment-1703988345
       nix-path = nixPath;
+
+      # Relax sandbox to allow DMI access for QEMU spoofing
+      sandbox = "relaxed";
     };
 
     # Make legacy nix commands consistent as well
