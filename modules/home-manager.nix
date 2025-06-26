@@ -123,7 +123,7 @@
             "$mod, down, movefocus, d"
             "$mod SHIFT, left, movewindow, l"
             "$mod SHIFT, right, movewindow, r"
-            "$mod SHIFT, up, momovewindow, u"
+            "$mod SHIFT, up, movewindow, u"
             "$mod SHIFT, down, movewindow, d"
             # Audio keys
             # ", XF86AudioMute, exec, swayosd-client --output-volume mute-toggle"
