@@ -118,13 +118,13 @@
             ", code:121, exec, toggleMic"
             # Move focus with arrow keys or hjkl
             "$mod, left, movefocus, l"
-            "$mod SHIFT, H, movefocus, l"
             "$mod, right, movefocus, r"
-            "$mod SHIFT, L, movefocus, r"
             "$mod, up, movefocus, u"
-            "$mod SHIFT, K, movefocus, u"
             "$mod, down, movefocus, d"
-            "$mod SHIFT, J, movefocus, d"
+            "$mod SHIFT, left, movewindow, l"
+            "$mod SHIFT, right, movewindow, r"
+            "$mod SHIFT, up, momovewindow, u"
+            "$mod SHIFT, down, movewindow, d"
             # Audio keys
             # ", XF86AudioMute, exec, swayosd-client --output-volume mute-toggle"
             # ", XF86AudioLowerVolume, exec, swayosd-client --output-volume lower"
