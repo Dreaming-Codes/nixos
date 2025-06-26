@@ -104,7 +104,7 @@
         commonModules
         ++ [
           ./desktop.nix
-          ./modules/virtualization
+          # ./modules/virtualization
           {networking.hostName = "DreamingDesk";}
         ];
     };
