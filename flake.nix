@@ -46,7 +46,6 @@
       url = "github:aylur/ags";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    hyprpanel.url = "github:Jas-SinghFSU/HyprPanel";
     hyprland.url = "github:hyprwm/Hyprland";
     hyprland-plugins = {
       url = "github:hyprwm/hyprland-plugins";
@@ -79,7 +78,6 @@
     razer-laptop-controller,
     rip2,
     home-manager,
-    hyprpanel,
     chaotic,
     somo,
     ags,
@@ -96,7 +94,7 @@
     pkgsDreamingCodes = import nixpkgs-dreamingcodes {inherit system;};
     pkgsGpuScreenRecoderUi = import nixpkgs-gpu-screen-recorder-ui {inherit system;};
 
-    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi astal ags hyprpanel dolphin-overlay home-manager nix-index-database rip2 somo zed;};
+    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi astal ags dolphin-overlay home-manager nix-index-database rip2 somo zed;};
     commonModules = [
       ./configuration.nix
       home-manager.nixosModules.home-manager
