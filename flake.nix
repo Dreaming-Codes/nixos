@@ -8,12 +8,16 @@
       "https://anyrun.cachix.org"
       "https://hyprland.cachix.org"
       "https://helix.cachix.org"
+      "https://zed.cachix.org"
+      "https://cache.garnix.io"
     ];
     extra-trusted-public-keys = [
       "chaotic-nyx.cachix.org-1:HfnXSw4pj95iI/n17rIDy40agHj12WfF+Gqk6SonIT8="
       "anyrun.cachix.org-1:pqBobmOjI7nKlsUMV25u9QHa9btJK65/C8vnO3p346s="
       "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
       "helix.cachix.org-1:ejp9KQpR1FBI2onstMQ34yogDm4OgU2ru6lIwPvuCVs="
+      "zed.cachix.org-1:/pHQ6dpMsAZk2DiP4WCL0p9YDNKWj2Q5FL20bNmw1cU="
+      "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
     ];
   };
 
@@ -23,6 +27,7 @@
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
     nixpkgs-dreamingcodes.url = "github:Dreaming-Codes/nixpkgs/master";
     somo.url = "github:theopfr/somo?dir=nix";
+    zed.url = "github:zed-industries/zed";
     rip2 = {
       url = "github:MilesCranmer/rip2";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -82,6 +87,7 @@
     nixpkgs-gpu-screen-recorder-ui,
     nix-index-database,
     astal,
+    zed,
     ...
   }: let
     system = "x86_64-linux";
@@ -90,7 +96,7 @@
     pkgsDreamingCodes = import nixpkgs-dreamingcodes {inherit system;};
     pkgsGpuScreenRecoderUi = import nixpkgs-gpu-screen-recorder-ui {inherit system;};
 
-    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi astal ags hyprpanel dolphin-overlay home-manager nix-index-database rip2 somo;};
+    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi astal ags hyprpanel dolphin-overlay home-manager nix-index-database rip2 somo zed;};
     commonModules = [
       ./configuration.nix
       home-manager.nixosModules.home-manager
@@ -104,7 +110,7 @@
         commonModules
         ++ [
           ./desktop.nix
-          # ./modules/virtualization
+          ./modules/virtualization
           {networking.hostName = "DreamingDesk";}
         ];
     };
