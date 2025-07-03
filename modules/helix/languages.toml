@@ -10,13 +10,13 @@ language-servers = ["svelteserver", "tailwindcss-ls"]
 [[language]]
 name = "javascript"
 language-servers = [ "typescript-language-server", "vscode-eslint-language-server"]
-formatter = { command = "dprint", args = [ "fmt", "--stdin", "javascript" ] }
+formatter = { command = "dprint", args = [ "fmt", "--stdin", "js" ] }
 auto-format = true
 
 [[language]]
 name = "typescript"
 language-servers = [ "typescript-language-server", "vscode-eslint-language-server" ]
-formatter = { command = "dprint", args = [ "fmt", "--stdin", "typescript" ] }
+formatter = { command = "dprint", args = [ "fmt", "--stdin", "ts" ] }
 auto-format = true
 
 [[language]]
