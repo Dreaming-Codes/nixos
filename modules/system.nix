@@ -5,6 +5,7 @@
   dolphin-overlay,
   rip2,
   somo,
+  zed,
   hyprpanel,
   inputs,
   ...
@@ -156,13 +157,11 @@
     zulu23
     kotlin
 
-    # Zed
-    zed-editor
-
     pkgsDreamingCodes.expo-orbit
 
     rip2.packages.${system}.default
     somo.packages.${system}.default
+    zed.packages.${system}.default
 
     distrobox
     boxbuddy
@@ -170,6 +169,7 @@
     jdt-language-server
     kotlin-language-server
     typescript-language-server
+    dprint
 
     pwvucontrol
     helvum
