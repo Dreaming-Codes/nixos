@@ -4,7 +4,7 @@
   ...
 }: {
   imports = [
-    ./edk2.nix
+    # ./edk2.nix
     ./libvirt.nix
     ./qemu
     ./looking_glass
