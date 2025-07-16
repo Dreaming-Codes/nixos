@@ -15,17 +15,17 @@
     programs.home-manager.enable = true;
 
     imports = [
-      nix-index-database.hmModules.nix-index
+      inputs.gauntlet.homeManagerModules.default
+      nix-index-database.homeModules.nix-index
     ];
     programs.nix-index-database.comma.enable = true;
 
-    # Hint Electron apps to use Wayland:
-    home.sessionVariables = {
-      EDITOR = "hx";
-      VISUAL = "hx";
-      NIXOS_OZONE_WL = "1";
-      QT_QPA_PLATFORMTHEME = "kde";
+    programs.gauntlet = {
+      enable = true;
+      service.enable = true;
+      config = {};
     };
+
     dconf.settings = {
       "org/virt-manager/virt-manager/connections" = {
         autoconnect = ["qemu:///system"];
@@ -48,6 +48,7 @@
       enable = true;
       systemd = {
         enable = true;
+        variables = ["--all"];
         enableXdgAutostart = true;
       };
       # Those are both null since it's installed by the nixos module
@@ -104,7 +105,7 @@
             "$mod, SPACE, exec, wezterm"
             ", Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m active"
             "SHIFT, Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m region"
-            "$mod, X, exec, anyrun"
+            "$mod, X, exec, gauntlet open"
             "$mod, Q, killactive"
             "$mod, T, exec, Telegram"
             "$mod, S, exec, signal-desktop"
@@ -225,11 +226,6 @@
     };
 
     home.packages = with pkgs; let
-      anyrun = inputs.anyrun.packages.${pkgs.system}.default;
-      anyrunStdin = inputs.anyrun.packages.${pkgs.system}.stdin;
-      dmenuWrapper = pkgs.writeShellScriptBin "dmenu" ''
-        exec ${anyrun}/bin/anyrun --show-results-immediately true --plugins ${anyrunStdin}/lib/libstdin.so "$@"
-      '';
       toggleMic = pkgs.writeShellScriptBin "toggleMic" ./mictoggle.sh;
       toggleMixer = pkgs.writeShellScriptBin "toggleMixer" ./mixer.sh;
     in [
@@ -239,7 +235,6 @@
       goldwarden
       telegram-desktop
       bitwarden-desktop
-      prismlauncher
       btop
       bun
       nodejs
@@ -250,7 +245,6 @@
       kwalletcli
       tor-browser
       jetbrains-toolbox
-      dmenuWrapper
       toggleMic
       toggleMixer
     ];
@@ -264,7 +258,7 @@
       };
       gpg-agent = {
         enable = true;
-        pinentryPackage = pkgs.kwalletcli;
+        pinentry.package = pkgs.kwalletcli;
         extraConfig = "pinentry-program ${pkgs.kwalletcli}/bin/pinentry-kwallet";
       };
     };
@@ -331,99 +325,6 @@
       };
       pay-respects = {
         enable = true;
-      };
-      anyrun = {
-        enable = true;
-        extraConfigFiles = {
-          "applications.ron".text = ''
-            Config(
-              desktop_actions: false,
-              max_entries: 5,
-            )
-          '';
-
-          "shell.ron".text = ''
-            Config(
-              prefix: ">"
-            )
-          '';
-
-          "randr.ron".text = ''
-            Config(
-              prefi: ":dp",
-              max_entries: 5,
-            )
-          '';
-
-          "stdin.ron".text = ''
-            Config(
-              allow_invalid: true,
-              max_entries: 20
-            )
-          '';
-        };
-        extraCss = ''
-          * {
-            all: unset;
-            font-size: 1.2rem;
-          }
-
-          #window,
-          #match,
-          #entry,
-          #plugin,
-          #main {
-            background: transparent;
-          }
-
-          #match.activatable {
-            border-radius: 8px;
-            margin: 4px 0;
-            padding: 4px;
-            /* transition: 100ms ease-out; */
-          }
-          #match.activatable:first-child {
-            margin-top: 12px;
-          }
-          #match.activatable:last-child {
-            margin-bottom: 0;
-          }
-
-          #match:hover {
-            background: rgba(255, 255, 255, 0.05);
-          }
-          #match:selected {
-            background: rgba(255, 255, 255, 0.1);
-          }
-
-          #entry {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            padding: 4px 8px;
-          }
-
-          box#main {
-            background: rgba(0, 0, 0, 0.5);
-            box-shadow:
-              inset 0 0 0 1px rgba(255, 255, 255, 0.1),
-              0 30px 30px 15px rgba(0, 0, 0, 0.5);
-            border-radius: 20px;
-            padding: 12px;
-          }
-        '';
-        config = {
-          width.fraction = 0.25;
-          y.fraction = 0.3;
-          hidePluginInfo = true;
-          closeOnClick = true;
-          plugins = with inputs.anyrun.packages.${pkgs.system}; [
-            applications
-            randr
-            shell
-            symbols
-          ];
-        };
       };
       zellij = {
         enable = true;

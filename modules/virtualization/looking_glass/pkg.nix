@@ -1,5 +1,4 @@
 {pkgs, ...}: {
-  hardware.opengl.enable = true;
   virtualisation.spiceUSBRedirection.enable = true;
 
   systemd.tmpfiles.rules = [

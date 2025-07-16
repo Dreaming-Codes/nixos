@@ -5,7 +5,6 @@
     extra-substituters = [
       "https://chaotic-nyx.cachix.org"
       "https://nix-mirror.freetls.fastly.net"
-      "https://anyrun.cachix.org"
       "https://hyprland.cachix.org"
       "https://helix.cachix.org"
       "https://zed.cachix.org"
@@ -13,7 +12,6 @@
     ];
     extra-trusted-public-keys = [
       "chaotic-nyx.cachix.org-1:HfnXSw4pj95iI/n17rIDy40agHj12WfF+Gqk6SonIT8="
-      "anyrun.cachix.org-1:pqBobmOjI7nKlsUMV25u9QHa9btJK65/C8vnO3p346s="
       "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
       "helix.cachix.org-1:ejp9KQpR1FBI2onstMQ34yogDm4OgU2ru6lIwPvuCVs="
       "zed.cachix.org-1:/pHQ6dpMsAZk2DiP4WCL0p9YDNKWj2Q5FL20bNmw1cU="
@@ -27,7 +25,11 @@
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
     nixpkgs-dreamingcodes.url = "github:Dreaming-Codes/nixpkgs/master";
     somo.url = "github:theopfr/somo?dir=nix";
-    zed.url = "github:zed-industries/zed";
+    zed.url = "github:Dreaming-Codes/zed";
+    gauntlet = {
+      url = "github:project-gauntlet/gauntlet";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     rip2 = {
       url = "github:MilesCranmer/rip2";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -61,10 +63,6 @@
       url = "github:JosuGZ/razer-laptop-control-no-dkms";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    anyrun = {
-      url = "github:anyrun-org/anyrun";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     helix = {
       url = "github:helix-editor/helix";
     };
@@ -72,6 +70,7 @@
 
   outputs = inputs @ {
     self,
+    gauntlet,
     nixpkgs,
     nixpkgs-stable,
     nixpkgs-dreamingcodes,
@@ -94,7 +93,7 @@
     pkgsDreamingCodes = import nixpkgs-dreamingcodes {inherit system;};
     pkgsGpuScreenRecoderUi = import nixpkgs-gpu-screen-recorder-ui {inherit system;};
 
-    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi astal ags dolphin-overlay home-manager nix-index-database rip2 somo zed;};
+    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi astal ags dolphin-overlay home-manager nix-index-database rip2 somo zed gauntlet;};
     commonModules = [
       ./configuration.nix
       home-manager.nixosModules.home-manager

@@ -7,10 +7,15 @@
   somo,
   zed,
   inputs,
+  self,
   ...
 }: {
   boot.loader.limine.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+
+  imports = [
+    inputs.gauntlet.nixosModules.default
+  ];
 
   security.pki.certificateFiles = [
     ./AdGuard_CLI_CA.pem
@@ -156,6 +161,12 @@
     zulu23
     kotlin
 
+    zig
+    python314
+    node-gyp
+
+    prismlauncher-unwrapped
+
     pkgsDreamingCodes.expo-orbit
 
     rip2.packages.${system}.default
@@ -237,6 +248,12 @@
     PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig";
     # Fix for some app that rely on env to choose audio driver
     SDL_AUDIODRIVER = "pipewire";
+
+    EDITOR = "hx";
+    VISUAL = "hx";
+    # Hint Electron apps to use Wayland:
+    NIXOS_OZONE_WL = "1";
+    QT_QPA_PLATFORMTHEME = "kde";
   };
 
   services.mullvad-vpn.enable = true;
