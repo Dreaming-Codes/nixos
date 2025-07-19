@@ -13,6 +13,14 @@
   boot.loader.limine.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
+  services = {
+    udev = {
+      extraRules = ''
+        SUBSYSTEM=="tty", ATTRS{idVendor}=="1915", ATTRS{idProduct}=="522a", ATTRS{serial}=="84014353616C81E9", GROUP="wireshark", MODE="0666"
+      '';
+    };
+  };
+
   imports = [
     inputs.gauntlet.nixosModules.default
   ];
@@ -84,6 +92,11 @@
   programs.appimage = {
     enable = true;
     binfmt = true;
+  };
+
+  programs.wireshark = {
+    enable = true;
+    package = pkgs.wireshark;
   };
 
   environment.systemPackages = with pkgs; [
@@ -162,7 +175,8 @@
     kotlin
 
     zig
-    python314
+    python313
+    python313Packages.pyserial
     node-gyp
 
     prismlauncher-unwrapped

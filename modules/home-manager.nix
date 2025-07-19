@@ -20,6 +20,11 @@
     ];
     programs.nix-index-database.comma.enable = true;
 
+    home.sessionVariables = {
+      # use bitwarden ssh key agent
+      SSH_AUTH_SOCK = "/home/dreamingcodes/.bitwarden-ssh-agent.sock";
+    };
+
     programs.gauntlet = {
       enable = true;
       service.enable = true;
@@ -110,7 +115,7 @@
             "$mod, T, exec, Telegram"
             "$mod, S, exec, signal-desktop"
             "$mod, O, togglefloating"
-            "$mod, C, exec, clipcat-menu"
+            "$mod, C, exec, gauntlet run https://github.com/Mrid22/gauntlet-clipboard template-view :primary"
             "$mod, L, exec, hyprlock"
             "$mod, F, fullscreen"
             "$mod, M, exec, toggleMixer"
