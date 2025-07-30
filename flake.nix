@@ -120,7 +120,7 @@
       modules =
         commonModules
         ++ [
-          /etc/nixos/hardware-configuration.nix
+          # /etc/nixos/hardware-configuration.nix
           razer-laptop-controller.nixosModules.default
           ./laptop.nix
           {
