@@ -5,6 +5,7 @@
   ...
 }: {
   imports = [
+    /etc/nixos/secrets/github.nix
     ./modules/networking.nix
     # ./modules/davinci-resolve.nix
     ./modules/services.nix
