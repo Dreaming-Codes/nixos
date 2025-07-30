@@ -179,7 +179,7 @@
     python313Packages.pyserial
     node-gyp
 
-    prismlauncher-unwrapped
+    prismlauncher
 
     pkgsDreamingCodes.expo-orbit
 

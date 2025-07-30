@@ -66,6 +66,7 @@
     helix = {
       url = "github:helix-editor/helix";
     };
+    nixos-facter-modules.url = "github:nix-community/nixos-facter-modules";
   };
 
   outputs = inputs @ {
@@ -95,6 +96,7 @@
 
     specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi astal ags dolphin-overlay home-manager nix-index-database rip2 somo zed gauntlet;};
     commonModules = [
+      inputs.nixos-facter-modules.nixosModules.facter
       ./configuration.nix
       home-manager.nixosModules.home-manager
       chaotic.nixosModules.default
@@ -106,6 +108,7 @@
       modules =
         commonModules
         ++ [
+          {config.facter.reportPath = ./facter-dreamingdesk.json;}
           ./desktop.nix
           ./modules/virtualization
           {networking.hostName = "DreamingDesk";}
@@ -117,6 +120,7 @@
       modules =
         commonModules
         ++ [
+          /etc/nixos/hardware-configuration.nix
           razer-laptop-controller.nixosModules.default
           ./laptop.nix
           {

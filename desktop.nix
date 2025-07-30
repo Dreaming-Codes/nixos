@@ -1,4 +1,9 @@
-{pkgs, ...}: {
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}: {
   environment.systemPackages = with pkgs; [
     # amd gpu utility
     lact
@@ -6,6 +11,22 @@
     amf
     via
   ];
+
+  boot.kernelModules = ["kvm-intel"];
+
+  fileSystems."/" = {
+    device = "/dev/disk/by-uuid/059dc105-5a7a-4c4c-967c-af7bc6c7dd1a";
+    fsType = "ext4";
+  };
+
+  fileSystems."/boot" = {
+    device = "/dev/disk/by-uuid/FF73-5BE2";
+    fsType = "vfat";
+    options = ["fmask=0022" "dmask=0022"];
+  };
+
+  nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
+  hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
   services.sunshine = {
     enable = true;
