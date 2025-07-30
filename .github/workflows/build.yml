@@ -17,6 +17,5 @@ jobs:
           name: "Dreaming-Codes/nixos"
           rolling: true
           visibility: "public"
-          include-output-paths: true
       - uses: DeterminateSystems/flakehub-cache-action@main
       - run: nix build .#nixosConfigurations.DreamingDesk.config.system.build.toplevel
