@@ -114,6 +114,7 @@
     unrar
     bottles
     yaak
+    libcamera
 
     signal-desktop
 
