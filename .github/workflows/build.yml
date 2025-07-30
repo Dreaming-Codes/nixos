@@ -12,10 +12,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4.2.2
       - uses: DeterminateSystems/determinate-nix-action@main
-      - uses: "DeterminateSystems/flakehub-push@main"
-        with:
-          name: "Dreaming-Codes/nixos"
-          rolling: true
-          visibility: "public"
+      # - uses: "DeterminateSystems/flakehub-push@main"
+      #   with:
+      #     name: "Dreaming-Codes/nixos"
+      #     rolling: true
+      #     visibility: "public"
       - uses: DeterminateSystems/flakehub-cache-action@main
       - run: nix build .#nixosConfigurations.DreamingDesk.config.system.build.toplevel
