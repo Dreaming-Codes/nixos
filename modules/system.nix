@@ -159,7 +159,9 @@
     stremio
 
     psst
-    spotify-player
+    (spotify-player.override {
+      withAudioBackend = "pulseaudio";
+    })
     mission-center
 
     xwayland-satellite
@@ -238,7 +240,7 @@
     };
 
     extraPortals = with pkgs; [
-      inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland
+      xdg-desktop-portal-hyprland
       # Add xdg-desktop-portal-gtk for Wayland GTK apps (font issues etc.)
       xdg-desktop-portal-gtk
       kdePackages.xdg-desktop-portal-kde

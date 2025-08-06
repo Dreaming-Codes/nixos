@@ -5,14 +5,12 @@
     extra-substituters = [
       "https://chaotic-nyx.cachix.org"
       "https://nix-mirror.freetls.fastly.net"
-      "https://hyprland.cachix.org"
       "https://helix.cachix.org"
       # "https://zed.cachix.org"
       "https://cache.garnix.io"
     ];
     extra-trusted-public-keys = [
       "chaotic-nyx.cachix.org-1:HfnXSw4pj95iI/n17rIDy40agHj12WfF+Gqk6SonIT8="
-      "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
       "helix.cachix.org-1:ejp9KQpR1FBI2onstMQ34yogDm4OgU2ru6lIwPvuCVs="
       # "zed.cachix.org-1:/pHQ6dpMsAZk2DiP4WCL0p9YDNKWj2Q5FL20bNmw1cU="
       "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
@@ -25,7 +23,10 @@
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
     nixpkgs-dreamingcodes.url = "github:Dreaming-Codes/nixpkgs/master";
     somo.url = "github:theopfr/somo?dir=nix";
-    zed.url = "github:Dreaming-Codes/zed";
+    zed = {
+      url = "github:zed-industries/zed";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     gauntlet = {
       url = "github:project-gauntlet/gauntlet";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -47,11 +48,6 @@
     ags = {
       url = "github:aylur/ags";
       inputs.nixpkgs.follows = "nixpkgs";
-    };
-    hyprland.url = "github:hyprwm/Hyprland";
-    hyprland-plugins = {
-      url = "github:hyprwm/hyprland-plugins";
-      inputs.hyprland.follows = "hyprland";
     };
     nix-alien.url = "github:thiagokokada/nix-alien";
     chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";

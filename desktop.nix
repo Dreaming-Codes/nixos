@@ -69,7 +69,7 @@
     "amdgpu"
   ];
   # Blacklist nvidia gpu driver to prevent use
-  boot.blacklistedKernelModules = ["nouveau"];
+  boot.blacklistedKernelModules = ["nouveau" "nvidia"];
 
   nixpkgs.config.rocmSupport = true;
 
