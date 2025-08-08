@@ -6,13 +6,13 @@
       "https://chaotic-nyx.cachix.org"
       "https://nix-mirror.freetls.fastly.net"
       "https://helix.cachix.org"
-      # "https://zed.cachix.org"
+      "https://zed.cachix.org"
       "https://cache.garnix.io"
     ];
     extra-trusted-public-keys = [
       "chaotic-nyx.cachix.org-1:HfnXSw4pj95iI/n17rIDy40agHj12WfF+Gqk6SonIT8="
       "helix.cachix.org-1:ejp9KQpR1FBI2onstMQ34yogDm4OgU2ru6lIwPvuCVs="
-      # "zed.cachix.org-1:/pHQ6dpMsAZk2DiP4WCL0p9YDNKWj2Q5FL20bNmw1cU="
+      "zed.cachix.org-1:/pHQ6dpMsAZk2DiP4WCL0p9YDNKWj2Q5FL20bNmw1cU="
       "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
     ];
   };
@@ -116,6 +116,7 @@
       modules =
         commonModules
         ++ [
+          # replace with sudo nix run --option experimental-features "nix-command flakes" nixpkgs#nixos-facter -- -o facter.json
           /etc/nixos/hardware-configuration.nix
           razer-laptop-controller.nixosModules.default
           ./laptop.nix
