@@ -127,6 +127,8 @@
 
     godot
 
+    fvm
+
     lurk
     cartero
 
@@ -188,7 +190,7 @@
 
     rip2.packages.${system}.default
     somo.packages.${system}.default
-    zed.packages.${system}.default
+    # zed.packages.${system}.default
 
     distrobox
     boxbuddy
