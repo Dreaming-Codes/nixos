@@ -116,8 +116,7 @@
       modules =
         commonModules
         ++ [
-          # replace with sudo nix run --option experimental-features "nix-command flakes" nixpkgs#nixos-facter -- -o facter.json
-          /etc/nixos/hardware-configuration.nix
+          {config.facter.reportPath = ./facter-dreamingblade.json;}
           razer-laptop-controller.nixosModules.default
           ./laptop.nix
           {

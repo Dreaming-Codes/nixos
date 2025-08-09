@@ -4,6 +4,21 @@
   config,
   ...
 }: {
+  boot.initrd.availableKernelModules = ["nvme" "xhci_pci" "usb_storage" "usbhid" "sd_mod"];
+  fileSystems."/" = {
+    device = "/dev/disk/by-uuid/0806bf06-5970-44da-8b99-400c140db160";
+    fsType = "ext4";
+  };
+
+  fileSystems."/boot" = {
+    device = "/dev/disk/by-uuid/3E30-ADDD";
+    fsType = "vfat";
+    options = ["fmask=0022" "dmask=0022"];
+  };
+
+  nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
+  hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+
   environment.systemPackages = with pkgs; [nrfutil];
   nixpkgs.config.segger-jlink.acceptLicense = true;
 
@@ -30,7 +45,7 @@
   nixpkgs.config.cudaSupport = true;
 
   boot.kernelModules = ["kvm-amd"];
-  boot.kernelParams = ["nvidia.NVreg_PreserveVideoMemoryAllocations=1"];
+  boot.kernelParams = ["nvidia.NVreg_PreserveVideoMemoryAllocations=1" "nvidia.NVreg_EnableGpuFirmware=0"];
 
   ### Nvidia STUFF
   hardware.graphics = {
