@@ -153,6 +153,8 @@
     })
 
     lldb
+    # required to build a lot of rust ctates
+    protobuf
 
     # Not sure what caused this but now this is needed to make bash work
     bashInteractive
