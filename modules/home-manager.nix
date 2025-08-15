@@ -365,6 +365,9 @@
           push = {
             autoSetupRemote = true;
           };
+          diff = {
+            external = "difft";
+          };
           credential = {
             helper = [
               "libsecret"
