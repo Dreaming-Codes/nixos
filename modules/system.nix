@@ -128,6 +128,7 @@
     godot
 
     fvm
+    obsidian
 
     lurk
     cartero
