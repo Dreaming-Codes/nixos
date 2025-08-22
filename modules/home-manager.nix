@@ -211,6 +211,7 @@
       };
     };
 
+    services.swaync.enable = true;
     services.hypridle.enable = true;
     services.hypridle.settings = {
       general = {
@@ -258,9 +259,9 @@
     #   };
     # };
 
-    systemd.user.services.hyprpanel = {
+    systemd.user.services.ashell = {
       Unit = {
-        Description = "Hyprpanel";
+        Description = "ashell";
         PartOf = ["hyprland-session.target"];
         After = ["hyprland-session.target"];
       };
@@ -268,7 +269,7 @@
         WantedBy = ["hyprland-session.target"];
       };
       Service = {
-        ExecStart = "${pkgs.hyprpanel}/bin/hyprpanel";
+        ExecStart = "/run/current-system/sw/bin/ashell";
         Restart = "always";
         Type = "simple";
       };
@@ -280,7 +281,6 @@
     in [
       astal.packages.${system}.default
       ags.packages.${system}.default
-      hyprpanel
       goldwarden
       telegram-desktop
       bitwarden-desktop
@@ -314,6 +314,11 @@
 
     home.file."./.config/zellij" = {
       source = ./zellij;
+      recursive = true;
+    };
+
+    home.file."./.config/ashell" = {
+      source = ./ashell;
       recursive = true;
     };
 
