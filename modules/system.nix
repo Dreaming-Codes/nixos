@@ -127,6 +127,8 @@
 
     google-chrome
 
+    ashell
+
     gimp3-with-plugins
 
     godot
