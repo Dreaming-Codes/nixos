@@ -33,6 +33,17 @@
     ./AdGuard_CLI_CA.pem
   ];
 
+  security.polkit.extraConfig = ''
+    polkit.addRule(function(action, subject) {
+      if (
+        action.id == "org.freedesktop.UPower.PowerProfiles.switch-profile" &&
+        subject.isInGroup("wheel")
+      ) {
+        return polkit.Result.YES;
+      }
+    });
+  '';
+
   time.timeZone = "Europe/Rome";
   i18n.defaultLocale = "en_US.UTF-8";
   i18n.extraLocaleSettings = {
@@ -128,6 +139,16 @@
     google-chrome
 
     ashell
+
+    (pantheon.switchboard-with-plugs.override {
+      useDefaultPlugs = false;
+      plugs = [
+        pantheon.switchboard-plug-network
+        pantheon.switchboard-plug-sound
+        pantheon.switchboard-plug-printers
+        pantheon.switchboard-plug-bluetooth
+      ];
+    })
 
     gimp3-with-plugins
 
