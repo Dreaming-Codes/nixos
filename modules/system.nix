@@ -13,6 +13,10 @@
   boot.loader.limine.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
+  networking.networkmanager.enable = true;
+  networking.useNetworkd = false;
+  systemd.network.wait-online.enable = false;
+
   services = {
     udev = {
       extraRules = ''
@@ -161,7 +165,6 @@
     bashInteractive
 
     upscayl
-    stremio
 
     psst
     (spotify-player.override {
@@ -174,9 +177,6 @@
     mullvad-browser
     mullvad-vpn
     pkgsStable.frida-tools
-
-    # needed for browser widget
-    kdePackages.qtwebengine
 
     # Java
     zulu23
