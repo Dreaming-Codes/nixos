@@ -63,6 +63,7 @@
       url = "github:helix-editor/helix";
     };
     nixos-facter-modules.url = "github:nix-community/nixos-facter-modules";
+    vaultix.url = "github:milieuim/vaultix";
   };
 
   outputs = inputs @ {
@@ -82,6 +83,7 @@
     nix-index-database,
     astal,
     zed,
+    vaultix,
     ...
   }: let
     system = "x86_64-linux";
@@ -127,6 +129,14 @@
             };
           }
         ];
+    };
+    vaultix = vaultix.configure {
+      nodes = self.nixosConfigurations;
+      identity = self + "/opt/secret.age";
+      extraRecipients = [];
+      extraPackages = [];
+      pinentryPackage = pkgs.kwalletcli;
+      cache = "./secret/.cache";
     };
   };
 }
