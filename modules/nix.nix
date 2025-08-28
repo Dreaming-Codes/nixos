@@ -28,7 +28,7 @@
       builders-use-substitutes = true;
 
       # We are using flakes, so enable the experimental features
-      experimental-features = ["nix-command" "flakes" "dynamic-derivations" "repl-flake"];
+      experimental-features = ["nix-command" "flakes"];
 
       # Users allowed to use Nix
       allowed-users = ["@wheel"];

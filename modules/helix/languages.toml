@@ -10,28 +10,28 @@ language-servers = ["svelteserver", "tailwindcss-ls"]
 [[language]]
 name = "javascript"
 language-servers = [ "typescript-language-server", "vscode-eslint-language-server"]
-formatter = { command = "dprint", args = [ "fmt", "--stdin", "js" ] }
+# formatter = { command = "dprint", args = [ "fmt", "--stdin", "js" ] }
 auto-format = true
 
 [[language]]
 name = "typescript"
 language-servers = [ "typescript-language-server", "vscode-eslint-language-server" ]
-formatter = { command = "dprint", args = [ "fmt", "--stdin", "ts" ] }
+# formatter = { command = "dprint", args = [ "fmt", "--stdin", "ts" ] }
 auto-format = true
 
 [[language]]
 name = "tsx"
 language-servers = [ "typescript-language-server", "vscode-eslint-language-server" ]
-formatter = { command = "dprint", args = [ "fmt", "--stdin", "tsx" ] }
+# formatter = { command = "dprint", args = [ "fmt", "--stdin", "tsx" ] }
 auto-format = true
 
 [[language]]
 name = "jsx"
 language-servers = [ "typescript-language-server", "vscode-eslint-language-server" ]
-formatter = { command = "dprint", args = [ "fmt", "--stdin", "jsx" ] }
+# formatter = { command = "dprint", args = [ "fmt", "--stdin", "jsx" ] }
 auto-format = true
 
 [[language]]
 name = "json"
-formatter = { command = "dprint", args = [ "fmt", "--stdin", "json" ] }
+# formatter = { command = "dprint", args = [ "fmt", "--stdin", "json" ] }
 auto-format = true

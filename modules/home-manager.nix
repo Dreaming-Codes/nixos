@@ -241,22 +241,22 @@
       ];
     };
 
-    systemd.user.services.clipcat = {
-      Unit = {
-        Description = "Clipcat Daemon";
-        PartOf = ["hyprland-session.target"];
-        After = ["hyprland-session.target"];
-      };
-      Install = {
-        WantedBy = ["hyprland-session.target"];
-      };
-      Service = {
-        ExecStartPre = "/run/current-system/sw/bin/rm -f %t/clipcat/grpc.sock";
-        ExecStart = "/run/current-system/sw/bin/clipcatd --no-daemon --replace";
-        Restart = "on-failure";
-        Type = "simple";
-      };
-    };
+    # systemd.user.services.clipcat = {
+    #   Unit = {
+    #     Description = "Clipcat Daemon";
+    #     PartOf = ["hyprland-session.target"];
+    #     After = ["hyprland-session.target"];
+    #   };
+    #   Install = {
+    #     WantedBy = ["hyprland-session.target"];
+    #   };
+    #   Service = {
+    #     ExecStartPre = "/run/current-system/sw/bin/rm -f %t/clipcat/grpc.sock";
+    #     ExecStart = "/run/current-system/sw/bin/clipcatd --no-daemon --replace";
+    #     Restart = "on-failure";
+    #     Type = "simple";
+    #   };
+    # };
 
     systemd.user.services.hyprpanel = {
       Unit = {

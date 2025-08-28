@@ -143,7 +143,7 @@
     #   studioVariant = true;
     # })
 
-    clipcat
+    # clipcat
     playerctl
     brightnessctl
     alsa-utils
@@ -201,7 +201,7 @@
     jdt-language-server
     kotlin-language-server
     typescript-language-server
-    dprint
+    # dprint
 
     pwvucontrol
     helvum
