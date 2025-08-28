@@ -144,15 +144,59 @@
           ]
           ++ (
             # workspaces
-            builtins.concatLists (builtins.genList (
-                i: let
-                  ws = i + 1;
-                in [
-                  "$mod, code:1${toString i}, workspace, ${toString ws}"
-                  "$mod SHIFT, code:1${toString i}, movetoworkspace, ${toString ws}"
-                ]
-              )
-              9)
+            let
+              # Generate 1–9 and 0 (mapped to 10)
+              numWorkspaces =
+                builtins.genList (
+                  i: let
+                    ws =
+                      if i == 9
+                      then 10
+                      else i + 1;
+                    key =
+                      if i == 9
+                      then "0"
+                      else toString (i + 1);
+                  in [
+                    "$mod, ${key}, workspace, ${toString ws}"
+                    "$mod SHIFT, ${key}, movetoworkspace, ${toString ws}"
+                  ]
+                )
+                10;
+
+              # Generate F1–F12
+              fWorkspaces =
+                builtins.genList (
+                  i: let
+                    ws = "F${toString (i + 1)}";
+                    key = "F${toString (i + 1)}";
+                  in [
+                    "$mod, ${key}, workspace, name:${ws}"
+                    "$mod SHIFT, ${key}, movetoworkspace, name:${ws}"
+                  ]
+                )
+                12;
+
+              # Generate ALT1–ALT10 (with ALT0 = ALT10)
+              altWorkspaces =
+                builtins.genList (
+                  i: let
+                    ws =
+                      if i == 9
+                      then "ALT10"
+                      else "ALT${toString (i + 1)}";
+                    key =
+                      if i == 9
+                      then "0"
+                      else toString (i + 1);
+                  in [
+                    "$mod ALT, ${key}, workspace, name:${ws}"
+                    "$mod SHIFT ALT, ${key}, movetoworkspace, name:${ws}"
+                  ]
+                )
+                10;
+            in
+              builtins.concatLists (numWorkspaces ++ fWorkspaces ++ altWorkspaces)
           );
       };
     };
