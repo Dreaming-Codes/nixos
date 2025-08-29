@@ -17,6 +17,8 @@
       };
     };
   };
+  # networking.useNetworkd = false;
+  systemd.network.wait-online.enable = false;
 
   hardware.wirelessRegulatoryDatabase = true;
 

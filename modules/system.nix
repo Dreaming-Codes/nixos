@@ -13,10 +13,6 @@
   boot.loader.limine.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  networking.networkmanager.enable = true;
-  networking.useNetworkd = false;
-  systemd.network.wait-online.enable = false;
-
   services = {
     udev = {
       extraRules = ''
