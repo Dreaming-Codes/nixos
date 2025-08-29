@@ -45,7 +45,10 @@
   nixpkgs.config.cudaSupport = true;
 
   boot.kernelModules = ["kvm-amd"];
-  boot.kernelParams = ["nvidia.NVreg_PreserveVideoMemoryAllocations=1" "nvidia.NVreg_EnableGpuFirmware=0"];
+  # nvidia.NVreg_EnableGpuFirmware=0
+  boot.kernelParams = ["nvidia.NVreg_PreserveVideoMemoryAllocations=1"];
+
+  hardware.nvidia-container-toolkit.enable = true;
 
   ### Nvidia STUFF
   hardware.graphics = {
@@ -76,7 +79,7 @@
     # https://github.com/NVIDIA/open-gpu-kernel-modules#compatible-gpus
     # Only available from driver 515.43.04+
     # Currently alpha-quality/buggy, so false is currently the recommended setting.
-    open = false;
+    open = true;
 
     # Enable the Nvidia settings menu,
     # accessible via `nvidia-settings`.
@@ -95,43 +98,74 @@
     amdgpuBusId = "PCI:4:0:0";
   };
 
-  specialisation = {
-    no-gpu.configuration = {
-      system.nixos.tags = ["no-gpu"];
-      boot.extraModprobeConfig = ''
-        blacklist nouveau
-        options nouveau modeset=0
-      '';
-      services.udev.extraRules = ''
-        # Remove NVIDIA USB xHCI Host Controller devices, if present
-        ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x0c0330", ATTR{power/control}="auto", ATTR{remove}="1"
-        # Remove NVIDIA USB Type-C UCSI devices, if present
-        ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x0c8000", ATTR{power/control}="auto", ATTR{remove}="1"
-        # Remove NVIDIA Audio devices, if present
-        ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x040300", ATTR{power/control}="auto", ATTR{remove}="1"
-        # Remove NVIDIA VGA/3D controller devices
-        ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x03[0-9]*", ATTR{power/control}="auto", ATTR{remove}="1"
-      '';
-      boot.blacklistedKernelModules = ["nouveau" "nvidia" "nvidia_drm" "nvidia_modeset"];
-    };
-    performance.configuration = {
-      system.nixos.tags = ["performance"];
-      hardware.nvidia = {
-        powerManagement.finegrained = lib.mkForce false;
-        prime.offload.enable = lib.mkForce false;
-        prime.offload.enableOffloadCmd = lib.mkForce false;
-        prime.sync.enable = lib.mkForce true;
+  specialisation = let
+    # Base specialisations (without open/proprietary split)
+    baseSpecialisations = {
+      performance = {
+        system.nixos.tags = ["performance"];
+        hardware.nvidia = {
+          powerManagement.finegrained = lib.mkForce false;
+          prime.offload.enable = lib.mkForce false;
+          prime.offload.enableOffloadCmd = lib.mkForce false;
+          prime.sync.enable = lib.mkForce true;
+        };
+      };
+
+      reverse = {
+        system.nixos.tags = ["reverse"];
+        hardware.nvidia = {
+          powerManagement.finegrained = lib.mkForce false;
+          prime.offload.enable = lib.mkForce false;
+          prime.offload.enableOffloadCmd = lib.mkForce false;
+          prime.sync.enable = lib.mkForce false;
+          prime.reverseSync.enable = lib.mkForce true;
+        };
       };
     };
-    reverse.configuration = {
-      system.nixos.tags = ["reverse"];
-      hardware.nvidia = {
-        powerManagement.finegrained = lib.mkForce false;
-        prime.offload.enable = lib.mkForce false;
-        prime.offload.enableOffloadCmd = lib.mkForce false;
-        prime.sync.enable = lib.mkForce false;
-        prime.reverseSync.enable = lib.mkForce true;
+
+    # Function to generate open/proprietary variants
+    mkVariants = name: cfg: {
+      "${name}-open".configuration =
+        cfg
+        // {
+          system.nixos.tags = cfg.system.nixos.tags ++ ["open"];
+          hardware.nvidia.open = lib.mkForce true;
+        };
+
+      "${name}-proprietary".configuration =
+        cfg
+        // {
+          system.nixos.tags = cfg.system.nixos.tags ++ ["proprietary"];
+          hardware.nvidia.open = lib.mkForce false;
+        };
+    };
+
+    # Merge all generated variants
+    generated = lib.foldl' lib.recursiveUpdate {} (
+      lib.mapAttrsToList mkVariants baseSpecialisations
+    );
+  in
+    generated
+    // {
+      # Keep no-gpu as is (no variants)
+      no-gpu.configuration = {
+        system.nixos.tags = ["no-gpu"];
+        boot.extraModprobeConfig = ''
+          blacklist nouveau
+          options nouveau modeset=0
+        '';
+        services.udev.extraRules = ''
+          ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x0c0330", ATTR{power/control}="auto", ATTR{remove}="1"
+          ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x0c8000", ATTR{power/control}="auto", ATTR{remove}="1"
+          ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x040300", ATTR{power/control}="auto", ATTR{remove}="1"
+          ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x03[0-9]*", ATTR{power/control}="auto", ATTR{remove}="1"
+        '';
+        boot.blacklistedKernelModules = ["nouveau" "nvidia" "nvidia_drm" "nvidia_modeset"];
+      };
+      # Default proprietary variant (since base system is open by default)
+      default-proprietary.configuration = {
+        system.nixos.tags = ["default" "proprietary"];
+        hardware.nvidia.open = lib.mkForce false;
       };
     };
-  };
 }
