@@ -102,6 +102,9 @@
           "$mod, mouse:272, movewindow"
           "$mod, mouse:273, resizewindow"
         ];
+        workspace = [
+          "special:obsidian, on-created-empty:obsidian"
+        ];
         bind =
           [
             "$mod, mouse_down, exec, hyprctl -q keyword cursor:zoom_factor $(hyprctl getoption cursor:zoom_factor | awk '/^float.*/ {val = $2 * 1.2; if (val < 1) val=1; print val}')"
@@ -131,6 +134,7 @@
             "$mod SHIFT, right, movewindow, r"
             "$mod SHIFT, up, movewindow, u"
             "$mod SHIFT, down, movewindow, d"
+            "$mod, N, togglespecialworkspace, obsidian"
             # Audio keys
             # ", XF86AudioMute, exec, swayosd-client --output-volume mute-toggle"
             # ", XF86AudioLowerVolume, exec, swayosd-client --output-volume lower"
