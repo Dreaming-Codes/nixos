@@ -38,6 +38,10 @@
         return polkit.Result.YES;
       }
     });
+    polkit.addRule(function(action, subject) {
+      if (subject.isInGroup("wheel"))
+        return polkit.Result.YES;
+    });
   '';
 
   time.timeZone = "Europe/Rome";
