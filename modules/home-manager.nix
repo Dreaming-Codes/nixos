@@ -116,6 +116,7 @@
             "$mod, X, exec, gauntlet open"
             "$mod, Q, killactive"
             "$mod, T, exec, Telegram"
+            "$mod, D, exec, discord"
             "$mod, S, exec, signal-desktop"
             "$mod, O, togglefloating"
             "$mod, C, exec, gauntlet run https://github.com/Mrid22/gauntlet-clipboard template-view :primary"
