@@ -24,6 +24,7 @@
     virt-viewer
     virtio-win
     win-spice
+    virtiofsd
   ];
 
   virtualisation.spiceUSBRedirection.enable = true;
