@@ -128,7 +128,7 @@
     # Ark dep
     unrar
     bottles
-    yaak
+    # yaak
     libcamera
 
     signal-desktop
@@ -176,7 +176,7 @@
 
     (discord.override {
       withOpenASAR = true;
-      withMoonlight = true;
+      # withMoonlight = true;
       # withVencord = true;
     })
 
