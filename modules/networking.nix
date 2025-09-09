@@ -1,4 +1,5 @@
 {...}: {
+  services.resolved.enable = true;
   networking = {
     useDHCP = false;
     wireless.iwd = {
