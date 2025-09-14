@@ -4,7 +4,6 @@
   pkgsDreamingCodes,
   dolphin-overlay,
   rip2,
-  somo,
   zed,
   inputs,
   self,
@@ -215,7 +214,6 @@
     pkgsDreamingCodes.expo-orbit
 
     rip2.packages.${system}.default
-    somo.packages.${system}.default
     # zed.packages.${system}.default
 
     distrobox

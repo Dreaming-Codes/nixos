@@ -24,7 +24,6 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05";
     nixpkgs-dreamingcodes.url = "github:Dreaming-Codes/nixpkgs/master";
-    somo.url = "github:theopfr/somo?dir=nix";
     zed = {
       url = "github:zed-industries/zed";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -78,7 +77,6 @@
     rip2,
     home-manager,
     chaotic,
-    somo,
     ags,
     dolphin-overlay,
     nixpkgs-gpu-screen-recorder-ui,
@@ -94,7 +92,7 @@
     pkgsDreamingCodes = import nixpkgs-dreamingcodes {inherit system;};
     pkgsGpuScreenRecoderUi = import nixpkgs-gpu-screen-recorder-ui {inherit system;};
 
-    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi astal ags dolphin-overlay home-manager nix-index-database rip2 somo zed gauntlet;};
+    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi astal ags dolphin-overlay home-manager nix-index-database rip2 zed gauntlet;};
     commonModules = [
       inputs.nixos-facter-modules.nixosModules.facter
       ./configuration.nix
