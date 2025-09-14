@@ -745,22 +745,6 @@
     },
     "nixpkgs_7": {
       "locked": {
-        "lastModified": 1752596105,
-        "narHash": "sha256-lFNVsu/mHLq3q11MuGkMhUUoSXEdQjCHvpReaGP1S2k=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "dab3a6e781554f965bde3def0aa2fda4eb8f1708",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "nixpkgs-unstable",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
-    "nixpkgs_8": {
-      "locked": {
         "lastModified": 1751637120,
         "narHash": "sha256-xVNy/XopSfIG9c46nRmPaKfH1Gn/56vQ8++xWA8itO4=",
         "owner": "NixOS",
@@ -860,7 +844,6 @@
         "nixpkgs-stable": "nixpkgs-stable",
         "razer-laptop-controller": "razer-laptop-controller",
         "rip2": "rip2",
-        "somo": "somo",
         "vaultix": "vaultix",
         "zed": "zed"
       }
@@ -949,26 +932,6 @@
         "type": "github"
       }
     },
-    "somo": {
-      "inputs": {
-        "nixpkgs": "nixpkgs_7"
-      },
-      "locked": {
-        "dir": "nix",
-        "lastModified": 1757361756,
-        "narHash": "sha256-lFw6uQmJ4YnbNEJ1kJQOxcVfUDzKv8A0Qgu07Mix/S4=",
-        "owner": "theopfr",
-        "repo": "somo",
-        "rev": "79c546a87257dcce1b492f2c7bc3161e9650214e",
-        "type": "github"
-      },
-      "original": {
-        "dir": "nix",
-        "owner": "theopfr",
-        "repo": "somo",
-        "type": "github"
-      }
-    },
     "systems": {
       "locked": {
         "lastModified": 1681028828,
@@ -1003,7 +966,7 @@
       "inputs": {
         "crane": "crane_2",
         "flake-parts": "flake-parts_3",
-        "nixpkgs": "nixpkgs_8",
+        "nixpkgs": "nixpkgs_7",
         "pre-commit-hooks": "pre-commit-hooks",
         "rust-overlay": "rust-overlay_3"
       },
