@@ -48,11 +48,24 @@
     nixPath = lib.mapAttrsToList (key: value: "${key}=${value.to.path}") config.nix.registry;
 
     # Use the Lix package manager
-    package = pkgs.lix;
+    # package = pkgs.lixPackageSets.stable.lix;
 
     # Automtaically pin registries based on inputs
     registry = lib.mapAttrs (_: v: {flake = v;}) inputs;
   };
+
+  # nixpkgs.overlays = [
+  #   (final: prev: {
+  #     inherit
+  #       (final.lixPackageSets.stable)
+  #       nixpkgs-review
+  #       nix-direnv
+  #       nix-eval-jobs
+  #       nix-fast-build
+  #       colmena
+  #       ;
+  #   })
+  # ];
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
