@@ -82,8 +82,8 @@
           gaps_in = 0;
         };
         gestures = {
-          workspace_swipe = true;
-          workspace_swipe_min_fingers = true;
+          # workspace_swipe = true;
+          # workspace_swipe_min_fingers = true;
           workspace_swipe_forever = true;
         };
         windowrulev2 = [
