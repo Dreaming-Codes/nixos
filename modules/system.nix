@@ -43,7 +43,7 @@
     });
   '';
 
-  time.timeZone = "Europe/Rome";
+  time.timeZone = "America/Los_Angeles";
   i18n.defaultLocale = "en_US.UTF-8";
   i18n.extraLocaleSettings = {
     LC_ADDRESS = "it_IT.UTF-8";
