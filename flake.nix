@@ -4,7 +4,6 @@
   nixConfig = {
     extra-substituters = [
       "https://chaotic-nyx.cachix.org"
-      "https://nix-mirror.freetls.fastly.net"
       "https://helix.cachix.org"
       "https://zed.cachix.org"
       "https://cache.garnix.io"
