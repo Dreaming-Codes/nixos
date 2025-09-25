@@ -287,7 +287,6 @@
     in [
       astal.packages.${system}.default
       ags.packages.${system}.default
-      goldwarden
       telegram-desktop
       bitwarden-desktop
       btop
