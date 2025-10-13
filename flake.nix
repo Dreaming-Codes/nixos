@@ -64,6 +64,7 @@
     };
     nixos-facter-modules.url = "github:nix-community/nixos-facter-modules";
     vaultix.url = "github:milieuim/vaultix";
+    winboat.url = "github:TibixDev/winboat";
   };
 
   outputs = inputs @ {
@@ -83,6 +84,7 @@
     astal,
     zed,
     vaultix,
+    winboat,
     ...
   }: let
     system = "x86_64-linux";
@@ -91,7 +93,7 @@
     pkgsDreamingCodes = import nixpkgs-dreamingcodes {inherit system;};
     pkgsGpuScreenRecoderUi = import nixpkgs-gpu-screen-recorder-ui {inherit system;};
 
-    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi astal ags dolphin-overlay home-manager nix-index-database rip2 zed gauntlet;};
+    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi astal ags dolphin-overlay home-manager nix-index-database rip2 zed gauntlet winboat;};
     commonModules = [
       inputs.nixos-facter-modules.nixosModules.facter
       ./configuration.nix

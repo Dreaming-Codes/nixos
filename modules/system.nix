@@ -119,6 +119,11 @@
     # yaak
     libcamera
 
+    impala
+
+    inputs.winboat.packages.${system}.winboat
+    freerdp
+
     signal-desktop
 
     libimobiledevice
