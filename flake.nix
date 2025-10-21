@@ -41,14 +41,6 @@
     };
     nixpkgs-gpu-screen-recorder-ui.url = "github:js6pak/nixpkgs/gpu-screen-recorder-ui/init";
     dolphin-overlay.url = "github:rumboon/dolphin-overlay";
-    astal = {
-      url = "github:aylur/astal";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    ags = {
-      url = "github:aylur/ags";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     nix-alien.url = "github:thiagokokada/nix-alien";
     chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
     home-manager = {
@@ -77,11 +69,9 @@
     rip2,
     home-manager,
     chaotic,
-    ags,
     dolphin-overlay,
     nixpkgs-gpu-screen-recorder-ui,
     nix-index-database,
-    astal,
     zed,
     vaultix,
     winboat,
@@ -93,7 +83,7 @@
     pkgsDreamingCodes = import nixpkgs-dreamingcodes {inherit system;};
     pkgsGpuScreenRecoderUi = import nixpkgs-gpu-screen-recorder-ui {inherit system;};
 
-    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi astal ags dolphin-overlay home-manager nix-index-database rip2 zed gauntlet winboat;};
+    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi dolphin-overlay home-manager nix-index-database rip2 zed gauntlet winboat;};
     commonModules = [
       inputs.nixos-facter-modules.nixosModules.facter
       ./configuration.nix

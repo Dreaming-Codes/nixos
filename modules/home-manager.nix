@@ -2,8 +2,6 @@
   pkgs,
   lib,
   inputs,
-  astal,
-  ags,
   nix-index-database,
   ...
 }: {
@@ -285,8 +283,6 @@
       toggleMic = pkgs.writeShellScriptBin "toggleMic" ./mictoggle.sh;
       toggleMixer = pkgs.writeShellScriptBin "toggleMixer" ./mixer.sh;
     in [
-      astal.packages.${system}.default
-      ags.packages.${system}.default
       telegram-desktop
       bitwarden-desktop
       btop
