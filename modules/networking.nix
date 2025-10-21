@@ -21,6 +21,8 @@
   # networking.useNetworkd = false;
   systemd.network.wait-online.enable = false;
 
+  services.cloudflare-warp.enable = true;
+
   hardware.wirelessRegulatoryDatabase = true;
 
   boot.kernelModules = ["tcp_bbr"];
