@@ -121,6 +121,8 @@
 
     impala
 
+    clang
+
     inputs.winboat.packages.${system}.winboat
     freerdp
 
