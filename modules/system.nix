@@ -170,6 +170,8 @@
     # (callPackage ./davinci-resolve.nix {
     #   studioVariant = true;
     # })
+    #
+    (callPackage ./helium-browser.nix {})
 
     # clipcat
     playerctl
