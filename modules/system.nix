@@ -102,6 +102,11 @@
     package = pkgs.wireshark;
   };
 
+  programs.weylus = {
+    enable = true;
+    openFirewall = true;
+  };
+
   environment.systemPackages = with pkgs; [
     wl-clipboard-rs
     wget
