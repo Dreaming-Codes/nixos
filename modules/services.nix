@@ -25,7 +25,12 @@
     variant = "alt-intl";
   };
 
-  services.printing.enable = true;
+  services.printing = {
+    enable = true;
+    drivers = [
+      pkgs.hplipWithPlugin
+    ];
+  };
 
   # Centralized storage for coredumps (coredumpctl list)
   systemd.coredump.enable = true;
