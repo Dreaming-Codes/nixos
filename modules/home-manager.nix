@@ -108,7 +108,7 @@
           [
             "$mod, mouse_down, exec, hyprctl -q keyword cursor:zoom_factor $(hyprctl getoption cursor:zoom_factor | awk '/^float.*/ {val = $2 * 1.2; if (val < 1) val=1; print val}')"
             "$mod, mouse_up, exec, hyprctl -q keyword cursor:zoom_factor $(hyprctl getoption cursor:zoom_factor | awk '/^float.*/ {val = $2 * 0.8; if (val < 1) val=1; print val}')"
-            "$mod, W, exec, google-chrome-stable"
+            "$mod, W, exec, helium-browser"
             "$mod, SPACE, exec, wezterm"
             ", Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m active"
             "SHIFT, Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m region"
