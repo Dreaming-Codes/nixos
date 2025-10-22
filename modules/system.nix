@@ -120,6 +120,7 @@
     libcamera
 
     impala
+    hplipWithPlugin
 
     clang
     clang-tools
