@@ -154,8 +154,6 @@
 
     gimp3-with-plugins
 
-    godot
-
     fvm
     obsidian
 
