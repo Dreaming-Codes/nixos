@@ -5,6 +5,17 @@
   inputs,
   ...
 }: {
+  nixpkgs.overlays = [
+    (final: prev: {
+      inherit
+        (prev.lixPackageSets.stable)
+        nixpkgs-review
+        nix-eval-jobs
+        nix-fast-build
+        colmena
+        ;
+    })
+  ];
   nix = rec {
     # Channels are dead, long live flakes
     channel.enable = false;
@@ -48,7 +59,7 @@
     nixPath = lib.mapAttrsToList (key: value: "${key}=${value.to.path}") config.nix.registry;
 
     # Use the Lix package manager
-    package = pkgs.lix;
+    package = pkgs.lixPackageSets.stable.lix;
 
     # Automtaically pin registries based on inputs
     registry = lib.mapAttrs (_: v: {flake = v;}) inputs;
