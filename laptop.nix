@@ -89,6 +89,10 @@
     package = config.boot.kernelPackages.nvidiaPackages.stable;
   };
 
+  services.udev.packages = with pkgs; [
+    nrf-udev
+  ];
+
   hardware.nvidia.prime = {
     offload = {
       enable = true;

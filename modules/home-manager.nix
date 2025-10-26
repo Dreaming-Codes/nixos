@@ -353,6 +353,11 @@
       recursive = true;
     };
 
+    home.file."./.local/lib/wireshark/extcap" = {
+      source = ./extcap;
+      recursive = true;
+    };
+
     programs = {
       gpg = {
         enable = true;

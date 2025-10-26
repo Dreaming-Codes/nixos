@@ -12,14 +12,6 @@
   boot.loader.limine.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  services = {
-    udev = {
-      extraRules = ''
-        SUBSYSTEM=="tty", ATTRS{idVendor}=="1915", ATTRS{idProduct}=="522a", ATTRS{serial}=="84014353616C81E9", GROUP="wireshark", MODE="0666"
-      '';
-    };
-  };
-
   imports = [
     inputs.gauntlet.nixosModules.default
   ];
@@ -127,6 +119,8 @@
     impala
     hplipWithPlugin
 
+    uv
+
     clang
     clang-tools
 
@@ -211,8 +205,13 @@
     kotlin
 
     zig
-    python313
-    python313Packages.pyserial
+    (python311.withPackages (
+      ps:
+        with ps; [
+          pyserial
+          psutil
+        ]
+    ))
     node-gyp
 
     prismlauncher
