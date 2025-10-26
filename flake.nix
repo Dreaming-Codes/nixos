@@ -4,13 +4,11 @@
   nixConfig = {
     extra-substituters = [
       "https://chaotic-nyx.cachix.org"
-      "https://zed.cachix.org"
       "https://cache.garnix.io"
       "https://numtide.cachix.org"
     ];
     extra-trusted-public-keys = [
       "chaotic-nyx.cachix.org-1:HfnXSw4pj95iI/n17rIDy40agHj12WfF+Gqk6SonIT8="
-      "zed.cachix.org-1:/pHQ6dpMsAZk2DiP4WCL0p9YDNKWj2Q5FL20bNmw1cU="
       "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
       "numtide.cachix.org-1:2ps1kLBUWjxIneOy1Ik6cQjb41X0iXVXeHigGmycPPE="
     ];
@@ -21,10 +19,6 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05";
     nixpkgs-dreamingcodes.url = "github:Dreaming-Codes/nixpkgs/master";
-    zed = {
-      url = "github:zed-industries/zed";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     gauntlet = {
       url = "github:project-gauntlet/gauntlet";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -67,7 +61,6 @@
     dolphin-overlay,
     nixpkgs-gpu-screen-recorder-ui,
     nix-index-database,
-    zed,
     vaultix,
     winboat,
     ...
@@ -78,7 +71,7 @@
     pkgsDreamingCodes = import nixpkgs-dreamingcodes {inherit system;};
     pkgsGpuScreenRecoderUi = import nixpkgs-gpu-screen-recorder-ui {inherit system;};
 
-    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi dolphin-overlay home-manager nix-index-database rip2 zed gauntlet winboat;};
+    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi dolphin-overlay home-manager nix-index-database rip2 gauntlet winboat;};
     commonModules = [
       inputs.nixos-facter-modules.nixosModules.facter
       ./configuration.nix
