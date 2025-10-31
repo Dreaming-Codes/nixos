@@ -118,6 +118,8 @@
     impala
     hplipWithPlugin
 
+    orca-slicer
+
     uv
 
     clang
