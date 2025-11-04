@@ -125,7 +125,7 @@
     clang
     clang-tools
 
-    inputs.winboat.packages.${system}.winboat
+    winboat
     freerdp
 
     signal-desktop
