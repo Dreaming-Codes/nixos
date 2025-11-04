@@ -82,7 +82,7 @@
         ++ [
           {config.facter.reportPath = ./facter-dreamingdesk.json;}
           ./desktop.nix
-          ./modules/virtualization
+          # ./modules/virtualization
           {networking.hostName = "DreamingDesk";}
         ];
     };
