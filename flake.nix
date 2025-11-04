@@ -24,10 +24,6 @@
       url = "github:project-gauntlet/gauntlet";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    rip2 = {
-      url = "github:MilesCranmer/rip2";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     nix-index-database = {
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";

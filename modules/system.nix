@@ -3,7 +3,6 @@
   pkgsStable,
   pkgsDreamingCodes,
   dolphin-overlay,
-  rip2,
   inputs,
   self,
   ...
@@ -102,7 +101,7 @@
     wl-clipboard-rs
     wget
     any-nix-shell
-    inputs.nix-alien.packages.${system}.nix-alien
+    inputs.nix-alien.packages.${stdenv.hostPlatform.system}.nix-alien
     gcc
     openssl
     pkg-config
@@ -219,7 +218,6 @@
 
     pkgsDreamingCodes.expo-orbit
 
-    rip2.packages.${system}.default
     zed-editor
 
     distrobox
