@@ -278,7 +278,8 @@
   };
 
   # Allow GTK applications to show an appmenu on KDE
-  chaotic.appmenu-gtk3-module.enable = true;
+  # Broken: 11/03/2025
+  # chaotic.appmenu-gtk3-module.enable = true;
 
   custom.misc.sdks = {
     enable = true;
