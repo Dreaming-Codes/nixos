@@ -197,7 +197,7 @@
 
     mullvad-browser
     mullvad-vpn
-    pkgsStable.frida-tools
+    frida-tools
 
     # Java
     zulu23
