@@ -19,7 +19,6 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05";
     nixpkgs-davinci.url = "github:nixos/nixpkgs/d457818da697aa7711ff3599be23ab8850573a46";
-    nixpkgs-dreamingcodes.url = "github:Dreaming-Codes/nixpkgs/master";
     gauntlet = {
       url = "github:project-gauntlet/gauntlet";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -49,7 +48,6 @@
     gauntlet,
     nixpkgs,
     nixpkgs-stable,
-    nixpkgs-dreamingcodes,
     razer-laptop-controller,
     rip2,
     home-manager,
@@ -63,10 +61,9 @@
     system = "x86_64-linux";
     pkgs = import nixpkgs {inherit system;};
     pkgsStable = import nixpkgs-stable {inherit system;};
-    pkgsDreamingCodes = import nixpkgs-dreamingcodes {inherit system;};
     pkgsGpuScreenRecoderUi = import nixpkgs-gpu-screen-recorder-ui {inherit system;};
 
-    specialArgs = {inherit inputs pkgsStable pkgsDreamingCodes pkgsGpuScreenRecoderUi dolphin-overlay home-manager nix-index-database rip2 gauntlet;};
+    specialArgs = {inherit inputs pkgsStable pkgsGpuScreenRecoderUi dolphin-overlay home-manager nix-index-database rip2 gauntlet;};
     commonModules = [
       inputs.nixos-facter-modules.nixosModules.facter
       ./configuration.nix
