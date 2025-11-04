@@ -1,7 +1,6 @@
 {
   pkgs,
   pkgsStable,
-  pkgsDreamingCodes,
   dolphin-overlay,
   inputs,
   self,
@@ -215,8 +214,6 @@
     node-gyp
 
     prismlauncher
-
-    pkgsDreamingCodes.expo-orbit
 
     zed-editor
 
