@@ -7,16 +7,16 @@
   copyDesktopItems,
 }: let
   pname = "helium-browser";
-  version = "0.5.8.1";
+  version = "0.6.3.1";
 
   architectures = {
     "x86_64-linux" = {
       arch = "x86_64";
-      hash = "sha256-d8kwLEU6qgEgp7nlEwdfRevB1JrbEKHRe8+GhGpGUig=";
+      hash = "sha256-N7JpLLOdsnYuzYreN1iaHI992MR2SuXTmXHfa6fd1UU=";
     };
     "aarch64-linux" = {
       arch = "arm64";
-      hash = "sha256-KfQlOT4mMKQ40B8hWl+GlmRNVhZnEln59ptfXN0XCLc=";
+      hash = "sha256-B81KARcFmMCRHXSy/6YNSEZ1foYQfD1jLNHTbDYRuK4=";
     };
   };
 
