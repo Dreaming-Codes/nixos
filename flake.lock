@@ -460,6 +460,22 @@
         "type": "github"
       }
     },
+    "nixpkgs-davinci": {
+      "locked": {
+        "lastModified": 1758410083,
+        "narHash": "sha256-f9Di87TN2FiOCrC0usE0nO/fMILJAh/7q4WRdrAFjoY=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "d457818da697aa7711ff3599be23ab8850573a46",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "d457818da697aa7711ff3599be23ab8850573a46",
+        "type": "github"
+      }
+    },
     "nixpkgs-dreamingcodes": {
       "locked": {
         "lastModified": 1749217968,
@@ -725,6 +741,7 @@
         "nix-index-database": "nix-index-database_2",
         "nixos-facter-modules": "nixos-facter-modules",
         "nixpkgs": "nixpkgs_4",
+        "nixpkgs-davinci": "nixpkgs-davinci",
         "nixpkgs-dreamingcodes": "nixpkgs-dreamingcodes",
         "nixpkgs-gpu-screen-recorder-ui": "nixpkgs-gpu-screen-recorder-ui",
         "nixpkgs-stable": "nixpkgs-stable",

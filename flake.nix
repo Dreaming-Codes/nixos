@@ -18,6 +18,7 @@
     # NixOS official package source, using the nixos-unstable branch here
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs-davinci.url = "github:nixos/nixpkgs/d457818da697aa7711ff3599be23ab8850573a46";
     nixpkgs-dreamingcodes.url = "github:Dreaming-Codes/nixpkgs/master";
     gauntlet = {
       url = "github:project-gauntlet/gauntlet";
