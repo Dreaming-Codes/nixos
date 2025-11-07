@@ -19,6 +19,10 @@
   inputs = {
     # NixOS official package source, using the nixos-unstable branch here
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nur = {
+      url = "github:nix-community/NUR";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     # nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05";
     nixpkgs-davinci.url = "github:nixos/nixpkgs/d457818da697aa7711ff3599be23ab8850573a46";
     gauntlet = {
@@ -49,6 +53,7 @@
     gauntlet,
     nixpkgs,
     # nixpkgs-stable,
+    nur,
     razer-laptop-controller,
     home-manager,
     chaotic,
@@ -74,6 +79,7 @@
     commonModules = [
       inputs.nixos-facter-modules.nixosModules.facter
       ./configuration.nix
+      nur.modules.nixos.default
       home-manager.nixosModules.home-manager
       chaotic.nixosModules.default
     ];

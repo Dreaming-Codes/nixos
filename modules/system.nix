@@ -116,7 +116,7 @@
     impala
     hplipWithPlugin
 
-    orca-slicer
+    # orca-slicer
 
     uv
 
@@ -162,7 +162,7 @@
     #   studioVariant = true;
     # })
     #
-    (callPackage ./helium-browser.nix {})
+    nur.repos.forkprince.helium-nightly
 
     # clipcat
     playerctl
