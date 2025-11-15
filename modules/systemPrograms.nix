@@ -38,7 +38,6 @@
     libgcc
     gcc
     libepoxy
-    libcef
     gmp
     gst_all_1.gst-plugins-base
     gst_all_1.gst-plugins-ugly
