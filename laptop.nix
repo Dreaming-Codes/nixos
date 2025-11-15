@@ -136,12 +136,12 @@
           hardware.nvidia.open = lib.mkForce true;
         };
 
-      "${name}-proprietary".configuration =
-        cfg
-        // {
-          system.nixos.tags = cfg.system.nixos.tags ++ ["proprietary"];
-          hardware.nvidia.open = lib.mkForce false;
-        };
+      # "${name}-proprietary".configuration =
+      #   cfg
+      #   // {
+      #     system.nixos.tags = cfg.system.nixos.tags ++ ["proprietary"];
+      #     hardware.nvidia.open = lib.mkForce false;
+      #   };
     };
 
     # Merge all generated variants
