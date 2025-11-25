@@ -200,8 +200,8 @@
     frida-tools
 
     # Java
-    zulu23
-    kotlin
+    # zulu23
+    # kotlin
 
     zig
     (python311.withPackages (
@@ -220,8 +220,8 @@
     distrobox
     boxbuddy
 
-    jdt-language-server
-    kotlin-language-server
+    # jdt-language-server
+    # kotlin-language-server
     typescript-language-server
     # dprint
 
@@ -286,9 +286,9 @@
     links = {
       nodejs = pkgs.nodejs;
       jdk = pkgs.temurin-bin;
-      kotlin = pkgs.kotlin;
+      # kotlin = pkgs.kotlin;
       jdk17 = pkgs.temurin-bin-17;
-      jdk23 = pkgs.zulu23;
+      # jdk23 = pkgs.zulu23;
     };
   };
 
