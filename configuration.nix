@@ -21,7 +21,7 @@
       ./modules/locales.nix
       ./modules/hardware.nix
       ./modules/boot.nix
-      ./modules/davinci.nix
+      # ./modules/davinci.nix
     ]
     ++ (
       if builtins.pathExists /etc/nixos/secrets/github.nix
