@@ -12,9 +12,11 @@
     networkmanager = {
       enable = true;
       unmanaged = ["lo" "docker0" "virbr0"];
+      dns = "systemd-resolved";
       wifi = {
-        backend = "iwd";
-        powersave = false;
+        backend = "wpa_supplicant";
+        powersave = true;
+        macAddress = "stable-ssid";
       };
     };
   };
