@@ -123,7 +123,6 @@
     clang
     clang-tools
 
-    winboat
     freerdp
 
     signal-desktop
