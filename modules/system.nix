@@ -190,6 +190,7 @@
     (spotify-player.override {
       withAudioBackend = "pulseaudio";
     })
+    spotify
     mission-center
 
     xwayland-satellite
