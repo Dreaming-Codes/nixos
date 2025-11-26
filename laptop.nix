@@ -32,7 +32,8 @@
           "AQ_DRM_DEVICES,/dev/dri/card0:/dev/dri/card1"
         ];
         monitor = [
-          "eDP-1, 1920x1080@60, 0x0, 1"
+          "DP-2, 2560x1440@179.84, 0x0, 1"
+          "eDP-1, 1920x1080@60, 0x1440, 1"
         ];
       };
     };
