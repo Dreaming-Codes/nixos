@@ -247,7 +247,6 @@
     kdePackages.kimageformats
     kdePackages.kio-admin
     libinput-gestures
-    plasma-plugin-blurredwallpaper
     resvg
     sshfs
     xdg-desktop-portal
