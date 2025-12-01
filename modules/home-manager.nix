@@ -207,7 +207,7 @@
 
     services.wpaperd.enable = true;
     services.wpaperd.settings = {
-      default = {
+      any = {
         duration = "30m";
         mode = "center";
         sorting = "random";
