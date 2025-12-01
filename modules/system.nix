@@ -123,8 +123,6 @@
     clang
     clang-tools
 
-    freerdp
-
     signal-desktop
 
     libimobiledevice
