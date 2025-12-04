@@ -167,10 +167,10 @@
         '';
         boot.blacklistedKernelModules = ["nouveau" "nvidia" "nvidia_drm" "nvidia_modeset"];
       };
-      # Default proprietary variant (since base system is open by default)
-      default-proprietary.configuration = {
-        system.nixos.tags = ["default" "proprietary"];
-        hardware.nvidia.open = lib.mkForce false;
-      };
+      # # Default proprietary variant (since base system is open by default)
+      # default-proprietary.configuration = {
+      #   system.nixos.tags = ["default" "proprietary"];
+      #   hardware.nvidia.open = lib.mkForce false;
+      # };
     };
 }
