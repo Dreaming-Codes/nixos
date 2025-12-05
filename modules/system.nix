@@ -113,7 +113,6 @@
     # yaak
     libcamera
 
-    impala
     hplipWithPlugin
 
     # orca-slicer
