@@ -2,19 +2,12 @@
   services.resolved.enable = true;
   networking = {
     useDHCP = false;
-    wireless.iwd = {
-      enable = true;
-      settings = {
-        General.AddressRandomization = "once";
-        General.AddressRandomizationRange = "full";
-      };
-    };
+    wireless.enable = true;
     networkmanager = {
       enable = true;
       unmanaged = ["lo" "docker0" "virbr0"];
       dns = "systemd-resolved";
       wifi = {
-        backend = "wpa_supplicant";
         powersave = true;
         macAddress = "stable-ssid";
       };
