@@ -40,6 +40,8 @@
   security.sudo-rs.enable = true;
   security.sudo-rs.wheelNeedsPassword = false;
   security.pam.services.login.enableKwallet = true;
+  # fscrypt for home folder encryption
+  security.pam.enableFscrypt = true;
   security.pam.loginLimits = [
     {
       domain = "*";
