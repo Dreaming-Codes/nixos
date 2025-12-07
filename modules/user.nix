@@ -3,6 +3,19 @@
   pkgs,
   ...
 }: {
+  security = {
+    # auto unlock kwallet on boot
+    pam = {
+      services = {
+        "dreamingcodes" = {
+          kwallet = {
+            enable = true;
+            package = pkgs.kdePackages.kwallet-pam;
+          };
+        };
+      };
+    };
+  };
   users.users.dreamingcodes = {
     isNormalUser = true;
     description = "DreamingCodes";
