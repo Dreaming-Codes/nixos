@@ -215,6 +215,9 @@
 
     zed-editor
 
+    ripgrep
+    ripgrep-all
+
     distrobox
     boxbuddy
 
