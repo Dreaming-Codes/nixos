@@ -1,6 +1,5 @@
 {
   pkgs,
-  pkgsStable,
   dolphin-overlay,
   inputs,
   self,
