@@ -57,6 +57,15 @@
           return 1
         fi
       fi
+      # Re-stage files that were previously staged
+      if [ -n "$STAGED_FILES" ]; then
+        echo "Re-staging previously staged files..."
+        echo "$STAGED_FILES" | while IFS= read -r file; do
+          if [ -n "$file" ] && [ -e "$file" ]; then
+            git add "$file"
+          fi
+        done
+      fi
       return 0
     }
 
@@ -69,6 +78,7 @@
       case "$response" in
         [yY][eE][sS]|[yY])
           echo "Stashing changes..."
+          STAGED_FILES=$(git diff --cached --name-only)
           git stash push -m "update-system auto-stash"
           STASHED=1
           ;;
