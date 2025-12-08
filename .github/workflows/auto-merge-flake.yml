@@ -1,0 +1,56 @@
+name: Auto-merge Flake Update
+
+on:
+  check_suite:
+    types: [completed]
+
+jobs:
+  auto-merge:
+    # Only run for the auto-update-flake branch
+    if: github.event.check_suite.head_branch == 'auto-update-flake'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Find PR
+        id: find_pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get PR info including head repository
+          PR_DATA=$(gh pr list --head auto-update-flake --json number,headRepositoryOwner --jq '.[0]')
+          PR_NUMBER=$(echo "$PR_DATA" | jq -r '.number')
+          PR_OWNER=$(echo "$PR_DATA" | jq -r '.headRepositoryOwner.login')
+          
+          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
+            echo "No PR found for branch auto-update-flake"
+            echo "pr_exists=false" >> $GITHUB_OUTPUT
+          elif [ "$PR_OWNER" != "${{ github.repository_owner }}" ]; then
+            echo "PR is from a fork (owner: $PR_OWNER), skipping auto-merge"
+            echo "pr_exists=false" >> $GITHUB_OUTPUT
+          else
+            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+            echo "pr_exists=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check result and merge or notify
+        if: steps.find_pr.outputs.pr_exists == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER=${{ steps.find_pr.outputs.pr_number }}
+          CONCLUSION="${{ github.event.check_suite.conclusion }}"
+          
+          echo "Check suite concluded with: $CONCLUSION"
+          
+          if [ "$CONCLUSION" = "success" ]; then
+            echo "All checks passed! Merging PR #$PR_NUMBER..."
+            gh pr merge $PR_NUMBER --squash --delete-branch
+          else
+            echo "Checks failed. Notifying owner..."
+            gh pr comment $PR_NUMBER --body "@${{ github.repository_owner }} Garnix CI failed with conclusion: \`$CONCLUSION\`. Please review the errors and fix them manually."
+          fi
