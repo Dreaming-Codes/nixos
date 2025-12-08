@@ -217,6 +217,7 @@
 
     ripgrep
     ripgrep-all
+    rq
 
     nps
 
