@@ -306,6 +306,10 @@
     QT_QPA_PLATFORMTHEME = "kde";
   };
 
+  environment.sessionVariables = {
+    NIX_PACKAGE_SEARCH_EXPERIMENTAL = true;
+  };
+
   services.mullvad-vpn.enable = true;
 
   services.fwupd.enable = true;
