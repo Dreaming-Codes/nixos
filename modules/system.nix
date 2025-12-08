@@ -307,7 +307,7 @@
   };
 
   environment.sessionVariables = {
-    NIX_PACKAGE_SEARCH_EXPERIMENTAL = true;
+    NIX_PACKAGE_SEARCH_EXPERIMENTAL = "true";
   };
 
   services.mullvad-vpn.enable = true;
