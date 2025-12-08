@@ -88,7 +88,7 @@
     FLAKE_DIR="/home/dreamingcodes/.nixos"
     CACHE_FILE="/var/lib/nixos-config-hash"
     if [[ -d "$FLAKE_DIR/.git" ]]; then
-      HASH=$(${pkgs.gitFull}/bin/git -C "$FLAKE_DIR" ls-files -s | ${pkgs.git}/bin/git hash-object --stdin)
+      HASH=$(${pkgs.gitFull}/bin/git -C "$FLAKE_DIR" ls-files -s | ${pkgs.gitFull}/bin/git hash-object --stdin)
       echo "$HASH" > "$CACHE_FILE"
     fi
   '';
