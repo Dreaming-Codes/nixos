@@ -83,6 +83,16 @@
     fi
   '';
 
+  # Store config hash after successful activation for update-system to check
+  system.activationScripts.storeConfigHash = ''
+    FLAKE_DIR="/home/dreamingcodes/.nixos"
+    CACHE_FILE="/var/lib/nixos-config-hash"
+    if [[ -d "$FLAKE_DIR/.git" ]]; then
+      HASH=$(${pkgs.gitFull}/bin/git -C "$FLAKE_DIR" ls-files -s | ${pkgs.git}/bin/git hash-object --stdin)
+      echo "$HASH" > "$CACHE_FILE"
+    fi
+  '';
+
   # Improved nix rebuild UX & cleanup timer
   programs.nh = {
     flake = "/home/dreamingcodes/.nixos/";

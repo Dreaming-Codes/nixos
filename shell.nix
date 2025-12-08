@@ -1,6 +1,41 @@
-{pkgs ? import <nixpkgs> {}}:
-let
-  update-system = pkgs.writeShellScriptBin "update-system" ''
+{pkgs ? import <nixpkgs> {}}: let
+  system-current = pkgs.writeShellScriptBin "system-current" ''
+    CACHE_FILE="/var/lib/nixos-config-hash"
+
+    if [ ! -f "$CACHE_FILE" ]; then
+      echo "No previous switch recorded"
+      exit 1
+    fi
+
+    CURRENT_HASH=$(git ls-files -s | git hash-object --stdin)
+    STORED_HASH=$(cat "$CACHE_FILE")
+
+    if [ "$CURRENT_HASH" = "$STORED_HASH" ]; then
+      echo "System is up to date"
+      exit 0
+    else
+      echo "System is outdated"
+      exit 1
+    fi
+  '';
+
+  update-system-common = pkgs.writeShellScriptBin "update-system-common" ''
+    MODE="$1"
+
+    if [ "$MODE" != "switch" ] && [ "$MODE" != "boot" ]; then
+      echo "Usage: update-system-common <switch|boot>"
+      exit 1
+    fi
+
+    apply_if_needed() {
+      if ${system-current}/bin/system-current > /dev/null 2>&1; then
+        echo "System is already up to date! Skipping $MODE."
+      else
+        echo "Configuration changed. Running $MODE..."
+        nh os "$MODE" -- --impure --accept-flake-config
+      fi
+    }
+
     restore_stash() {
       echo "Restoring stashed changes..."
       if ! git stash pop 2>&1; then
@@ -38,7 +73,7 @@ let
           STASHED=1
           ;;
         *)
-          echo "Please commit or stash your changes and run 'update-system' again."
+          echo "Please commit or stash your changes and try again."
           exit 1
           ;;
       esac
@@ -52,8 +87,7 @@ let
           exit 1
         fi
       fi
-      echo "Switching system..."
-      nh os switch -- --impure --accept-flake-config
+      apply_if_needed
     else
       if git diff --name-only --diff-filter=U | grep -q .; then
         echo "Merge conflicts detected!"
@@ -75,11 +109,10 @@ let
                 exit 1
               fi
             fi
-            echo "Switching system..."
-            nh os switch -- --impure --accept-flake-config
+            apply_if_needed
             ;;
           *)
-            echo "Please resolve the conflicts manually and run 'update-system' again."
+            echo "Please resolve the conflicts manually and try again."
             exit 1
             ;;
         esac
@@ -89,7 +122,15 @@ let
       fi
     fi
   '';
+
+  update-system = pkgs.writeShellScriptBin "update-system" ''
+    ${update-system-common}/bin/update-system-common switch
+  '';
+
+  update-system-boot = pkgs.writeShellScriptBin "update-system-boot" ''
+    ${update-system-common}/bin/update-system-common boot
+  '';
 in
-pkgs.mkShell {
-  packages = [pkgs.nil pkgs.nixd pkgs.nixfmt update-system];
-}
+  pkgs.mkShell {
+    packages = [pkgs.nil pkgs.nixd pkgs.nixfmt system-current update-system update-system-boot];
+  }
