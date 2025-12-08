@@ -52,5 +52,5 @@ jobs:
             gh pr merge $PR_NUMBER --squash --delete-branch
           else
             echo "Checks failed. Notifying owner..."
-            gh pr comment $PR_NUMBER --body "@${{ github.repository_owner }} Garnix CI failed with conclusion: \`$CONCLUSION\`. Please review the errors and fix them manually."
+            gh pr comment $PR_NUMBER --body "@${{ github.repository_owner }} @copilot Garnix CI failed with conclusion: \`$CONCLUSION\`. Please review the errors and fix them."
           fi
