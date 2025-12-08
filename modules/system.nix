@@ -218,6 +218,8 @@
     ripgrep
     ripgrep-all
 
+    nps
+
     distrobox
     boxbuddy
 
