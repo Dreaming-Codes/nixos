@@ -33,10 +33,10 @@
     enable = true;
     memoryPercent = 90;
   };
-  # services.scx = {
-  #   enable = true;
-  #   scheduler = "scx_bpfland";
-  #   package = pkgs.scx.rustscheds;
-  # };
+  services.scx = {
+    enable = true;
+    scheduler = "scx_bpfland";
+    package = pkgs.scx.rustscheds;
+  };
   boot.kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-latest;
 }
