@@ -69,6 +69,18 @@
       return 0
     }
 
+    # Check if remote has changes
+    echo "Fetching remote..."
+    git fetch
+    LOCAL=$(git rev-parse HEAD)
+    REMOTE=$(git rev-parse @{u} 2>/dev/null)
+
+    if [ "$LOCAL" = "$REMOTE" ]; then
+      echo "Already up to date with remote."
+      apply_if_needed
+      exit 0
+    fi
+
     # Check for unstaged/uncommitted changes
     if ! git diff --quiet || ! git diff --cached --quiet; then
       echo "You have uncommitted changes:"
