@@ -4,6 +4,8 @@
   inputs,
   ...
 }: {
+  nixpkgs.overlays = [inputs.nix-cachyos-kernel.overlays.default];
+
   imports =
     [
       ./modules/networking.nix

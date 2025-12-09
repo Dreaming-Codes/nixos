@@ -86,24 +86,8 @@
     # accessible via `nvidia-settings`.
     nvidiaSettings = false;
 
-    # Optionally, you may need to select the appropriate driver version for your specific GPU.
-    # package = config.boot.kernelPackages.nvidiaPackages.stable;
-    # FIXME: delete following fix and uncomment line on top of this once https://github.com/nixos/nixpkgs/issues/467145 is fixed
-    package =
-      config.boot.kernelPackages.nvidiaPackages.stable
-      // {
-        open = config.boot.kernelPackages.nvidiaPackages.stable.open.overrideAttrs (old: {
-          patches =
-            (old.patches or [])
-            ++ [
-              (pkgs.fetchpatch {
-                name = "get_dev_pagemap.patch";
-                url = "https://github.com/NVIDIA/open-gpu-kernel-modules/commit/3e230516034d29e84ca023fe95e284af5cd5a065.patch";
-                hash = "sha256-BhL4mtuY5W+eLofwhHVnZnVf0msDj7XBxskZi8e6/k8=";
-              })
-            ];
-        });
-      };
+    # FIXME: revert to stable nvidia driver once https://github.com/nixos/nixpkgs/issues/467814 is fixed
+    package = config.boot.kernelPackages.nvidiaPackages.beta;
   };
 
   services.udev.packages = with pkgs; [
