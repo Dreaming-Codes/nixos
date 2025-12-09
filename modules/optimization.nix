@@ -6,7 +6,7 @@
   services.ananicy = {
     enable = true;
     package = pkgs.ananicy-cpp;
-    rulesProvider = pkgs.ananicy-rules-cachyos_git;
+    rulesProvider = pkgs.ananicy-rules-cachyos;
   };
   systemd.oomd = {
     enable = true;
@@ -38,5 +38,5 @@
   #   scheduler = "scx_bpfland";
   #   package = pkgs.scx.rustscheds;
   # };
-  boot.kernelPackages = pkgs.linuxPackages_cachyos;
+  boot.kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-latest;
 }

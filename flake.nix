@@ -3,13 +3,11 @@
 
   nixConfig = {
     extra-substituters = [
-      "https://chaotic-nyx.cachix.org"
       "https://cache.garnix.io"
       "https://numtide.cachix.org"
       "https://nix-community.cachix.org"
     ];
     extra-trusted-public-keys = [
-      "chaotic-nyx.cachix.org-1:HfnXSw4pj95iI/n17rIDy40agHj12WfF+Gqk6SonIT8="
       "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       "numtide.cachix.org-1:2ps1kLBUWjxIneOy1Ik6cQjb41X0iXVXeHigGmycPPE="
@@ -19,6 +17,7 @@
   inputs = {
     # NixOS official package source, using the nixos-unstable branch here
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nix-cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel";
     nur = {
       url = "github:nix-community/NUR";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -35,7 +34,6 @@
     };
     dolphin-overlay.url = "github:rumboon/dolphin-overlay";
     nix-alien.url = "github:thiagokokada/nix-alien";
-    chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -56,7 +54,6 @@
     nur,
     razer-laptop-controller,
     home-manager,
-    chaotic,
     dolphin-overlay,
     nix-index-database,
     vaultix,
@@ -81,7 +78,6 @@
       ./configuration.nix
       nur.modules.nixos.default
       home-manager.nixosModules.home-manager
-      chaotic.nixosModules.default
     ];
   in {
     nixosConfigurations.DreamingDesk = nixpkgs.lib.nixosSystem {
