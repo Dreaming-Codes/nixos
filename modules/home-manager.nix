@@ -279,6 +279,22 @@
       };
     };
 
+    # KWallet daemon for auto-unlock with Hyprland
+    systemd.user.services.kwallet-pam = {
+      Unit = {
+        Description = "KWallet PAM Auto-unlock";
+        PartOf = ["hyprland-session.target"];
+        After = ["hyprland-session.target"];
+      };
+      Install = {
+        WantedBy = ["hyprland-session.target"];
+      };
+      Service = {
+        ExecStart = "${pkgs.kdePackages.kwallet-pam}/libexec/pam_kwallet_init";
+        Type = "oneshot";
+      };
+    };
+
     home.packages = with pkgs; let
       toggleMic = pkgs.writeShellScriptBin "toggleMic" ./mictoggle.sh;
       toggleMixer = pkgs.writeShellScriptBin "toggleMixer" ./mixer.sh;
