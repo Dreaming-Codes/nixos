@@ -268,6 +268,11 @@
         "org.freedesktop.impl.portal.FileChooser" = "kde";
         "org.freedesktop.impl.portal.OpenURI" = "kde";
       };
+      plasma = {
+        default = ["kde" "gtk"];
+        "org.freedesktop.impl.portal.FileChooser" = "kde";
+        "org.freedesktop.impl.portal.OpenURI" = "kde";
+      };
     };
 
     extraPortals = with pkgs; [

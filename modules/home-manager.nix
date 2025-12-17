@@ -214,8 +214,23 @@
         path = "~/Pictures/wallpaper";
       };
     };
+    systemd.user.services.wpaperd = {
+      Unit = {
+        PartOf = lib.mkForce ["hyprland-session.target"];
+        After = lib.mkForce ["hyprland-session.target"];
+      };
+      Install.WantedBy = lib.mkForce ["hyprland-session.target"];
+    };
 
     services.swaync.enable = true;
+    systemd.user.services.swaync = {
+      Unit = {
+        PartOf = lib.mkForce ["hyprland-session.target"];
+        After = lib.mkForce ["hyprland-session.target"];
+      };
+      Install.WantedBy = lib.mkForce ["hyprland-session.target"];
+    };
+
     services.hypridle.enable = true;
     services.hypridle.settings = {
       general = {
@@ -244,6 +259,13 @@
           on-timeout = "systemctl suspend";
         }
       ];
+    };
+    systemd.user.services.hypridle = {
+      Unit = {
+        PartOf = lib.mkForce ["hyprland-session.target"];
+        After = lib.mkForce ["hyprland-session.target"];
+      };
+      Install.WantedBy = lib.mkForce ["hyprland-session.target"];
     };
 
     # systemd.user.services.clipcat = {
