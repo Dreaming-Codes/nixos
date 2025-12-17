@@ -77,8 +77,6 @@
   fonts.packages = with pkgs; [nerd-fonts.fira-code];
 
   # nixpkgs.overlays = [dolphin-overlay.overlays.default];
-  systemd.user.services.gpu-screen-recorder.wantedBy = ["default.target"];
-  systemd.user.services.gpu-screen-recorder-ui.wantedBy = ["default.target"];
 
   programs.fish.enable = true;
 
