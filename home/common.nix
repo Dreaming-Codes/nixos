@@ -22,17 +22,17 @@
 
   # Config file links shared by all users
   home.file."./.config/zellij" = {
-    source = ../zellij;
+    source = ../config/zellij;
     recursive = true;
   };
 
   home.file."./.config/wezterm" = {
-    source = ../wezterm;
+    source = ../config/wezterm;
     recursive = true;
   };
 
   home.file."./.config/helix" = {
-    source = ../helix;
+    source = ../config/helix;
     recursive = true;
   };
 

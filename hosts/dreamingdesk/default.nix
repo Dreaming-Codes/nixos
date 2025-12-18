@@ -7,7 +7,7 @@
   ...
 }: {
   imports = [
-    ./modules/sddm
+    ../../modules/desktop/sddm
   ];
 
   # Riccardo user (desktop only)
@@ -72,7 +72,7 @@
   home-manager.users.riccardo = {
     imports = [
       nix-index-database.homeModules.nix-index
-      ./modules/home-manager/common.nix
+      ../../home/common.nix
     ];
     home.stateVersion = "24.11";
   };
@@ -172,9 +172,7 @@
   hardware.graphics = {
     # Mesa
     enable = true;
-
     enable32Bit = true;
-
     extraPackages = with pkgs; [rocmPackages.clr.icd amf];
   };
 

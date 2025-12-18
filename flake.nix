@@ -22,7 +22,6 @@
       url = "github:nix-community/NUR";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05";
     nixpkgs-davinci.url = "github:nixos/nixpkgs/d457818da697aa7711ff3599be23ab8850573a46";
     gauntlet = {
       url = "github:project-gauntlet/gauntlet";
@@ -48,68 +47,39 @@
 
   outputs = inputs @ {
     self,
-    gauntlet,
     nixpkgs,
-    # nixpkgs-stable,
-    nur,
-    razer-laptop-controller,
-    home-manager,
-    dolphin-overlay,
-    nix-index-database,
     vaultix,
+    razer-laptop-controller,
     ...
   }: let
     system = "x86_64-linux";
     pkgs = import nixpkgs {inherit system;};
-    # pkgsStable = import nixpkgs-stable {inherit system;};
-
-    specialArgs = {
-      inherit
-        inputs
-        #pkgsStable
-        dolphin-overlay
-        home-manager
-        nix-index-database
-        gauntlet
-        ;
-    };
-    commonModules = [
-      inputs.nixos-facter-modules.nixosModules.facter
-      ./configuration.nix
-      nur.modules.nixos.default
-      home-manager.nixosModules.home-manager
-    ];
+    lib = import ./lib/mkHost.nix {inherit inputs;};
   in {
-    nixosConfigurations.DreamingDesk = nixpkgs.lib.nixosSystem {
-      inherit specialArgs;
-      system = "x86_64-linux";
-      modules =
-        commonModules
-        ++ [
-          {config.facter.reportPath = ./facter-dreamingdesk.json;}
-          ./desktop.nix
-          # ./modules/virtualization
-          {networking.hostName = "DreamingDesk";}
+    nixosConfigurations = {
+      DreamingDesk = lib.mkHost {
+        hostname = "DreamingDesk";
+        hostPath = "dreamingdesk";
+        extraModules = [
+          # ./modules/programs/virtualization  # Enable when ready
         ];
-    };
-    nixosConfigurations.DreamingBlade = nixpkgs.lib.nixosSystem {
-      inherit specialArgs;
-      system = "x86_64-linux";
-      modules =
-        commonModules
-        ++ [
-          {config.facter.reportPath = ./facter-dreamingblade.json;}
+      };
+
+      DreamingBlade = lib.mkHost {
+        hostname = "DreamingBlade";
+        hostPath = "dreamingblade";
+        extraModules = [
           razer-laptop-controller.nixosModules.default
-          ./laptop.nix
           {
-            networking.hostName = "DreamingBlade";
             powerManagement = {
               enable = true;
               powertop.enable = true;
             };
           }
         ];
+      };
     };
+
     vaultix = vaultix.configure {
       nodes = self.nixosConfigurations;
       identity = self + "/opt/secret.age";

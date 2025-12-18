@@ -4,8 +4,8 @@
   inputs,
   ...
 }: let
-  toggleMic = pkgs.writeShellScriptBin "toggleMic" (builtins.readFile ../mictoggle.sh);
-  toggleMixer = pkgs.writeShellScriptBin "toggleMixer" (builtins.readFile ../mixer.sh);
+  toggleMic = pkgs.writeShellScriptBin "toggleMic" (builtins.readFile ../scripts/mictoggle.sh);
+  toggleMixer = pkgs.writeShellScriptBin "toggleMixer" (builtins.readFile ../scripts/mixer.sh);
 in {
   imports = [
     inputs.gauntlet.homeManagerModules.default
@@ -124,15 +124,10 @@ in {
           "$mod SHIFT, down, movewindow, d"
           "$mod, N, togglespecialworkspace, obsidian"
           # Audio keys
-          # ", XF86AudioMute, exec, swayosd-client --output-volume mute-toggle"
-          # ", XF86AudioLowerVolume, exec, swayosd-client --output-volume lower"
-          # ", XF86AudioRaiseVolume, exec, swayosd-client --output-volume raise"
           ", XF86AudioMicMute, exec, toggleMic"
           ", XF86AudioPlay, exec, playerctl play-pause"
           ", XF86AudioPrev, exec, playerctl previous"
           ", XF86AudioNext, exec,playerctl next"
-          # ", XF86MonBrightnessDown, exec, swayosd-client --brightness lower"
-          # ", XF86MonBrightnessUp, exec, swayosd-client --brightness raise"
         ]
         ++ (
           # workspaces
@@ -312,32 +307,32 @@ in {
 
   # DreamingCodes-specific config files
   home.file."./.config/ashell" = {
-    source = ../ashell;
+    source = ../config/ashell;
     recursive = true;
   };
 
   home.file."./.config/clipcat" = {
-    source = ../clipcat;
+    source = ../config/clipcat;
     recursive = true;
   };
 
   home.file."./.config/hypr" = {
-    source = ../hypr;
+    source = ../config/hypr;
     recursive = true;
   };
 
   home.file."./Pictures/wallpaper" = {
-    source = ../wallpaper;
+    source = ../config/wallpaper;
     recursive = true;
   };
 
   home.file."./.config/spotify-player" = {
-    source = ../spotify-player;
+    source = ../config/spotify-player;
     recursive = true;
   };
 
   home.file."./.local/lib/wireshark/extcap" = {
-    source = ../extcap;
+    source = ../config/extcap;
     recursive = true;
   };
 
