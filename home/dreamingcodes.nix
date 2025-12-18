@@ -380,14 +380,16 @@ in {
 
     git = {
       enable = true;
-      userName = "DreamingCodes";
-      userEmail = "me@dreaming.codes";
       package = pkgs.gitFull;
       signing = {
         key = "1FE3A3F18110DDDD";
         signByDefault = true;
       };
-      extraConfig = {
+      settings = {
+        user = {
+          name = "DreamingCodes";
+          email = "me@dreaming.codes";
+        };
         core = {editor = "hx";};
         init = {defaultBranch = "master";};
         pull = {rebase = true;};
