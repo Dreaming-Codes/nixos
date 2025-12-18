@@ -11,8 +11,22 @@
     enable = true;
     wayland.enable = true;
   };
+  # Default session for dreamingcodes (and system-wide fallback)
+  services.displayManager.defaultSession = "hyprland";
+
   services.desktopManager.plasma6.enable = true;
   environment.plasma6.excludePackages = with pkgs.kdePackages; [konsole];
+
+  # AccountsService per-user session default for riccardo (Plasma Wayland)
+  system.activationScripts.accountsservice-riccardo = ''
+    mkdir -p /var/lib/AccountsService/users
+    cat > /var/lib/AccountsService/users/riccardo << EOF
+    [User]
+    Session=plasma
+    XSession=plasma
+    EOF
+    chmod 600 /var/lib/AccountsService/users/riccardo
+  '';
 
   programs.hyprland = {
     enable = true;
