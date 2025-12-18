@@ -1,8 +1,4 @@
 {pkgs, ...}: {
-  security.pki.certificateFiles = [
-    ../../certs/AdGuard_CLI_CA.pem
-  ];
-
   security.polkit.extraConfig = ''
     polkit.addRule(function(action, subject) {
       if (
