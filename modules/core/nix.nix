@@ -84,8 +84,10 @@
   '';
 
   # Store config hash after successful activation for update-system to check
-  system.activationScripts.storeConfigHash = ''
-    FLAKE_DIR="/home/dreamingcodes/.nixos"
+  system.activationScripts.storeConfigHash = let
+    flakeDir = config.users.users.dreamingcodes.home + "/.nixos";
+  in ''
+    FLAKE_DIR="${flakeDir}"
     CACHE_FILE="/var/lib/nixos-config-hash"
     if [[ -d "$FLAKE_DIR/.git" ]]; then
       HASH=$(${pkgs.gitFull}/bin/git -C "$FLAKE_DIR" ls-files -s | ${pkgs.gitFull}/bin/git hash-object --stdin)
@@ -95,7 +97,7 @@
 
   # Improved nix rebuild UX & cleanup timer
   programs.nh = {
-    flake = "/home/dreamingcodes/.nixos/";
+    flake = config.users.users.dreamingcodes.home + "/.nixos/";
     clean = {
       enable = true;
       extraArgs = "--keep-since 3d --keep 2";

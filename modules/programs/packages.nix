@@ -1,82 +1,11 @@
 {
   pkgs,
-  dolphin-overlay,
   inputs,
-  self,
   ...
 }: {
-  boot.loader.limine.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
-
   imports = [
     inputs.gauntlet.nixosModules.default
   ];
-
-  security.pki.certificateFiles = [
-    ./AdGuard_CLI_CA.pem
-  ];
-
-  security.polkit.extraConfig = ''
-    polkit.addRule(function(action, subject) {
-      if (
-        action.id == "org.freedesktop.UPower.PowerProfiles.switch-profile" &&
-        subject.isInGroup("wheel")
-      ) {
-        return polkit.Result.YES;
-      }
-    });
-    polkit.addRule(function(action, subject) {
-      if (subject.isInGroup("wheel"))
-        return polkit.Result.YES;
-    });
-  '';
-
-  time.timeZone = "America/Los_Angeles";
-  i18n.defaultLocale = "en_US.UTF-8";
-
-  services.pulseaudio.enable = false;
-  security.rtkit.enable = true;
-  security.sudo-rs.enable = true;
-  security.sudo-rs.wheelNeedsPassword = false;
-  security.pam.services.login.enableKwallet = true;
-  # fscrypt for home folder encryption
-  security.pam.enableFscrypt = true;
-  security.pam.loginLimits = [
-    {
-      domain = "*";
-      type = "soft";
-      item = "nofile";
-      value = "10000";
-    }
-  ];
-
-  # Disable man page cache generation since it's very slow and fish enable it by default
-  documentation.man.generateCaches = false;
-
-  hardware.bluetooth.enable = true;
-
-  services = {
-    usbmuxd = {
-      enable = true;
-      package = pkgs.usbmuxd2;
-    };
-    acpid.enable = true;
-    power-profiles-daemon.enable = true;
-    avahi = {
-      enable = true;
-      nssmdns4 = true;
-      publish = {
-        enable = true;
-        userServices = true;
-      };
-    };
-  };
-
-  programs.virt-manager.enable = true;
-
-  fonts.packages = with pkgs; [nerd-fonts.fira-code];
-
-  # nixpkgs.overlays = [dolphin-overlay.overlays.default];
 
   programs.fish.enable = true;
 
@@ -95,6 +24,19 @@
     openFirewall = true;
   };
 
+  programs.virt-manager.enable = true;
+
+  services = {
+    usbmuxd = {
+      enable = true;
+      package = pkgs.usbmuxd2;
+    };
+    acpid.enable = true;
+    power-profiles-daemon.enable = true;
+    mullvad-vpn.enable = true;
+    fwupd.enable = true;
+  };
+
   environment.systemPackages = with pkgs; [
     wl-clipboard-rs
     wget
@@ -109,12 +51,9 @@
     # Ark dep
     unrar
     bottles
-    # yaak
     libcamera
 
     hplipWithPlugin
-
-    # orca-slicer
 
     uv
 
@@ -153,13 +92,8 @@
 
     rustscan
 
-    # (callPackage ./davinci-resolve.nix {
-    #   studioVariant = true;
-    # })
-    #
     nur.repos.forkprince.helium-nightly
 
-    # clipcat
     playerctl
     brightnessctl
     alsa-utils
@@ -169,12 +103,10 @@
 
     (discord.override {
       withOpenASAR = true;
-      # withMoonlight = true;
-      # withVencord = true;
     })
 
     lldb
-    # required to build a lot of rust ctates
+    # required to build a lot of rust crates
     protobuf
 
     # Not sure what caused this but now this is needed to make bash work
@@ -194,10 +126,6 @@
     mullvad-browser
     mullvad-vpn
     frida-tools
-
-    # Java
-    # zulu23
-    # kotlin
 
     zig
     (python311.withPackages (
@@ -222,17 +150,14 @@
     distrobox
     boxbuddy
 
-    # jdt-language-server
-    # kotlin-language-server
     typescript-language-server
-    # dprint
 
     pwvucontrol
     helvum
 
     scrcpy
 
-    #kdl formatter
+    # kdl formatter
     kdlfmt
     # Nix LSP
     nil
@@ -272,42 +197,6 @@
     jetbrains-toolbox
   ];
 
-  xdg.portal = {
-    xdgOpenUsePortal = true;
-    enable = true;
-
-    config = {
-      hyprland = {
-        default = ["hyprland" "gtk" "kde"];
-        "org.freedesktop.impl.portal.FileChooser" = "kde";
-        "org.freedesktop.impl.portal.OpenURI" = "kde";
-      };
-      plasma = {
-        default = ["kde" "gtk"];
-        "org.freedesktop.impl.portal.FileChooser" = "kde";
-        "org.freedesktop.impl.portal.OpenURI" = "kde";
-      };
-    };
-
-    extraPortals = with pkgs; [
-      xdg-desktop-portal-hyprland
-      # Add xdg-desktop-portal-gtk for Wayland GTK apps (font issues etc.)
-      xdg-desktop-portal-gtk
-      kdePackages.xdg-desktop-portal-kde
-    ];
-  };
-
-  custom.misc.sdks = {
-    enable = true;
-    links = {
-      nodejs = pkgs.nodejs;
-      jdk = pkgs.temurin-bin;
-      # kotlin = pkgs.kotlin;
-      jdk17 = pkgs.temurin-bin-17;
-      # jdk23 = pkgs.zulu23;
-    };
-  };
-
   environment.variables = {
     PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig";
     # Fix for some app that rely on env to choose audio driver
@@ -323,10 +212,4 @@
   environment.sessionVariables = {
     NIX_PACKAGE_SEARCH_EXPERIMENTAL = "true";
   };
-
-  services.mullvad-vpn.enable = true;
-
-  services.fwupd.enable = true;
-
-  system.stateVersion = "24.11";
 }

@@ -136,13 +136,6 @@
           system.nixos.tags = cfg.system.nixos.tags ++ ["open"];
           hardware.nvidia.open = lib.mkForce true;
         };
-
-      # "${name}-proprietary".configuration =
-      #   cfg
-      #   // {
-      #     system.nixos.tags = cfg.system.nixos.tags ++ ["proprietary"];
-      #     hardware.nvidia.open = lib.mkForce false;
-      #   };
     };
 
     # Merge all generated variants
@@ -167,10 +160,5 @@
         '';
         boot.blacklistedKernelModules = ["nouveau" "nvidia" "nvidia_drm" "nvidia_modeset"];
       };
-      # # Default proprietary variant (since base system is open by default)
-      # default-proprietary.configuration = {
-      #   system.nixos.tags = ["default" "proprietary"];
-      #   hardware.nvidia.open = lib.mkForce false;
-      # };
     };
 }

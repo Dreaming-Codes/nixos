@@ -1,13 +1,12 @@
 {
-  config,
   pkgs,
-  inputs,
+  config,
   ...
 }: let
   nixos-auto-update = pkgs.writeShellScriptBin "nixos-auto-update" ''
     set -euo pipefail
 
-    CONFIG_DIR="/home/dreamingcodes/.nixos"
+    CONFIG_DIR="${config.users.users.dreamingcodes.home}/.nixos"
     STATE_FILE="/var/lib/nixos-auto-update/last-update-week"
     CURRENT_WEEK=$(date +%G-%V)
 
@@ -95,8 +94,6 @@
     fi
   '';
 in {
-  services.envfs.enable = true;
-
   # NixOS auto-update service (runs on boot, applies weekly updates)
   systemd.services.nixos-auto-update = {
     description = "NixOS Weekly Auto-Update";
@@ -112,59 +109,6 @@ in {
       User = "root";
       # Give it some time to complete
       TimeoutStartSec = "30min";
-    };
-  };
-  services.xserver.enable = true;
-
-  services.displayManager.sddm = {
-    enable = true;
-    wayland.enable = true;
-  };
-  # Default session for dreamingcodes (and system-wide fallback)
-  services.displayManager.defaultSession = "hyprland";
-
-  services.desktopManager.plasma6.enable = true;
-  environment.plasma6.excludePackages = with pkgs.kdePackages; [konsole];
-
-  programs.hyprland = {
-    enable = true;
-  };
-  programs.hyprlock.enable = true;
-
-  services.xserver.xkb = {
-    layout = "us";
-    variant = "alt-intl";
-  };
-
-  services.printing = {
-    enable = true;
-    drivers = [
-      pkgs.hplipWithPlugin
-    ];
-  };
-
-  # Centralized storage for coredumps (coredumpctl list)
-  systemd.coredump.enable = true;
-
-  services.pipewire = {
-    enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
-    pulse.enable = true;
-    jack.enable = true;
-    systemWide = false;
-    wireplumber.enable = true;
-  };
-
-  virtualisation = {
-    docker.enable = true;
-    spiceUSBRedirection.enable = true;
-  };
-
-  environment.etc = {
-    # https://github.com/Scrut1ny/Hypervisor-Phantom
-    "ovmf" = {
-      source = ./ovmf;
     };
   };
 }

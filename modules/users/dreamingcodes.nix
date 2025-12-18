@@ -2,6 +2,8 @@
   config,
   pkgs,
   lib,
+  nix-index-database,
+  inputs,
   ...
 }: let
   # Groups shared by all users
@@ -57,6 +59,22 @@ in {
       description = "DreamingCodes";
       extraGroups = commonGroups ++ adminGroups;
       shell = pkgs.fish;
+    };
+
+    # Home Manager configuration
+    home-manager.useGlobalPkgs = true;
+    home-manager.useUserPackages = true;
+    home-manager.extraSpecialArgs = {inherit inputs;};
+    home-manager.backupFileExtension = "hm-backup";
+
+    home-manager.users.dreamingcodes = {
+      home.stateVersion = "24.11";
+
+      imports = [
+        nix-index-database.homeModules.nix-index
+        ../../home/common.nix
+        ../../home/dreamingcodes.nix
+      ];
     };
   };
 }
