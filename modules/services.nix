@@ -82,7 +82,8 @@
     fi
 
     echo "Applying configuration for next boot..."
-    if ${pkgs.nh}/bin/nh os boot "$CONFIG_DIR" -- --impure --accept-flake-config; then
+    HOSTNAME=$(${pkgs.hostname}/bin/hostname)
+    if ${pkgs.nh}/bin/nh os boot "$CONFIG_DIR#$HOSTNAME" -- --impure --accept-flake-config; then
       mkdir -p "$(dirname "$STATE_FILE")"
       echo "$CURRENT_WEEK" > "$STATE_FILE"
       notify_users "NixOS Auto-Update" "Update complete! Changes will apply on next reboot." "normal"
