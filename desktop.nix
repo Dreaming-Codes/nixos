@@ -199,6 +199,9 @@
     };
   in [
     "L+    /opt/rocm   -    -    -     -    ${rocmEnv}"
+    # Allow dreamingcodes full access to riccardo's home via ACL
+    "A+ /home/riccardo - - - - u:dreamingcodes:rwx"
+    "A+ /home/riccardo - - - - d:u:dreamingcodes:rwx"
   ];
 
   hardware.keyboard.qmk.enable = true;
