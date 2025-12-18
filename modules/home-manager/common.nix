@@ -56,6 +56,9 @@
       generateCompletions = false;
       interactiveShellInit = ''
         set fish_greeting # Disable greeting
+        # Remap fzf keybindings to avoid zellij conflicts
+        bind --erase \ct  # Remove Ctrl+T
+        bind \et fzf-file-widget  # Alt+T for file search
         # Use bat as cat replacement in interactive shell
         function cat --wraps bat --description 'Use bat instead of cat'
           ${pkgs.bat}/bin/bat $argv
@@ -64,6 +67,71 @@
       shellAliases = {
         htop = "btop";
         shutdown = "systemctl poweroff";
+      };
+      functions = {
+        binds = ''
+          echo "╔═══════════════════════════════════════════════════════════════╗"
+          echo "║                      KEYBINDINGS                              ║"
+          echo "╠═══════════════════════════════════════════════════════════════╣"
+          echo "║  FISH SHELL                                                   ║"
+          echo "╠═══════════════════════════════════════════════════════════════╣"
+          echo "║  Alt+T          File search (fzf)                             ║"
+          echo "║  Ctrl+R         Command history (fzf)                         ║"
+          echo "║  Alt+C          cd into directory (fzf)                       ║"
+          echo "╠═══════════════════════════════════════════════════════════════╣"
+          echo "║  HYPRLAND                                                     ║"
+          echo "╠═══════════════════════════════════════════════════════════════╣"
+          echo "║  Super+Space    Open terminal (wezterm)                       ║"
+          echo "║  Super+W        Open browser (helium)                         ║"
+          echo "║  Super+X        Open Gauntlet                                 ║"
+          echo "║  Super+Q        Kill active window                            ║"
+          echo "║  Super+F        Fullscreen                                    ║"
+          echo "║  Super+O        Toggle floating                               ║"
+          echo "║  Super+L        Lock screen (hyprlock)                        ║"
+          echo "║  Super+M        Toggle mixer                                  ║"
+          echo "║  Super+C        Clipboard (gauntlet)                          ║"
+          echo "║  Super+N        Toggle Obsidian workspace                     ║"
+          echo "╠═══════════════════════════════════════════════════════════════╣"
+          echo "║  APPS                                                         ║"
+          echo "╠═══════════════════════════════════════════════════════════════╣"
+          echo "║  Super+T        Telegram                                      ║"
+          echo "║  Super+D        Discord                                       ║"
+          echo "║  Super+S        Signal                                        ║"
+          echo "╠═══════════════════════════════════════════════════════════════╣"
+          echo "║  SCREENSHOTS                                                  ║"
+          echo "╠═══════════════════════════════════════════════════════════════╣"
+          echo "║  Print          Screenshot active window                      ║"
+          echo "║  Shift+Print    Screenshot region                             ║"
+          echo "╠═══════════════════════════════════════════════════════════════╣"
+          echo "║  WINDOW MANAGEMENT                                            ║"
+          echo "╠═══════════════════════════════════════════════════════════════╣"
+          echo "║  Super+Arrow    Move focus                                    ║"
+          echo "║  Super+Shift+Arrow  Move window                               ║"
+          echo "║  Super+Mouse    Move/resize window (left/right click)         ║"
+          echo "║  Super+Scroll   Zoom cursor                                   ║"
+          echo "╠═══════════════════════════════════════════════════════════════╣"
+          echo "║  WORKSPACES                                                   ║"
+          echo "╠═══════════════════════════════════════════════════════════════╣"
+          echo "║  Super+1-0      Switch to workspace 1-10                      ║"
+          echo "║  Super+Shift+1-0  Move window to workspace 1-10               ║"
+          echo "║  Super+F1-F12   Switch to workspace F1-F12                    ║"
+          echo "║  Super+Shift+F1-F12  Move window to F1-F12                    ║"
+          echo "║  Super+Alt+1-0  Switch to ALT workspace 1-10                  ║"
+          echo "║  Super+Shift+Alt+1-0  Move to ALT workspace                   ║"
+          echo "╠═══════════════════════════════════════════════════════════════╣"
+          echo "║  WALLPAPER                                                    ║"
+          echo "╠═══════════════════════════════════════════════════════════════╣"
+          echo "║  Super+,        Previous wallpaper                            ║"
+          echo "║  Super+.        Next wallpaper                                ║"
+          echo "╠═══════════════════════════════════════════════════════════════╣"
+          echo "║  MEDIA                                                        ║"
+          echo "╠═══════════════════════════════════════════════════════════════╣"
+          echo "║  XF86AudioPlay  Play/Pause                                    ║"
+          echo "║  XF86AudioPrev  Previous track                                ║"
+          echo "║  XF86AudioNext  Next track                                    ║"
+          echo "║  XF86AudioMicMute  Toggle microphone                          ║"
+          echo "╚═══════════════════════════════════════════════════════════════╝"
+        '';
       };
     };
 

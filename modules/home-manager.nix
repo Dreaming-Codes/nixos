@@ -8,6 +8,7 @@
   home-manager.useGlobalPkgs = true;
   home-manager.useUserPackages = true;
   home-manager.extraSpecialArgs = {inherit inputs;};
+  home-manager.backupFileExtension = "hm-backup";
 
   home-manager.users.dreamingcodes = {
     home.stateVersion = "24.11";

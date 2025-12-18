@@ -16,6 +16,7 @@
     "wireshark"
     "dialout"
     "flatpak"
+    "nix"
   ];
 
   # Admin-only groups (sudo + libvirt system access)
@@ -34,6 +35,8 @@ in {
   config = {
     # Ensure flatpak group exists even on systems without flatpak enabled
     users.groups.flatpak = {};
+    # Group for non-admin users to access nix
+    users.groups.nix = {};
 
     security = {
       # auto unlock kwallet on boot

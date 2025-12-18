@@ -42,7 +42,7 @@
       experimental-features = ["nix-command" "flakes"];
 
       # Users allowed to use Nix
-      allowed-users = ["@wheel"];
+      allowed-users = ["@wheel" "@nix"];
       trusted-users = ["@wheel"];
 
       # Max number of parallel jobs
