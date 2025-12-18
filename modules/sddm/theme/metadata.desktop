@@ -1,0 +1,16 @@
+[SddmGreeterTheme]
+Name=Breeze Per-User Session
+Description=Breeze theme with per-user session memory
+Author=Custom (based on KDE Visual Design Group)
+Copyright=(c) 2014, David Edmundson
+License=CC-BY-SA
+Type=sddm-theme
+Version=0.1
+Website=https://github.com/sddm/sddm
+MainScript=Main.qml
+ConfigFile=theme.conf
+TranslationsDirectory=translations
+Email=plasma-devel@kde.org
+Theme-Id=breeze-per-user
+Theme-API=2.0
+QtVersion=6
