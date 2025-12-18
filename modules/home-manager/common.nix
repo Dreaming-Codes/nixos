@@ -7,6 +7,12 @@
   home.shell.enableShellIntegration = true;
   programs.home-manager.enable = true;
 
+  # Add Flathub remote for user-level Flatpak installations
+  # This allows KDE Discover to install apps per-user without requiring admin password
+  home.activation.flatpak-user-remote = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    ${pkgs.flatpak}/bin/flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+  '';
+
   # Comma integration with nix-index
   programs.nix-index-database.comma.enable = true;
 
