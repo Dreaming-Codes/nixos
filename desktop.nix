@@ -30,6 +30,25 @@
   services.flatpak.enable = true;
   services.packagekit.enable = true;
 
+  # Flatpak auto-update
+  systemd.services.flatpak-update = {
+    description = "Update Flatpak packages";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.flatpak}/bin/flatpak update -y";
+    };
+  };
+
+  systemd.timers.flatpak-update = {
+    description = "Auto-update Flatpak packages";
+    wantedBy = ["timers.target"];
+    timerConfig = {
+      OnCalendar = "daily";
+      Persistent = true;
+      RandomizedDelaySec = "1h";
+    };
+  };
+
   # Riccardo Home Manager configuration
   home-manager.users.riccardo = {
     imports = [
