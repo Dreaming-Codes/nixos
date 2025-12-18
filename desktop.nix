@@ -6,6 +6,10 @@
   inputs,
   ...
 }: {
+  imports = [
+    ./modules/sddm
+  ];
+
   # Riccardo user (desktop only)
   users.users.riccardo = {
     isNormalUser = true;
