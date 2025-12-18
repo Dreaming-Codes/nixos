@@ -19,8 +19,11 @@
       
       for user in $(who | awk '{print $1}' | sort -u); do
         uid=$(id -u "$user" 2>/dev/null) || continue
-        sudo -u "$user" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" \
-          ${pkgs.libnotify}/bin/notify-send -u "$urgency" "$title" "$message" || true
+        # Check if user's D-Bus session bus exists before attempting notification
+        if [ -S "/run/user/$uid/bus" ]; then
+          sudo -u "$user" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" \
+            ${pkgs.libnotify}/bin/notify-send -u "$urgency" "$title" "$message" 2>/dev/null || true
+        fi
       done
     }
 
