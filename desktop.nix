@@ -2,8 +2,39 @@
   pkgs,
   lib,
   config,
+  nix-index-database,
+  inputs,
   ...
 }: {
+  # Riccardo user (desktop only)
+  users.users.riccardo = {
+    isNormalUser = true;
+    description = "Riccardo";
+    extraGroups = config.users.commonGroups;
+    shell = pkgs.fish;
+  };
+
+  # PAM kwallet for riccardo
+  security.pam.services."riccardo" = {
+    kwallet = {
+      enable = true;
+      package = pkgs.kdePackages.kwallet-pam;
+    };
+  };
+
+  # Flatpak + Discover integration (desktop only)
+  services.flatpak.enable = true;
+  services.packagekit.enable = true;
+
+  # Riccardo Home Manager configuration
+  home-manager.users.riccardo = {
+    imports = [
+      nix-index-database.homeModules.nix-index
+      ./modules/home-manager/common.nix
+    ];
+    home.stateVersion = "24.11";
+  };
+
   environment.systemPackages = with pkgs; [
     # amd gpu utility
     lact
@@ -137,9 +168,6 @@
     KERNEL=="uinput", GROUP="input", TAG+="uaccess"
     SUBSYSTEM=="input", ATTRS{idVendor}=="3434", ATTRS{idProduct}=="0660", MODE="0660", TAG+="uaccess"
   '';
-
-  # Allow input devices to be accessed by dreamingcodes user (needed for xremap)
-  users.users.dreamingcodes.extraGroups = ["input"];
 
   boot.kernelParams = [
     "pcie_acs_override=downstream"

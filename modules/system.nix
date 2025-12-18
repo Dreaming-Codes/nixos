@@ -256,6 +256,20 @@
     xdg-desktop-portal
 
     uutils-coreutils-noprefix
+
+    # Packages moved from home-manager (shared by all users)
+    telegram-desktop
+    bitwarden-desktop
+    btop
+    bun
+    nodejs
+    bintools
+    rustup
+    kdePackages.kleopatra
+    gnupg
+    kwalletcli
+    tor-browser
+    jetbrains-toolbox
   ];
 
   xdg.portal = {
