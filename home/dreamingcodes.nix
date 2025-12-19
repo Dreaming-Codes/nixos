@@ -8,7 +8,6 @@
   toggleMixer = pkgs.writeShellScriptBin "toggleMixer" (builtins.readFile ../scripts/mixer.sh);
   vibeMerge = pkgs.writeShellScriptBin "vibe-merge" (builtins.readFile ../scripts/vibeMerge.sh);
   vibeCommit = pkgs.writeShellScriptBin "vibe-commit" (builtins.readFile ../scripts/vibeCommit.sh);
-  figona = pkgs.writeShellScriptBin "figona" (builtins.readFile ../scripts/figona.sh);
 in {
   imports = [
     inputs.gauntlet.homeManagerModules.default
@@ -302,7 +301,6 @@ in {
     toggleMixer
     vibeMerge
     vibeCommit
-    figona
   ];
 
   # Services
