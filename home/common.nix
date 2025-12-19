@@ -56,6 +56,7 @@
       generateCompletions = false;
       interactiveShellInit = ''
         set fish_greeting # Disable greeting
+
         # Remap fzf keybindings to avoid zellij conflicts
         bind --erase \ct  # Remove Ctrl+T
         bind \et fzf-file-widget  # Alt+T for file search
