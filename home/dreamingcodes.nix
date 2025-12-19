@@ -6,10 +6,22 @@
 }: let
   toggleMic = pkgs.writeShellScriptBin "toggleMic" (builtins.readFile ../scripts/mictoggle.sh);
   toggleMixer = pkgs.writeShellScriptBin "toggleMixer" (builtins.readFile ../scripts/mixer.sh);
+  vibeMerge = pkgs.writeShellScriptBin "vibe-merge" (builtins.readFile ../scripts/vibeMerge.sh);
+  vibeCommit = pkgs.writeShellScriptBin "vibe-commit" (builtins.readFile ../scripts/vibeCommit.sh);
+  figona = pkgs.writeShellScriptBin "figona" (builtins.readFile ../scripts/figona.sh);
 in {
   imports = [
     inputs.gauntlet.homeManagerModules.default
   ];
+
+  programs.fish = {
+    completions = {
+      vibe-merge = ''
+        set -l PATH_TO_WORKTREES ".rsworktree"
+        complete -c vibe-merge -f -a "(test -d $PATH_TO_WORKTREES; and command ls -1 $PATH_TO_WORKTREES)"
+      '';
+    };
+  };
 
   # DreamingCodes-specific session paths
   home.sessionPath = [
@@ -288,6 +300,9 @@ in {
   home.packages = [
     toggleMic
     toggleMixer
+    vibeMerge
+    vibeCommit
+    figona
   ];
 
   # Services
