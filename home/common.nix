@@ -63,6 +63,7 @@
         function cat --wraps bat --description 'Use bat instead of cat'
           ${pkgs.bat}/bin/bat $argv
         end
+        abbr -a dockertui oxker
       '';
       shellAliases = {
         htop = "btop";
