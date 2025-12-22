@@ -182,6 +182,9 @@
 
     uutils-coreutils-noprefix
 
+    # certs for node and other binaries
+    cacert
+
     # Packages moved from home-manager (shared by all users)
     telegram-desktop
     bitwarden-desktop
