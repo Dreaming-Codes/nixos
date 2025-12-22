@@ -68,6 +68,12 @@
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
 
+  # Standard SSL cert location for precompiled binaries
+  environment.variables = {
+    SSL_CERT_FILE = "/etc/ssl/certs/ca-certificates.crt";
+    NIX_SSL_CERT_FILE = "/etc/ssl/certs/ca-certificates.crt";
+  };
+
   # Print a diff when running system updates
   system.activationScripts.diff = ''
     if [[ -e /run/current-system ]]; then
