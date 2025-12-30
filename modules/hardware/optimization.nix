@@ -33,5 +33,15 @@
     enable = true;
     memoryPercent = 90;
   };
+
+  # Disk-based swap as fallback when zram is exhausted
+  # Lower priority (5) than zram (100) ensures zram is used first
+  swapDevices = [
+    {
+      device = "/var/lib/swapfile";
+      size = 16 * 1024; # 16GB in MB
+      priority = 5;
+    }
+  ];
   boot.kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-latest;
 }
