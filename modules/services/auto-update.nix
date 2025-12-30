@@ -2,7 +2,8 @@
   pkgs,
   config,
   ...
-}: let
+}:
+let
   nixos-auto-update = pkgs.writeShellScriptBin "nixos-auto-update" ''
     set -euo pipefail
 
@@ -38,10 +39,10 @@
     # Check if today is Sunday or later in the week (we update on first boot after Sunday)
     # Day of week: 0 = Sunday, 1 = Monday, ..., 6 = Saturday
     DAY_OF_WEEK=$(date +%w)
-    
+
     # We want to update on Sunday (0) or any day after if we haven't updated this week yet
     # Since we already checked if we updated this week, we can proceed
-    
+
     notify_users "NixOS Auto-Update" "Starting weekly system update..." "low"
     echo "Starting NixOS auto-update for week $CURRENT_WEEK..."
 
@@ -93,14 +94,23 @@
       exit 1
     fi
   '';
-in {
+in
+{
   # NixOS auto-update service (runs on boot, applies weekly updates)
   systemd.services.nixos-auto-update = {
     description = "NixOS Weekly Auto-Update";
-    after = ["network-online.target"];
-    wants = ["network-online.target"];
-    wantedBy = ["multi-user.target"];
-    path = [pkgs.git pkgs.sudo pkgs.gawk pkgs.coreutils];
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    wantedBy = [ "multi-user.target" ];
+    path = [
+      pkgs.gitFull
+      pkgs.sudo-rs
+      pkgs.gawk
+      pkgs.uutils-coreutils-noprefix
+    ];
+    # Don't start/restart after nixos-rebuild, only on boot
+    restartIfChanged = false;
+    reloadIfChanged = false;
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${nixos-auto-update}/bin/nixos-auto-update";
