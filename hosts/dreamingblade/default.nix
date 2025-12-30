@@ -4,7 +4,13 @@
   config,
   ...
 }: {
-  boot.initrd.availableKernelModules = ["nvme" "xhci_pci" "usb_storage" "usbhid" "sd_mod"];
+  boot.initrd.availableKernelModules = [
+    "nvme"
+    "xhci_pci"
+    "usb_storage"
+    "usbhid"
+    "sd_mod"
+  ];
   fileSystems."/" = {
     device = "/dev/disk/by-uuid/0806bf06-5970-44da-8b99-400c140db160";
     fsType = "ext4";
@@ -13,7 +19,10 @@
   fileSystems."/boot" = {
     device = "/dev/disk/by-uuid/3E30-ADDD";
     fsType = "vfat";
-    options = ["fmask=0022" "dmask=0022"];
+    options = [
+      "fmask=0022"
+      "dmask=0022"
+    ];
   };
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
@@ -57,7 +66,10 @@
   };
 
   # Load nvidia driver for Xorg and Wayland
-  services.xserver.videoDrivers = ["nvidia" "amdgpu"];
+  services.xserver.videoDrivers = [
+    "nvidia"
+    "amdgpu"
+  ];
 
   hardware.nvidia = {
     # Modesetting is required.
@@ -90,9 +102,17 @@
     package = config.boot.kernelPackages.nvidiaPackages.beta;
   };
 
+  hardware.keyboard.qmk.enable = true;
   services.udev.packages = with pkgs; [
     nrf-udev
+    pkgs.keychron-udev-rules
   ];
+
+  # Keychron Q6 Pro - grant hidraw access for VIA/QMK configurator
+  services.udev.extraRules = ''
+    # Keychron Q6 Pro - world read/write for WebHID browser access
+    KERNEL=="hidraw*", ATTRS{idVendor}=="3434", ATTRS{idProduct}=="0660", MODE="0666", GROUP="plugdev", TAG+="uaccess"
+  '';
 
   hardware.nvidia.prime = {
     offload = {
@@ -139,9 +159,7 @@
     };
 
     # Merge all generated variants
-    generated = lib.foldl' lib.recursiveUpdate {} (
-      lib.mapAttrsToList mkVariants baseSpecialisations
-    );
+    generated = lib.foldl' lib.recursiveUpdate {} (lib.mapAttrsToList mkVariants baseSpecialisations);
   in
     generated
     // {
@@ -158,7 +176,12 @@
           ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x040300", ATTR{power/control}="auto", ATTR{remove}="1"
           ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x03[0-9]*", ATTR{power/control}="auto", ATTR{remove}="1"
         '';
-        boot.blacklistedKernelModules = ["nouveau" "nvidia" "nvidia_drm" "nvidia_modeset"];
+        boot.blacklistedKernelModules = [
+          "nouveau"
+          "nvidia"
+          "nvidia_drm"
+          "nvidia_modeset"
+        ];
       };
     };
 }
