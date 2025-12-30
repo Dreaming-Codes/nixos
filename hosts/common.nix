@@ -37,6 +37,16 @@
   services.automatic-timezoned.enable = true;
   i18n.defaultLocale = "en_US.UTF-8";
 
+  # Use Cloudflare-based geolocation service
+  services.geoclue2 = {
+    enable = true;
+    geoProviderUrl = "https://cloudflare-location-service.dreamingcodes.workers.dev/";
+  };
+
+  # Ensure geoclue starts after wpa_supplicant to reduce WiFi scan race condition
+  systemd.services.geoclue.after = ["wpa_supplicant.service"];
+  systemd.services.geoclue.wants = ["wpa_supplicant.service"];
+
   # State version
   system.stateVersion = "24.11";
 }
