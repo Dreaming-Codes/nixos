@@ -8,6 +8,7 @@
   toggleMixer = pkgs.writeShellScriptBin "toggleMixer" (builtins.readFile ../scripts/mixer.sh);
   vibeMerge = pkgs.writeShellScriptBin "vibe-merge" (builtins.readFile ../scripts/vibeMerge.sh);
   vibeCommit = pkgs.writeShellScriptBin "vibe-commit" (builtins.readFile ../scripts/vibeCommit.sh);
+  razerPower = pkgs.writeShellScriptBin "razer-power" (builtins.readFile ../scripts/razerpower.sh);
 in {
   imports = [
     inputs.gauntlet.homeManagerModules.default
@@ -301,6 +302,7 @@ in {
     toggleMixer
     vibeMerge
     vibeCommit
+    razerPower
   ];
 
   # Services
@@ -403,9 +405,15 @@ in {
           name = "DreamingCodes";
           email = "me@dreaming.codes";
         };
-        core = {editor = "hx";};
-        init = {defaultBranch = "master";};
-        pull = {rebase = true;};
+        core = {
+          editor = "hx";
+        };
+        init = {
+          defaultBranch = "master";
+        };
+        pull = {
+          rebase = true;
+        };
         push = {
           autoSetupRemote = true;
         };
