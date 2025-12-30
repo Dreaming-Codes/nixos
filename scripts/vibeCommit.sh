@@ -11,7 +11,6 @@ if [ -n "$COMMIT_ADDITIONAL_INFO" ]; then
 fi
 
 if [ -n "$(git status --porcelain)" ]; then
-  git add .
   STAGED_FILES=$(git diff --cached --name-only)
   bunx opencode-ai@latest run "Create a commit message for the following modified files:
   $STAGED_FILES
