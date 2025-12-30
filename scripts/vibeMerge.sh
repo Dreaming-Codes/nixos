@@ -20,6 +20,7 @@ if [ -n "$(git -C "$WT_PATH" status --porcelain)" ]; then
   echo "Uncommited changes detected in $WT_PATH. Generating commit..."
   (
     cd $WT_PATH
+    git add .
     vibe-commit
   )
 fi
