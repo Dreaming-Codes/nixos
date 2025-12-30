@@ -2,8 +2,7 @@
   pkgs,
   config,
   ...
-}:
-let
+}: let
   nixos-auto-update = pkgs.writeShellScriptBin "nixos-auto-update" ''
     set -euo pipefail
 
@@ -16,7 +15,7 @@ let
       local title="$1"
       local message="$2"
       local urgency="''${3:-normal}"
-      
+
       for user in $(who | awk '{print $1}' | sort -u); do
         uid=$(id -u "$user" 2>/dev/null) || continue
         # Check if user's D-Bus session bus exists before attempting notification
@@ -94,14 +93,13 @@ let
       exit 1
     fi
   '';
-in
-{
+in {
   # NixOS auto-update service (runs on boot, applies weekly updates)
   systemd.services.nixos-auto-update = {
     description = "NixOS Weekly Auto-Update";
-    after = [ "network-online.target" ];
-    wants = [ "network-online.target" ];
-    wantedBy = [ "multi-user.target" ];
+    after = ["network-online.target"];
+    wants = ["network-online.target"];
+    wantedBy = ["multi-user.target"];
     path = [
       pkgs.gitFull
       pkgs.sudo-rs
