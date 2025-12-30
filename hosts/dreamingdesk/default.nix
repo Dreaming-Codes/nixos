@@ -176,14 +176,9 @@
     "A+ /home/riccardo - - - - d:u:dreamingcodes:rwx"
   ];
 
-  hardware.keyboard.qmk.enable = true;
-  services.udev.packages = [pkgs.via];
   # 1. fix suspend
-  # 2. make xremap work
   services.udev.extraRules = ''
     ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x8086", ATTR{device}=="0x06ed", ATTR{power/wakeup}="disabled"
-    KERNEL=="uinput", GROUP="input", TAG+="uaccess"
-    SUBSYSTEM=="input", ATTRS{idVendor}=="3434", ATTRS{idProduct}=="0660", MODE="0660", TAG+="uaccess"
   '';
 
   boot.kernelParams = [
