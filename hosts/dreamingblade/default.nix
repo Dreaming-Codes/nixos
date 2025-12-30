@@ -49,6 +49,11 @@
   };
 
   services.razer-laptop-control.enable = true;
+
+  # Clean up stale socket before starting razer daemon
+  systemd.user.services.razerdaemon.serviceConfig.ExecStartPre = lib.mkBefore [
+    "-${pkgs.coreutils}/bin/rm -f /tmp/razercontrol-socket"
+  ];
   # Enable rocm support for the iGPU on the laptop
   nixpkgs.config.rocmSupport = true;
   # Enable cuda support for the dGPU on the laptop
