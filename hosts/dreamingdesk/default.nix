@@ -56,7 +56,6 @@
     lact
     # amd encoders/decoders
     amf
-    via
   ];
 
   boot.kernelModules = ["kvm-intel"];
