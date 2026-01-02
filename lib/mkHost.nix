@@ -15,7 +15,7 @@ in {
       inherit system;
       specialArgs = {
         inherit inputs;
-        inherit (inputs) dolphin-overlay home-manager nix-index-database gauntlet;
+        inherit (inputs) dolphin-overlay home-manager nix-index-database;
       };
       modules =
         commonModules

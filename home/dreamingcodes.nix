@@ -10,10 +10,6 @@
   vibeCommit = pkgs.writeShellScriptBin "vibe-commit" (builtins.readFile ../scripts/vibeCommit.sh);
   razerPower = pkgs.writeShellScriptBin "razer-power" (builtins.readFile ../scripts/razerpower.sh);
 in {
-  imports = [
-    inputs.gauntlet.homeManagerModules.default
-  ];
-
   programs.fish = {
     completions = {
       vibe-merge = ''
@@ -29,12 +25,6 @@ in {
     "/home/dreamingcodes/.cargo/bin"
     "/home/dreamingcodes/.bun/bin"
   ];
-
-  programs.gauntlet = {
-    enable = true;
-    service.enable = true;
-    config = {};
-  };
 
   # Virt-manager dconf settings (qemu:///system access)
   dconf.settings = {
@@ -112,13 +102,13 @@ in {
           "$mod, SPACE, exec, wezterm"
           ", Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m active"
           "SHIFT, Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m region"
-          "$mod, X, exec, gauntlet open"
+          "$mod, X, exec, vicinae open"
           "$mod, Q, killactive"
           "$mod, T, exec, Telegram"
           "$mod, D, exec, discord"
           "$mod, S, exec, signal-desktop"
           "$mod, O, togglefloating"
-          "$mod, C, exec, gauntlet run https://github.com/Mrid22/gauntlet-clipboard template-view :primary"
+          "$mod, C, exec, vicinae run https://github.com/Mrid22/gauntlet-clipboard template-view :primary"
           "$mod, L, exec, hyprlock"
           "$mod, F, fullscreen"
           "$mod, M, exec, toggleMixer"

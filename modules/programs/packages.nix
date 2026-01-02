@@ -3,10 +3,6 @@
   inputs,
   ...
 }: {
-  imports = [
-    inputs.gauntlet.nixosModules.default
-  ];
-
   programs.fish.enable = true;
 
   programs.appimage = {
@@ -38,6 +34,7 @@
   };
 
   environment.systemPackages = with pkgs; [
+    vicinae
     wl-clipboard-rs
     wget
     any-nix-shell

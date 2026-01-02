@@ -25,10 +25,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixpkgs-davinci.url = "github:nixos/nixpkgs/d457818da697aa7711ff3599be23ab8850573a46";
-    gauntlet = {
-      url = "github:project-gauntlet/gauntlet";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     nix-index-database = {
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
