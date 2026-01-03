@@ -11,7 +11,7 @@
   razerPower = pkgs.writeShellScriptBin "razer-power" (builtins.readFile ../scripts/razerpower.sh);
 in {
   imports = [
-    inputs.gauntlet.homeManagerModules.default
+    inputs.vicinae.homeManagerModules.default
   ];
 
   programs.fish = {
@@ -30,10 +30,123 @@ in {
     "/home/dreamingcodes/.bun/bin"
   ];
 
-  programs.gauntlet = {
+  services.vicinae = {
     enable = true;
-    service.enable = true;
-    config = {};
+    package = pkgs.vicinae;
+    systemd = {
+      enable = true;
+      autoStart = true;
+      environment = {
+        USE_LAYER_SHELL = 1;
+      };
+    };
+    settings = {
+      close_on_focus_loss = true;
+      pop_to_root_on_close = true;
+      font = {
+        normal = {
+          family = "FiraCode Nerd Font";
+        };
+      };
+      providers = {
+        "@Gelei/bluetooth-0" = {
+          preferences.connectionToggleable = true;
+        };
+        "@gebeto/store.raycast.translate" = {
+          preferences.autoInput = true;
+          entrypoints = {
+            instant-translate-copy.enabled = false;
+            instant-translate-paste.enabled = false;
+            instant-translate-view.enabled = false;
+            quick-translate.enabled = true;
+            translate.enabled = false;
+            translate-form.enabled = false;
+          };
+        };
+        "@knoopx/nix-0" = {
+          entrypoints.flake-packages.enabled = true;
+        };
+        "@marcjulian/store.raycast.obsidian" = {
+          preferences = {
+            removeLatex = false;
+            removeLinks = false;
+            removeYAML = false;
+            vaultPath = "/home/dreamingcodes/Documents/Obsidian Vault";
+          };
+          entrypoints = {
+            appendTaskCommand.enabled = false;
+            dailyNoteAppendCommand.enabled = false;
+            dailyNoteCommand.enabled = false;
+            openVaultCommand.enabled = false;
+            openWorkspaceCommand.enabled = false;
+            randomNoteCommand.enabled = false;
+            searchMedia.enabled = false;
+          };
+        };
+        "@mattisssa/store.raycast.spotify-player" = {
+          entrypoints = {
+            findLyrics.enabled = false;
+            generatePlaylist.enabled = false;
+            next.enabled = false;
+            previous.enabled = false;
+            search.preferences.musicOnly = true;
+            togglePlayPause.enabled = false;
+            volume.enabled = true;
+          };
+        };
+        "@ratoru/store.raycast.google-maps-search" = {
+          preferences = {
+            homeAddress = "";
+            preferredMode = "driving";
+            preferredOrigin = "home";
+            useSelected = true;
+          };
+          entrypoints = {
+            find.enabled = false;
+            quickSearchMaps.enabled = false;
+            travelHome.enabled = false;
+            travelTo.alias = "driveto";
+          };
+        };
+        clipboard = {
+          preferences.encryption = true;
+          entrypoints.history.preferences.defaultAction = "copy";
+        };
+        core = {
+          entrypoints = {
+            about.enabled = false;
+            documentation.enabled = false;
+            keybind-settings.enabled = false;
+            list-extensions.enabled = false;
+            open-config-file.enabled = false;
+            open-default-config.enabled = false;
+            report-bug.enabled = false;
+            sponsor.enabled = false;
+          };
+        };
+        files = {
+          enabled = false;
+          preferences.autoIndexing = true;
+        };
+        power = {
+          entrypoints = {
+            hibernate.enabled = false;
+            sleep.enabled = false;
+          };
+        };
+        theme.enabled = false;
+      };
+    };
+    extensions = with inputs.vicinae-extensions.packages.${pkgs.stdenv.hostPlatform.system}; [
+      bluetooth
+      it-tools
+      nix
+      player-pilot
+      port-killer
+      power-profile
+      process-manager
+      wifi-commander
+    ];
   };
 
   # Virt-manager dconf settings (qemu:///system access)
@@ -112,13 +225,13 @@ in {
           "$mod, SPACE, exec, wezterm"
           ", Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m active"
           "SHIFT, Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m region"
-          "$mod, X, exec, gauntlet open"
+          "$mod, X, exec, vicinae open"
           "$mod, Q, killactive"
           "$mod, T, exec, Telegram"
           "$mod, D, exec, discord"
           "$mod, S, exec, signal-desktop"
           "$mod, O, togglefloating"
-          "$mod, C, exec, gauntlet run https://github.com/Mrid22/gauntlet-clipboard template-view :primary"
+          "$mod, C, exec, vicinae deeplink vicinae://extensions/vicinae/clipboard/history"
           "$mod, L, exec, hyprlock"
           "$mod, F, fullscreen"
           "$mod, M, exec, toggleMixer"
