@@ -43,6 +43,7 @@ in {
     settings = {
       close_on_focus_loss = true;
       pop_to_root_on_close = true;
+      favorites = [];
       font = {
         normal = {
           family = "FiraCode Nerd Font";
