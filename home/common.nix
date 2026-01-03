@@ -85,13 +85,13 @@
           echo "╠═══════════════════════════════════════════════════════════════╣"
           echo "║  Super+Space    Open terminal (wezterm)                       ║"
           echo "║  Super+W        Open browser (helium)                         ║"
-          echo "║  Super+X        Open Gauntlet                                 ║"
+          echo "║  Super+X        Open Vicinae                                  ║"
           echo "║  Super+Q        Kill active window                            ║"
           echo "║  Super+F        Fullscreen                                    ║"
           echo "║  Super+O        Toggle floating                               ║"
+          echo "║  Super+C        Clipboard (Vicinae)                           ║"
           echo "║  Super+L        Lock screen (hyprlock)                        ║"
           echo "║  Super+M        Toggle mixer                                  ║"
-          echo "║  Super+C        Clipboard (gauntlet)                          ║"
           echo "║  Super+N        Toggle Obsidian workspace                     ║"
           echo "╠═══════════════════════════════════════════════════════════════╣"
           echo "║  APPS                                                         ║"
@@ -222,7 +222,10 @@
     eza = {
       enable = true;
       enableFishIntegration = true;
-      extraOptions = ["-al" "--icons"];
+      extraOptions = [
+        "-al"
+        "--icons"
+      ];
     };
 
     bat.enable = true;

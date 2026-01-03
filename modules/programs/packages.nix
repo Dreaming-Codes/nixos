@@ -3,10 +3,6 @@
   inputs,
   ...
 }: {
-  imports = [
-    inputs.gauntlet.nixosModules.default
-  ];
-
   programs.fish.enable = true;
 
   programs.appimage = {
