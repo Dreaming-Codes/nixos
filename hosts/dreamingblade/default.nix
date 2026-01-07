@@ -4,6 +4,10 @@
   config,
   ...
 }: {
+  imports = [
+    ../../modules/programs/college.nix
+  ];
+
   boot.initrd.availableKernelModules = [
     "nvme"
     "xhci_pci"
