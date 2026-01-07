@@ -3,7 +3,30 @@
   lib,
   config,
   ...
-}: {
+}: let
+  # Get GCC include paths for clangd
+  gcc = pkgs.gcc;
+  gccVersion = gcc.cc.version;
+  gccPath = "${gcc.cc}/include/c++/${gccVersion}";
+  gccTargetPath = "${gcc.cc}/include/c++/${gccVersion}/x86_64-unknown-linux-gnu";
+  gccBackwardPath = "${gcc.cc}/include/c++/${gccVersion}/backward";
+  gccLibPath = "${gcc.cc}/lib/gcc/x86_64-unknown-linux-gnu/${gccVersion}/include";
+  gccIncludePath = "${gcc.cc}/include";
+  gccLibFixedPath = "${gcc.cc}/lib/gcc/x86_64-unknown-linux-gnu/${gccVersion}/include-fixed";
+  glibcIncludePath = "${pkgs.glibc.dev}/include";
+
+  clangdConfig = pkgs.writeText "clangd-config.yaml" ''
+    CompileFlags:
+      Add:
+        - "-isystem${gccPath}"
+        - "-isystem${gccTargetPath}"
+        - "-isystem${gccBackwardPath}"
+        - "-isystem${gccLibPath}"
+        - "-isystem${gccIncludePath}"
+        - "-isystem${gccLibFixedPath}"
+        - "-isystem${glibcIncludePath}"
+  '';
+in {
   home.shell.enableShellIntegration = true;
   programs.home-manager.enable = true;
 
@@ -35,6 +58,8 @@
     source = ../config/helix;
     recursive = true;
   };
+
+  home.file.".config/clangd/config.yaml".source = clangdConfig;
 
   programs = {
     # Shell and CLI tools
