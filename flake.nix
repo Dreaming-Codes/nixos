@@ -2,12 +2,13 @@
   description = "NixOS system flake";
 
   nixConfig = {
-    extra-substituters = [
-      "https://attic.xuyh0120.win/lantian"
-      "https://cache.garnix.io"
-      "https://numtide.cachix.org"
-      "https://nix-community.cachix.org"
-      "https://vicinae.cachix.org"
+    substituters = [
+      "https://cache.garnix.io?priority=30"
+      "https://cache.nixos.org?priority=40"
+      "https://nix-community.cachix.org?priority=41"
+      "https://attic.xuyh0120.win/lantian?priority=42"
+      "https://numtide.cachix.org?priority=43"
+      "https://vicinae.cachix.org?priority=44"
     ];
     extra-trusted-public-keys = [
       "lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc="
