@@ -168,8 +168,5 @@ in {
       xz
       zlib
     ];
-
-    # Adb need to be installed globally to run as root
-    programs.adb.enable = true;
   };
 }

@@ -49,6 +49,8 @@
     bottles
     libcamera
 
+    android-tools
+
     hplipWithPlugin
 
     uv
