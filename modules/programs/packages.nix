@@ -197,6 +197,9 @@
     kwalletcli
     tor-browser
     jetbrains-toolbox
+
+    # Secrets management
+    sops
   ];
 
   environment.variables = {
@@ -209,6 +212,9 @@
     # Hint Electron apps to use Wayland:
     NIXOS_OZONE_WL = "1";
     QT_QPA_PLATFORMTHEME = "kde";
+
+    # sops-nix: point to age identity for encrypting/decrypting secrets
+    SOPS_AGE_KEY_FILE = "/home/dreamingcodes/.nixos/secrets/identity.age";
   };
 
   environment.sessionVariables = {
