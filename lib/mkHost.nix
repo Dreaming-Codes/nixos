@@ -3,6 +3,7 @@
     inputs.nixos-facter-modules.nixosModules.facter
     inputs.nur.modules.nixos.default
     inputs.home-manager.nixosModules.home-manager
+    inputs.determinate.nixosModules.default
   ];
 in {
   mkHost = {
