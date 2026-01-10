@@ -35,6 +35,7 @@
 
   environment.systemPackages = with pkgs; [
     wl-clipboard-rs
+    wl-clip-persist
     wget
     any-nix-shell
     inputs.nix-alien.packages.${stdenv.hostPlatform.system}.nix-alien
@@ -214,6 +215,8 @@
     NIX_PACKAGE_SEARCH_EXPERIMENTAL = "true";
   };
   environment.extraInit = ''
-    export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath [pkgs.openssl]}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    export LD_LIBRARY_PATH="${
+      pkgs.lib.makeLibraryPath [pkgs.openssl]
+    }''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
   '';
 }

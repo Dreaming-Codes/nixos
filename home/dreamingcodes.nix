@@ -420,6 +420,23 @@ in {
     };
   };
 
+  # Clipboard persistence for Wayland - keeps clipboard data after apps close
+  systemd.user.services.wl-clip-persist = {
+    Unit = {
+      Description = "Persistent clipboard for Wayland";
+      PartOf = ["hyprland-session.target"];
+      After = ["hyprland-session.target"];
+    };
+    Install = {
+      WantedBy = ["hyprland-session.target"];
+    };
+    Service = {
+      ExecStart = "${pkgs.wl-clip-persist}/bin/wl-clip-persist --clipboard regular";
+      Restart = "on-failure";
+      Type = "simple";
+    };
+  };
+
   # DreamingCodes-only packages (toggleMic/toggleMixer scripts)
   home.packages = [
     toggleMic
@@ -447,11 +464,6 @@ in {
   # DreamingCodes-specific config files
   home.file."./.config/ashell" = {
     source = ../config/ashell;
-    recursive = true;
-  };
-
-  home.file."./.config/clipcat" = {
-    source = ../config/clipcat;
     recursive = true;
   };
 
