@@ -25,7 +25,8 @@ if hyprctl monitors | grep -q "DP-2"; then
     for i in 11 12 13 14 15 16 17 18 19 20; do
         hyprctl dispatch moveworkspacetomonitor "$i eDP-1" 2>/dev/null
     done
-    # Switch eDP-1 to workspace F1 (11)
+    # Switch eDP-1 to workspace F1 (11) - go to F2 first to force refresh
+    hyprctl dispatch workspace 12
     hyprctl dispatch workspace 11
     # Refocus the original workspace
     hyprctl dispatch workspace "$current_workspace"
