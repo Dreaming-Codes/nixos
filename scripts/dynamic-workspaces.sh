@@ -9,9 +9,6 @@ configure_workspaces() {
     if hyprctl monitors | grep -q "DP-2"; then
         echo "DP-2 connected - binding 1-10 to DP-2, F1-F10 to eDP-1"
         
-        # Save current workspace to refocus later
-        current_workspace=$(hyprctl activeworkspace -j | jq -r '.id')
-        
         # External monitor connected - bind workspaces 1-10 to DP-2
         hyprctl keyword workspace "1, default:true, monitor:DP-2"
         for i in 2 3 4 5 6 7 8 9 10; do
@@ -29,13 +26,14 @@ configure_workspaces() {
         for i in 1 2 3 4 5 6 7 8 9 10; do
             hyprctl dispatch moveworkspacetomonitor "name:F$i eDP-1" 2>/dev/null
         done
-        # Switch eDP-1 to workspace F1 - go to F2 first to force refresh
+        # Switch to F2 and then back to F1 to refresh ashell displayed name
         hyprctl dispatch workspace name:F2
         hyprctl dispatch workspace name:F1
-        # Refocus the original workspace
-        hyprctl dispatch workspace "$current_workspace"
     else
         echo "DP-2 disconnected - binding all workspaces to eDP-1"
+
+        # Save current workspace to refocus later
+        current_workspace=$(hyprctl activeworkspace -j | jq -r '.id')
         
         # No external monitor - bind all workspaces to eDP-1
         hyprctl keyword workspace "1, default:true, monitor:eDP-1"
@@ -53,6 +51,8 @@ configure_workspaces() {
         for i in 1 2 3 4 5 6 7 8 9 10; do
             hyprctl dispatch moveworkspacetomonitor "name:F$i eDP-1" 2>/dev/null
         done
+
+        hyprctl dispatch workspace "$current_workspace"
     fi
 }
 
