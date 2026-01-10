@@ -63,15 +63,27 @@
           "21, defaultName:F11"
           "22, defaultName:F12"
         ];
-        exec-once = [
-          "${pkgs.writeShellScriptBin "dynamic-workspaces" (builtins.readFile ../../scripts/dynamic-workspaces.sh)}/bin/dynamic-workspaces"
-        ];
-        "monitoradded" = [
-          "exec, ${pkgs.writeShellScriptBin "dynamic-workspaces" (builtins.readFile ../../scripts/dynamic-workspaces.sh)}/bin/dynamic-workspaces"
-        ];
-        "monitorremoved" = [
-          "exec, ${pkgs.writeShellScriptBin "dynamic-workspaces" (builtins.readFile ../../scripts/dynamic-workspaces.sh)}/bin/dynamic-workspaces"
-        ];
+      };
+    };
+
+    # Dynamic workspace configuration daemon - listens to Hyprland IPC for monitor events
+    systemd.user.services.dynamic-workspaces = {
+      Unit = {
+        Description = "Dynamic workspace configuration for Hyprland";
+        PartOf = ["hyprland-session.target"];
+        After = ["hyprland-session.target"];
+      };
+      Service = {
+        Type = "simple";
+        ExecStart = "${pkgs.writeShellScript "dynamic-workspaces" ''
+          export PATH="${pkgs.socat}/bin:${pkgs.jq}/bin:${pkgs.hyprland}/bin:$PATH"
+          ${builtins.readFile ../../scripts/dynamic-workspaces.sh}
+        ''}";
+        Restart = "on-failure";
+        RestartSec = 5;
+      };
+      Install = {
+        WantedBy = ["hyprland-session.target"];
       };
     };
   };
