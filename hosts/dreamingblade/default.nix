@@ -90,10 +90,12 @@
 
   services.razer-laptop-control.enable = true;
 
-  # Clean up stale socket on boot (runs as root before user services)
-  systemd.tmpfiles.rules = [
-    "r /tmp/razercontrol-socket - - - - -"
-  ];
+  # Handle race condition: greeter starts daemon first, then exits when we log in.
+  # Our session's daemon fails initially but retries after greeter's daemon stops.
+  systemd.user.services.razerdaemon.serviceConfig = {
+    Restart = "on-failure";
+    RestartSec = 2;
+  };
   # Enable rocm support for the iGPU on the laptop
   nixpkgs.config.rocmSupport = true;
   # Enable cuda support for the dGPU on the laptop
