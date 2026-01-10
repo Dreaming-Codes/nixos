@@ -54,13 +54,19 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixos-facter-modules.url = "github:nix-community/nixos-facter-modules";
-    vaultix.url = "github:milieuim/vaultix";
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    nix-clawdbot = {
+      url = "github:clawdbot/nix-clawdbot";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs @ {
     self,
     nixpkgs,
-    vaultix,
     razer-laptop-controller,
     ...
   }: let
@@ -90,15 +96,6 @@
           }
         ];
       };
-    };
-
-    vaultix = vaultix.configure {
-      nodes = self.nixosConfigurations;
-      identity = self + "/opt/secret.age";
-      extraRecipients = [];
-      extraPackages = [];
-      pinentryPackage = pkgs.kwalletcli;
-      cache = "./secret/.cache";
     };
   };
 }

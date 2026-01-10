@@ -1,3 +1,6 @@
 .direnv
 /core
 .rsworktree/
+
+# sops-nix age private key (never commit!)
+secrets/identity.age
