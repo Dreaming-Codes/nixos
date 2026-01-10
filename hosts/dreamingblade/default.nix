@@ -145,8 +145,7 @@
     # accessible via `nvidia-settings`.
     nvidiaSettings = false;
 
-    # FIXME: revert to stable nvidia driver once https://github.com/nixos/nixpkgs/issues/467814 is fixed
-    package = config.boot.kernelPackages.nvidiaPackages.beta;
+    package = config.boot.kernelPackages.nvidiaPackages.stable;
   };
 
   hardware.keyboard.qmk.enable = true;
