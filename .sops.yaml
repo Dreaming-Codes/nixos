@@ -1,0 +1,10 @@
+# SOPS configuration for NixOS secrets
+# Age public key from ~/.nixos/secrets/identity.age
+keys:
+  - &dreamingcodes age1qh5lrgpzmvhkyadsnckl0ch0sfrmwjkk5thlvpcst2a7mhsy2g4swwquf5
+
+creation_rules:
+  - path_regex: secrets/.*\.yaml$
+    key_groups:
+      - age:
+          - *dreamingcodes
