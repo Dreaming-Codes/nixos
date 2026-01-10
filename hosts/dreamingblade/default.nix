@@ -90,9 +90,9 @@
 
   services.razer-laptop-control.enable = true;
 
-  # Clean up stale socket before starting razer daemon
-  systemd.user.services.razerdaemon.serviceConfig.ExecStartPre = lib.mkBefore [
-    "-${pkgs.coreutils}/bin/rm -f /tmp/razercontrol-socket"
+  # Clean up stale socket on boot (runs as root before user services)
+  systemd.tmpfiles.rules = [
+    "r /tmp/razercontrol-socket - - - - -"
   ];
   # Enable rocm support for the iGPU on the laptop
   nixpkgs.config.rocmSupport = true;
