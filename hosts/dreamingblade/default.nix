@@ -159,6 +159,8 @@
   services.udev.extraRules = ''
     # Keychron Q6 Pro - world read/write for WebHID browser access
     KERNEL=="hidraw*", ATTRS{idVendor}=="3434", ATTRS{idProduct}=="0660", MODE="0666", GROUP="plugdev", TAG+="uaccess"
+    # Keychron - disable USB autosuspend for all Keychron devices
+    ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="3434", ATTR{power/autosuspend}="-1"
   '';
 
   hardware.nvidia.prime = {
