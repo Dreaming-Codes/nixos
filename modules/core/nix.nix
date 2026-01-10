@@ -5,17 +5,6 @@
   inputs,
   ...
 }: {
-  nixpkgs.overlays = [
-    (final: prev: {
-      inherit
-        (prev.lixPackageSets.stable)
-        nixpkgs-review
-        nix-eval-jobs
-        nix-fast-build
-        colmena
-        ;
-    })
-  ];
   nix = rec {
     # Channels are dead, long live flakes
     channel.enable = false;
@@ -31,6 +20,9 @@
     '';
 
     settings = {
+      # Enable parallel evaluation (Determinate Nix 3.11+)
+      eval-cores = 0;
+
       # Allow using flakes & automatically optimize the nix store
       auto-optimise-store = true;
 
@@ -39,10 +31,16 @@
       builders-use-substitutes = true;
 
       # We are using flakes, so enable the experimental features
-      experimental-features = ["nix-command" "flakes"];
+      experimental-features = [
+        "nix-command"
+        "flakes"
+      ];
 
       # Users allowed to use Nix
-      allowed-users = ["@wheel" "@nix"];
+      allowed-users = [
+        "@wheel"
+        "@nix"
+      ];
       trusted-users = ["@wheel"];
 
       # Max number of parallel jobs
@@ -58,8 +56,7 @@
     # Make legacy nix commands consistent as well
     nixPath = lib.mapAttrsToList (key: value: "${key}=${value.to.path}") config.nix.registry;
 
-    # Use the Lix package manager
-    package = pkgs.lixPackageSets.stable.lix;
+    # Package is set by determinate.nixosModules.default
 
     # Automtaically pin registries based on inputs
     registry = lib.mapAttrs (_: v: {flake = v;}) inputs;

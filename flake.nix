@@ -3,6 +3,7 @@
 
   nixConfig = {
     substituters = [
+      "https://install.determinate.systems?priority=20"
       "https://cache.garnix.io?priority=30"
       "https://cache.nixos.org?priority=40"
       "https://nix-community.cachix.org?priority=41"
@@ -11,6 +12,7 @@
       "https://vicinae.cachix.org?priority=44"
     ];
     extra-trusted-public-keys = [
+      "cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM="
       "lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc="
       "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
@@ -22,6 +24,7 @@
   inputs = {
     # NixOS official package source, using the nixos-unstable branch here
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
     nix-cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel";
     nur = {
       url = "github:nix-community/NUR";
