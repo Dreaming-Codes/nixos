@@ -21,6 +21,7 @@
     ../modules/services/docker.nix
     ../modules/services/printing.nix
     ../modules/services/samba.nix
+    ../modules/services/flatpak.nix
     ../modules/services/auto-update.nix
     ../modules/programs/steam.nix
     ../modules/programs/development.nix
