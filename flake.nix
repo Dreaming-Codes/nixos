@@ -58,10 +58,6 @@
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nix-clawdbot = {
-      url = "github:clawdbot/nix-clawdbot";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs = inputs @ {
