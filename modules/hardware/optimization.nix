@@ -32,15 +32,15 @@
     algorithm = "zstd";
     enable = true;
     memoryPercent = 90;
+    priority = 100; # Higher priority - use zram first (faster, compressed RAM)
   };
 
   # Disk-based swap as fallback when zram is exhausted
-  # Lower priority (5) than zram (100) ensures zram is used first
   swapDevices = [
     {
       device = "/var/lib/swapfile";
       size = 16 * 1024; # 16GB in MB
-      priority = 5;
+      priority = 1; # Lower priority - only use when zram is full
     }
   ];
   boot.kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-latest;
