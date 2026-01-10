@@ -67,10 +67,10 @@
           "${pkgs.writeShellScriptBin "dynamic-workspaces" (builtins.readFile ../../scripts/dynamic-workspaces.sh)}/bin/dynamic-workspaces"
         ];
         "monitoradded" = [
-          ", , exec, ${pkgs.writeShellScriptBin "dynamic-workspaces" (builtins.readFile ../../scripts/dynamic-workspaces.sh)}/bin/dynamic-workspaces"
+          "exec, ${pkgs.writeShellScriptBin "dynamic-workspaces" (builtins.readFile ../../scripts/dynamic-workspaces.sh)}/bin/dynamic-workspaces"
         ];
         "monitorremoved" = [
-          ", , exec, ${pkgs.writeShellScriptBin "dynamic-workspaces" (builtins.readFile ../../scripts/dynamic-workspaces.sh)}/bin/dynamic-workspaces"
+          "exec, ${pkgs.writeShellScriptBin "dynamic-workspaces" (builtins.readFile ../../scripts/dynamic-workspaces.sh)}/bin/dynamic-workspaces"
         ];
       };
     };
