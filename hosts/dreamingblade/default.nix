@@ -45,8 +45,32 @@
           "AQ_DRM_DEVICES,/dev/dri/card0:/dev/dri/card1"
         ];
         monitor = [
-          "DP-2, 2560x1440@179.84, 0x0, 1"
-          "eDP-1, 1920x1080@60, 0x1440, 1"
+          "eDP-1, 1920x1080@60, 0x0, 1"
+          "DP-2, 2560x1440@179.84, 1920x0, 1"
+        ];
+        workspace = [
+          # Workspace names only - monitor bindings handled by dynamic-workspaces.sh
+          "11, defaultName:F1"
+          "12, defaultName:F2"
+          "13, defaultName:F3"
+          "14, defaultName:F4"
+          "15, defaultName:F5"
+          "16, defaultName:F6"
+          "17, defaultName:F7"
+          "18, defaultName:F8"
+          "19, defaultName:F9"
+          "20, defaultName:F10"
+          "21, defaultName:F11"
+          "22, defaultName:F12"
+        ];
+        exec-once = [
+          "${pkgs.writeShellScriptBin "dynamic-workspaces" (builtins.readFile ../../scripts/dynamic-workspaces.sh)}/bin/dynamic-workspaces"
+        ];
+        "monitoradded" = [
+          ", , exec, ${pkgs.writeShellScriptBin "dynamic-workspaces" (builtins.readFile ../../scripts/dynamic-workspaces.sh)}/bin/dynamic-workspaces"
+        ];
+        "monitorremoved" = [
+          ", , exec, ${pkgs.writeShellScriptBin "dynamic-workspaces" (builtins.readFile ../../scripts/dynamic-workspaces.sh)}/bin/dynamic-workspaces"
         ];
       };
     };
