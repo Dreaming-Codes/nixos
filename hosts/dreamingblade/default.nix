@@ -155,11 +155,12 @@
   ];
 
   # Keychron Q6 Pro - grant hidraw access for VIA/QMK configurator
+  # Keychron Q6 Pro udev rules
   services.udev.extraRules = ''
     # Keychron Q6 Pro - world read/write for WebHID browser access
     KERNEL=="hidraw*", ATTRS{idVendor}=="3434", ATTRS{idProduct}=="0660", MODE="0666", GROUP="plugdev", TAG+="uaccess"
     # Keychron Q6 Pro - disable USB autosuspend
-    ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="3434", ATTR{idProduct}=="0660", ATTR{power/control}="on"
+    ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="3434", ATTR{idProduct}=="0660", RUN+="${pkgs.bash}/bin/bash -c 'echo on > /sys%p/power/control'"
   '';
 
   hardware.nvidia.prime = {
