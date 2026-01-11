@@ -138,7 +138,7 @@
 
     prismlauncher
 
-    zed-editor
+    # zed-editor
 
     ripgrep
     ripgrep-all
