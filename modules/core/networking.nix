@@ -1,4 +1,13 @@
 {...}: {
+  # Intel AX210 WiFi optimizations - disable power saving for better stability
+  boot.extraModprobeConfig = ''
+    options iwlwifi power_save=0
+    options iwlmvm power_scheme=1
+  '';
+
+  # Use geoclue to automatically set regulatory domain based on location
+  location.provider = "geoclue2";
+
   services.resolved = {
     enable = true;
     dnsovertls = "true";
@@ -8,13 +17,35 @@
   };
   networking = {
     useDHCP = false;
-    wireless.enable = true;
+    wireless = {
+      enable = true;
+      # Enterprise WiFi (eduroam/WPA-Enterprise) optimizations
+      extraConfig = ''
+        # More aggressive background scanning for better roaming
+        # Format: bgscan="<module>:<short_interval>:<signal_threshold>:<long_interval>"
+        # Scan every 15s when signal < -65dBm, otherwise every 120s
+        bgscan="simple:15:-65:120"
+
+        # Enable Opportunistic Key Caching for faster roaming
+        okc=1
+
+        # Enable Protected Management Frames (required by some enterprise networks)
+        pmf=1
+
+        # Faster reconnection
+        fast_reauth=1
+      '';
+    };
     networkmanager = {
       enable = true;
-      unmanaged = ["lo" "docker0" "virbr0"];
+      unmanaged = [
+        "lo"
+        "docker0"
+        "virbr0"
+      ];
       dns = "systemd-resolved";
       wifi = {
-        powersave = true;
+        powersave = false;
         macAddress = "stable-ssid";
       };
     };
