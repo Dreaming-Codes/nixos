@@ -3,7 +3,40 @@
   lib,
   config,
   ...
-}: {
+}: let
+  # GPU Control package for dynamic NVIDIA GPU power management
+  gpu-control = pkgs.rustPlatform.buildRustPackage {
+    pname = "gpu-control";
+    version = "0.1.0";
+    src = ../../packages/gpu-control;
+    cargoLock = {
+      lockFile = ../../packages/gpu-control/Cargo.lock;
+    };
+    nativeBuildInputs = [pkgs.pkg-config];
+    buildInputs = [pkgs.systemdLibs];
+    meta = {
+      description = "Dynamic NVIDIA GPU power control for hybrid graphics";
+      mainProgram = "gpu-control";
+    };
+  };
+
+  # Udev rules to soft-disable GPU at boot (can be re-enabled at runtime)
+  gpuSoftDisableRules = ''
+    # Soft-disable NVIDIA GPU at boot - remove from PCI bus but don't blacklist modules
+    # Create marker file so gpu-control knows this was a soft-disable
+    ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x030000", RUN+="${pkgs.coreutils}/bin/touch /run/gpu-soft-disabled", RUN+="${pkgs.bash}/bin/bash -c 'echo 1 > /sys$devpath/remove'"
+    ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x030200", RUN+="${pkgs.coreutils}/bin/touch /run/gpu-soft-disabled", RUN+="${pkgs.bash}/bin/bash -c 'echo 1 > /sys$devpath/remove'"
+    ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x040300", RUN+="${pkgs.bash}/bin/bash -c 'echo 1 > /sys$devpath/remove'"
+  '';
+
+  # Udev rules to hard-disable GPU (used in no-gpu specialisation)
+  gpuHardDisableRules = ''
+    ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x0c0330", ATTR{power/control}="auto", ATTR{remove}="1"
+    ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x0c8000", ATTR{power/control}="auto", ATTR{remove}="1"
+    ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x040300", ATTR{power/control}="auto", ATTR{remove}="1"
+    ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x03[0-9]*", ATTR{power/control}="auto", ATTR{remove}="1"
+  '';
+in {
   imports = [
     ../../modules/programs/college.nix
   ];
@@ -32,7 +65,10 @@
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
-  environment.systemPackages = with pkgs; [nrfutil];
+  environment.systemPackages = with pkgs; [
+    nrfutil
+    gpu-control
+  ];
   nixpkgs.config.segger-jlink.acceptLicense = true;
 
   home-manager.users.dreamingcodes = {
@@ -84,6 +120,27 @@
       };
       Install = {
         WantedBy = ["hyprland-session.target"];
+      };
+    };
+
+    # GPU Control daemon - monitors display hotplug and manages NVIDIA GPU power
+    systemd.user.services.gpu-control = {
+      Unit = {
+        Description = "GPU Control daemon for dynamic NVIDIA power management";
+        PartOf = ["graphical-session.target"];
+        After = ["graphical-session.target"];
+      };
+      Service = {
+        Type = "simple";
+        ExecStart = "${gpu-control}/bin/gpu-control daemon";
+        Restart = "on-failure";
+        RestartSec = 5;
+        Environment = [
+          "RUST_LOG=info"
+        ];
+      };
+      Install = {
+        WantedBy = ["graphical-session.target"];
       };
     };
   };
@@ -212,19 +269,20 @@
   in
     generated
     // {
-      # Keep no-gpu as is (no variants)
+      # prime-ready: GPU enabled at boot but can be toggled at runtime
+      prime-ready.configuration = {
+        system.nixos.tags = ["prime-ready"];
+        # No soft-disable rules - GPU is available immediately
+      };
+
+      # Keep no-gpu as is (no variants) - GPU completely disabled
       no-gpu.configuration = {
         system.nixos.tags = ["no-gpu"];
         boot.extraModprobeConfig = ''
           blacklist nouveau
           options nouveau modeset=0
         '';
-        services.udev.extraRules = ''
-          ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x0c0330", ATTR{power/control}="auto", ATTR{remove}="1"
-          ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x0c8000", ATTR{power/control}="auto", ATTR{remove}="1"
-          ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x040300", ATTR{power/control}="auto", ATTR{remove}="1"
-          ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x03[0-9]*", ATTR{power/control}="auto", ATTR{remove}="1"
-        '';
+        services.udev.extraRules = gpuHardDisableRules;
         boot.blacklistedKernelModules = [
           "nouveau"
           "nvidia"
