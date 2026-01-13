@@ -17,6 +17,7 @@
   };
   networking = {
     useDHCP = false;
+    dhcpcd.enable = false; # NetworkManager handles DHCP, don't run dhcpcd separately
     wireless = {
       enable = true;
       # Enterprise WiFi (eduroam/WPA-Enterprise) optimizations
@@ -34,6 +35,17 @@
 
         # Faster reconnection
         fast_reauth=1
+
+        # Roaming improvements
+        # Only roam if new AP is at least 8dB better than current
+        bss_transition=1
+
+        # Prefer scanning current frequency first (faster roaming)
+        scan_cur_freq=1
+
+        # Auth timeout - default is 10s, Android uses 30s
+        # 15s is a reasonable middle ground for enterprise networks
+        auth_timeout=15
       '';
     };
     networkmanager = {
