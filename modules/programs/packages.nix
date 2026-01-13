@@ -68,6 +68,8 @@
 
     ashell
 
+    socat
+
     (pantheon.switchboard-with-plugs.override {
       useDefaultPlugs = false;
       plugs = [
