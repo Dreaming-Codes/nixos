@@ -166,11 +166,8 @@
   # Disable USB autosuspend for Keychron at boot (runs after powertop which enables autosuspend)
   systemd.services.keychron-no-autosuspend = {
     description = "Disable USB autosuspend for Keychron keyboard";
-    wantedBy = ["multi-user.target"];
-    after = [
-      "systemd-udev-settle.service"
-      "powertop.service"
-    ];
+    wantedBy = ["powertop.service"];
+    after = ["powertop.service"];
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${pkgs.bash}/bin/bash -c 'for dev in /sys/bus/usb/devices/*/; do if [ -f \"$dev/idVendor\" ] && [ -f \"$dev/idProduct\" ] && [ \"$(cat \"$dev/idVendor\")\" = \"3434\" ] && [ \"$(cat \"$dev/idProduct\")\" = \"0660\" ]; then echo on > \"$dev/power/control\" 2>/dev/null || true; fi; done'";
