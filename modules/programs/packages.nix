@@ -13,7 +13,7 @@
       hash = "sha256-tvgvbOlZvg24WoiC4EPgvqaPizNd/Ir68QQpYjWQZgk=";
     };
 
-    cargoHash = lib.fakeHash;
+    cargoHash = "sha256-PJrl8JghJ69+FbtSVKibiJYFaQQ3PV9+eU7N9nX/TxA=";
 
     nativeBuildInputs = [pkgs.pkg-config];
     buildInputs = [pkgs.openssl];
