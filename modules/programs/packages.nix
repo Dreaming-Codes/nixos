@@ -110,6 +110,10 @@
     # required to build a lot of rust crates
     protobuf
 
+    # Jupyter Notebook with Rust kernel
+    jupyter
+    evcxr
+
     # Not sure what caused this but now this is needed to make bash work
     bashInteractive
 
