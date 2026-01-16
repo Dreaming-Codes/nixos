@@ -10,7 +10,7 @@
 
     src = pkgs.fetchCrate {
       inherit pname version;
-      hash = "sha256-qwGtHi4Azfn1xq+mDoDt5aOdONhfUwQkgDhBrYoujIs=";
+      hash = "sha256-tvgvbOlZvg24WoiC4EPgvqaPizNd/Ir68QQpYjWQZgk=";
     };
 
     cargoHash = lib.fakeHash;
