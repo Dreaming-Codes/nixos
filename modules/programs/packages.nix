@@ -1,8 +1,24 @@
 {
   pkgs,
   inputs,
+  lib,
   ...
-}: {
+}: let
+  rsworktree = pkgs.rustPlatform.buildRustPackage rec {
+    pname = "rsworktree";
+    version = "0.7.1";
+
+    src = pkgs.fetchCrate {
+      inherit pname version;
+      hash = "sha256-qwGtHi4Azfn1xq+mDoDt5aOdONhfUwQkgDhBrYoujIs=";
+    };
+
+    cargoHash = lib.fakeHash;
+
+    nativeBuildInputs = [pkgs.pkg-config];
+    buildInputs = [pkgs.openssl];
+  };
+in {
   programs.fish.enable = true;
 
   programs.appimage = {
@@ -39,6 +55,7 @@
     wget
     any-nix-shell
     inputs.nix-alien.packages.${stdenv.hostPlatform.system}.nix-alien
+    inputs.opencode.packages.${stdenv.hostPlatform.system}.default
     gcc
     openssl
     pkg-config
@@ -113,6 +130,9 @@
     # Jupyter Notebook with Rust kernel
     jupyter
     evcxr
+
+    # Git worktree manager from crates.io
+    rsworktree
 
     # Not sure what caused this but now this is needed to make bash work
     bashInteractive

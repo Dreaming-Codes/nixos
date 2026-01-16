@@ -572,6 +572,26 @@
         "type": "github"
       }
     },
+    "opencode": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1768531822,
+        "narHash": "sha256-cw6cJ1oROdz8oQ+MWIF00oLS+lcmH8vqVig4WVXCF14=",
+        "owner": "anomalyco",
+        "repo": "opencode",
+        "rev": "1a43e5fe87e31abe062a006742df6c421f98f777",
+        "type": "github"
+      },
+      "original": {
+        "owner": "anomalyco",
+        "repo": "opencode",
+        "type": "github"
+      }
+    },
     "razer-laptop-controller": {
       "inputs": {
         "flake-utils": "flake-utils",
@@ -605,6 +625,7 @@
         "nixpkgs": "nixpkgs_6",
         "nixpkgs-davinci": "nixpkgs-davinci",
         "nur": "nur",
+        "opencode": "opencode",
         "razer-laptop-controller": "razer-laptop-controller",
         "sops-nix": "sops-nix",
         "vicinae": "vicinae",

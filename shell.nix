@@ -46,7 +46,7 @@
           git diff --name-only --diff-filter=U
           echo ""
           echo "Launching opencode to resolve stash conflicts..."
-          bunx opencode-ai@latest run "Please resolve the git stash pop conflicts in this repository. The conflicting files are: $(git diff --name-only --diff-filter=U | tr '\n' ' ')" -m $MODEL
+          opencode run "Please resolve the git stash pop conflicts in this repository. The conflicting files are: $(git diff --name-only --diff-filter=U | tr '\n' ' ')" -m $MODEL
           if git diff --name-only --diff-filter=U | grep -q .; then
             echo "Conflicts still exist. Please resolve them manually."
             return 1
@@ -121,7 +121,7 @@
         case "$response" in
           [yY][eE][sS]|[yY])
             echo "Launching opencode to resolve conflicts..."
-            bunx opencode-ai@latest run "Please resolve the git merge conflicts in this repository. The conflicting files are: $(git diff --name-only --diff-filter=U | tr '\n' ' ')" -m $MODEL
+            opencode run "Please resolve the git merge conflicts in this repository. The conflicting files are: $(git diff --name-only --diff-filter=U | tr '\n' ' ')" -m $MODEL
             if git diff --name-only --diff-filter=U | grep -q .; then
               echo "Conflicts still exist. Please resolve them manually or try again."
               exit 1
@@ -155,5 +155,12 @@
   '';
 in
   pkgs.mkShell {
-    packages = [pkgs.nil pkgs.nixd pkgs.nixfmt system-current update-system update-system-boot];
+    packages = [
+      pkgs.nil
+      pkgs.nixd
+      pkgs.nixfmt
+      system-current
+      update-system
+      update-system-boot
+    ];
   }
