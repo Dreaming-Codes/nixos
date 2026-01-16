@@ -15,6 +15,9 @@
 
     cargoHash = "sha256-PJrl8JghJ69+FbtSVKibiJYFaQQ3PV9+eU7N9nX/TxA=";
 
+    # Tests require git and network access
+    doCheck = false;
+
     nativeBuildInputs = [pkgs.pkg-config];
     buildInputs = [pkgs.openssl];
   };
