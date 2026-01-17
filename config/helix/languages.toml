@@ -35,3 +35,11 @@ auto-format = true
 name = "json"
 # formatter = { command = "dprint", args = [ "fmt", "--stdin", "json" ] }
 auto-format = true
+
+[[language]]
+name = "java"
+language-servers = ["jdtls"]
+auto-format = true
+
+[language-server.jdtls]
+command = "jdtls"
