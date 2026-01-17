@@ -180,6 +180,7 @@ in {
     boxbuddy
 
     typescript-language-server
+    jdt-language-server
 
     pwvucontrol
     helvum
