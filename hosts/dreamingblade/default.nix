@@ -3,7 +3,9 @@
   lib,
   config,
   ...
-}: {
+}: let
+  ci-keyboard-leds = pkgs.callPackage ../../packages/ci-keyboard-leds {};
+in {
   imports = [
     ../../modules/programs/college.nix
   ];
@@ -36,6 +38,19 @@
   nixpkgs.config.segger-jlink.acceptLicense = true;
 
   home-manager.users.dreamingcodes = {
+    # Fish function to notify ci-keyboard-leds daemon of CWD changes
+    programs.fish.functions.__notify_ci_leds = {
+      onVariable = "PWD";
+      body = ''
+        # Send CWD to ci-keyboard-leds daemon via Unix socket
+        set -l socket "$XDG_RUNTIME_DIR/ci-keyboard-leds.sock"
+        if test -S "$socket"
+          echo $PWD | ${pkgs.netcat}/bin/nc -U -N "$socket" 2>/dev/null &
+          disown
+        end
+      '';
+    };
+
     wayland.windowManager.hyprland = {
       settings = {
         bindl = [
@@ -84,6 +99,34 @@
       };
       Install = {
         WantedBy = ["hyprland-session.target"];
+      };
+    };
+
+    # CI status keyboard LED monitor (Razer laptop keyboard)
+    # TODO: Add Keychron Q6 Pro support when custom QMK firmware is ready
+    systemd.user.services.ci-keyboard-leds = {
+      Unit = {
+        Description = "Monitor CI status and update keyboard LEDs";
+        PartOf = ["hyprland-session.target"];
+        After = [
+          "hyprland-session.target"
+          "razerdaemon.service"
+        ];
+      };
+      Install = {
+        WantedBy = ["hyprland-session.target"];
+      };
+      Service = {
+        ExecStart = "${ci-keyboard-leds}/bin/ci-keyboard-leds";
+        Restart = "always";
+        RestartSec = 5;
+        # Import Hyprland env vars for IPC socket connection
+        PassEnvironment = [
+          "HYPRLAND_INSTANCE_SIGNATURE"
+          "XDG_RUNTIME_DIR"
+        ];
+        # Load GitHub token from sops secret
+        EnvironmentFile = "/run/secrets/github_token_env";
       };
     };
   };
