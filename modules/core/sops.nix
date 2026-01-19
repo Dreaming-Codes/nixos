@@ -15,6 +15,9 @@
     secrets = {
       github_token = {
         # Will be available at /run/secrets/github_token
+        owner = "dreamingcodes";
+        group = "users";
+        mode = "0400";
       };
       telegram_bot_token = {
         owner = "dreamingcodes";
@@ -27,6 +30,17 @@
     templates."nix-access-tokens.conf" = {
       content = ''
         access-tokens = github.com=${config.sops.placeholder.github_token}
+      '';
+    };
+
+    # Template for ci-keyboard-leds service environment file
+    templates."github_token_env" = {
+      owner = "dreamingcodes";
+      group = "users";
+      mode = "0400";
+      path = "/run/secrets/github_token_env";
+      content = ''
+        GITHUB_TOKEN=${config.sops.placeholder.github_token}
       '';
     };
   };
