@@ -51,6 +51,11 @@ in {
       '';
     };
 
+    # Register the PWD event handler on shell startup
+    programs.fish.interactiveShellInit = ''
+      __notify_ci_leds
+    '';
+
     wayland.windowManager.hyprland = {
       settings = {
         bindl = [
