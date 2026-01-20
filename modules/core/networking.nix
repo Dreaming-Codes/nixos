@@ -59,6 +59,10 @@
         "virbr0"
       ];
       dns = "systemd-resolved";
+      connectionConfig = {
+        "ipv4.ignore-auto-dns" = true;
+        "ipv6.ignore-auto-dns" = true;
+      };
       wifi = {
         powersave = false;
         macAddress = "stable-ssid";
