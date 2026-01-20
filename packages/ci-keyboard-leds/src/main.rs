@@ -23,6 +23,7 @@ impl Rgb {
     const RED: Self = Self(255, 0, 0);
     const ORANGE: Self = Self(255, 165, 0);
     const GRAY: Self = Self(128, 128, 128);
+    const BLUE: Self = Self(0, 0, 255);
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -370,16 +371,22 @@ async fn main() -> anyhow::Result<()> {
             info
         });
 
-        // Update repo info if we got something new
-        let repo_changed = current_info.is_some() && current_info != last_repo_info;
-        if let Some(ref info) = current_info {
-            last_repo_info = Some(info.clone());
-        }
-
-        let Some(ref info) = last_repo_info else {
-            eprintln!("[DEBUG] No repo info available, skipping");
+        // Handle case where we're not in a git repo with CI
+        let Some(ref info) = current_info else {
+            // Not in a git repo - set keyboard to blue
+            if last_repo_info.is_some() || last_status.is_some() {
+                eprintln!("[DEBUG] No repo info, setting keyboard to blue");
+                println!("(no repo) -> blue");
+                update_keyboards(Rgb::BLUE);
+                last_repo_info = None;
+                last_status = None;
+            }
             continue;
         };
+
+        // Update repo info if we got something new
+        let repo_changed = Some(info.clone()) != last_repo_info;
+        last_repo_info = Some(info.clone());
 
         // Fetch CI status
         let status = get_commit_status(&http_client, &info.repo, &info.sha, &token).await;
