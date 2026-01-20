@@ -8,11 +8,11 @@
 }:
 rustPlatform.buildRustPackage {
   pname = "ci-keyboard-leds";
-  version = "0.1.0";
+  version = "0.2.0";
 
   src = ./.;
 
-  cargoHash = "sha256-cvhoq7isdzwtSzhi00vPshYAIWR/q+uSO7M/I79YNu0=";
+  cargoHash = "sha256-LMjpQLvkU7MRjZKSTHXuKMRhhOQRgn5YikuKgI4YTsA=";
 
   nativeBuildInputs = [pkg-config];
 
