@@ -76,7 +76,7 @@ in {
       fuse
       fuse3
       gdk-pixbuf
-      glew110
+      glew_1_10
       glib
       libgcc
       gcc
