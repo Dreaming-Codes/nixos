@@ -122,6 +122,8 @@ in {
     mixxc
     termscp
 
+    slack
+
     (discord.override {
       withOpenASAR = true;
     })
