@@ -10,7 +10,6 @@
 
   services.resolved = {
     enable = true;
-    dnsovertls = "true";
     settings.Resolve.DNSOverTLS = "true";
   };
   networking = {
