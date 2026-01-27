@@ -139,6 +139,7 @@ in {
     # Git worktree manager from crates.io
     rsworktree
     cargo-edit
+    gh
 
     # Not sure what caused this but now this is needed to make bash work
     bashInteractive
