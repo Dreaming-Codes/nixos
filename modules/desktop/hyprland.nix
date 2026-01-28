@@ -12,8 +12,15 @@
 
   services.desktopManager.plasma6.enable = true;
   environment.plasma6.excludePackages = with pkgs.kdePackages; [konsole];
+
+  # Set the menu prefix so kbuildsycoca6 knows to look for plasma-applications.menu
+  environment.sessionVariables = {
+    XDG_MENU_PREFIX = "plasma-";
+  };
+
   # This fixes the unpopulated MIME menus in kde applications
-  environment.etc."/xdg/menus/plasma-applications.menu".text = builtins.readFile "${pkgs.kdePackages.plasma-workspace}/etc/xdg/menus/plasma-applications.menu";
+  environment.etc."/xdg/menus/plasma-applications.menu".text =
+    builtins.readFile "${pkgs.kdePackages.plasma-workspace}/etc/xdg/menus/plasma-applications.menu";
 
   programs.hyprland = {
     enable = true;
