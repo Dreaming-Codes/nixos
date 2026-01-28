@@ -37,19 +37,11 @@ in {
     }
 
     set_mime "helium.desktop" "application/pdf"
-    set_mime "jetbrains-toolbox.desktop" "x-scheme-handler/jetbrains"
     set_mime "helium.desktop" "x-scheme-handler/http"
     set_mime "helium.desktop" "x-scheme-handler/https"
     set_mime "helium.desktop" "text/html"
-    set_mime "bitwarden.desktop" "x-scheme-handler/bitwarden"
-    set_mime "org.telegram.desktop.desktop" "x-scheme-handler/tg"
-    set_mime "org.telegram.desktop.desktop" "x-scheme-handler/tonsite"
     set_mime "helium.desktop" "x-scheme-handler/about"
     set_mime "helium.desktop" "x-scheme-handler/unknown"
-    set_mime "signal.desktop" "x-scheme-handler/sgnl"
-    set_mime "signal.desktop" "x-scheme-handler/signalcaptcha"
-    set_mime "expo-orbit.desktop" "x-scheme-handler/expo-orbit"
-    set_mime "io.elementary.settings.desktop" "x-scheme-handler/settings"
     set_mime "helium.desktop" "x-scheme-handler/webcal"
     set_mime "helium.desktop" "x-scheme-handler/mailto"
   '';
