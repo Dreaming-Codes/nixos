@@ -12,6 +12,8 @@
 
   services.desktopManager.plasma6.enable = true;
   environment.plasma6.excludePackages = with pkgs.kdePackages; [konsole];
+  # This fixes the unpopulated MIME menus in kde applications
+  environment.etc."/xdg/menus/plasma-applications.menu".text = builtins.readFile "${pkgs.kdePackages.plasma-workspace}/etc/xdg/menus/plasma-applications.menu";
 
   programs.hyprland = {
     enable = true;
