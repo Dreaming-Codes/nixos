@@ -76,6 +76,7 @@ in {
 
     uv
 
+    zed-editor
     clang
     clang-tools
 
