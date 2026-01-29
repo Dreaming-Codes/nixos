@@ -44,6 +44,16 @@ in {
     set_mime "helium.desktop" "x-scheme-handler/unknown"
     set_mime "helium.desktop" "x-scheme-handler/webcal"
     set_mime "helium.desktop" "x-scheme-handler/mailto"
+
+    # Set dolphin as default file manager
+    set_mime "org.kde.dolphin.desktop" "inode/directory"
+  '';
+
+  # Configure KDE to use wezterm as the default terminal
+  # This runs on every activation to ensure the setting is applied
+  home.activation.configureKdeTerminal = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    /run/current-system/sw/bin/kwriteconfig6 --file kdeglobals --group General --key TerminalApplication "wezterm"
+    /run/current-system/sw/bin/kwriteconfig6 --file kdeglobals --group General --key TerminalService "org.wezfurlong.wezterm.desktop"
   '';
 
   # Comma integration with nix-index
