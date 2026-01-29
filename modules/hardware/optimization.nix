@@ -44,4 +44,6 @@
     }
   ];
   boot.kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-latest;
+
+  services.fstrim.enable = true;
 }
