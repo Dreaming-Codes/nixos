@@ -26,27 +26,26 @@
         - "-isystem${gccLibFixedPath}"
         - "-isystem${glibcIncludePath}"
   '';
+
+  mimes = import ../lib/mimes.nix;
 in {
   home.shell.enableShellIntegration = true;
   programs.home-manager.enable = true;
 
   home.activation.mimeApps = lib.hm.dag.entryAfter ["writeBoundary"] ''
-    # Helper to set default mime type
-    set_mime() {
-      /run/current-system/sw/bin/xdg-mime default "$1" "$2"
-    }
-
-    set_mime "helium.desktop" "application/pdf"
-    set_mime "helium.desktop" "x-scheme-handler/http"
-    set_mime "helium.desktop" "x-scheme-handler/https"
-    set_mime "helium.desktop" "text/html"
-    set_mime "helium.desktop" "x-scheme-handler/about"
-    set_mime "helium.desktop" "x-scheme-handler/unknown"
-    set_mime "helium.desktop" "x-scheme-handler/webcal"
-    set_mime "helium.desktop" "x-scheme-handler/mailto"
+    ${mimes.bindMimes "helium.desktop" [
+      "application/pdf"
+      "x-scheme-handler/http"
+      "x-scheme-handler/https"
+      "text/html"
+      "x-scheme-handler/about"
+      "x-scheme-handler/unknown"
+      "x-scheme-handler/webcal"
+      "x-scheme-handler/mailto"
+    ]}
 
     # Set dolphin as default file manager
-    set_mime "org.kde.dolphin.desktop" "inode/directory"
+    ${mimes.bindMimes "org.kde.dolphin.desktop" ["inode/directory"]}
   '';
 
   # Configure KDE to use wezterm as the default terminal
