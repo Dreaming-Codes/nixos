@@ -70,7 +70,7 @@
     };
   };
   systemd.network.wait-online.enable = false;
-  networking.networkmanager.wait-online.enable = false;
+  systemd.services.NetworkManager-wait-online.enable = false;
 
   services.cloudflare-warp.enable = true;
 
