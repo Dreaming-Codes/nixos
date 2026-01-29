@@ -243,6 +243,7 @@ in {
 
     EDITOR = "hx";
     VISUAL = "hx";
+    TERMINAL = "wezterm";
     # Hint Electron apps to use Wayland:
     NIXOS_OZONE_WL = "1";
     QT_QPA_PLATFORMTHEME = "kde";
