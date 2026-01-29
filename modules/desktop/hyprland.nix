@@ -11,7 +11,13 @@
   services.displayManager.defaultSession = "hyprland";
 
   services.desktopManager.plasma6.enable = true;
-  environment.plasma6.excludePackages = with pkgs.kdePackages; [konsole];
+  environment.plasma6.excludePackages = with pkgs.kdePackages; [
+    konsole
+    kwrite
+    elisa
+    krdp
+    plasma-browser-integration
+  ];
 
   # Set the menu prefix so kbuildsycoca6 knows to look for plasma-applications.menu
   environment.sessionVariables = {
