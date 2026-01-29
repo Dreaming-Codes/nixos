@@ -9,10 +9,16 @@
   vibeMerge = pkgs.writeShellScriptBin "vibe-merge" (builtins.readFile ../scripts/vibeMerge.sh);
   vibeCommit = pkgs.writeShellScriptBin "vibe-commit" (builtins.readFile ../scripts/vibeCommit.sh);
   razerPower = pkgs.writeShellScriptBin "razer-power" (builtins.readFile ../scripts/razerpower.sh);
+  mimes = import ../lib/mimes.nix;
 in {
   imports = [
     inputs.vicinae.homeManagerModules.default
   ];
+
+  # Set default applications (DreamingCodes specific)
+  home.activation.dreamingCodesMimeApps = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    ${mimes.bindMimes "Helix.desktop" mimes.textMimes}
+  '';
 
   programs.fish = {
     completions = {
