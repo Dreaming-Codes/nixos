@@ -39,6 +39,11 @@
     geoProviderUrl = "https://cloudflare-location-service.dreamingcodes.workers.dev/";
   };
 
+  services.espanso = {
+    enable = true;
+    package = pkgs.espanso-wayland;
+  };
+
   # Ensure geoclue starts after wpa_supplicant to reduce WiFi scan race condition
   systemd.services.geoclue.after = ["wpa_supplicant.service"];
   systemd.services.geoclue.wants = ["wpa_supplicant.service"];
