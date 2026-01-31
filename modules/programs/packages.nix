@@ -222,6 +222,7 @@ in {
     # Packages moved from home-manager (shared by all users)
     telegram-desktop
     bitwarden-desktop
+    rbw
     btop
     bun
     nodejs
