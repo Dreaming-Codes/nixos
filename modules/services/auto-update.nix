@@ -106,9 +106,10 @@ in {
       pkgs.gawk
       pkgs.uutils-coreutils-noprefix
     ];
-    # Don't start/restart after nixos-rebuild, only on boot
+    # Don't start/restart/stop after nixos-rebuild, only on boot
     restartIfChanged = false;
     reloadIfChanged = false;
+    stopIfChanged = false;
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${nixos-auto-update}/bin/nixos-auto-update";
