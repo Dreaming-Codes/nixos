@@ -228,6 +228,7 @@ in {
     nodejs
     bintools
     rustup
+    sccache
     kdePackages.kleopatra
     gnupg
     kwalletcli
