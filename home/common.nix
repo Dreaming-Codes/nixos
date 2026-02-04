@@ -86,6 +86,8 @@ in {
 
   home.file.".config/clangd/config.yaml".source = clangdConfig;
 
+  home.file."./.cargo/config.toml".source = ../config/cargo/config.toml;
+
   programs = {
     # Shell and CLI tools
     wezterm.enable = true;
