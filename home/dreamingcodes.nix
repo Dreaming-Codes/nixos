@@ -215,14 +215,9 @@ in {
       gesture = [
         "3, horizontal, workspace"
       ];
-      windowrulev2 = [
-        "opacity 0.0 override, class:^(xwaylandvideobridge)$"
-        "noanim, class:^(xwaylandvideobridge)$"
-        "noinitialfocus, class:^(xwaylandvideobridge)$"
-        "maxsize 1 1, class:^(xwaylandvideobridge)$"
-        "noblur, class:^(xwaylandvideobridge)$"
-        "nofocus, class:^(xwaylandvideobridge)$"
-        "stayfocused, class:expo-orbit"
+      windowrule = [
+        "opacity 0.0 override, no_anim on, no_initial_focus on, max_size 1 1, no_blur on, no_focus on, match:class ^(xwaylandvideobridge)$"
+        "stay_focused on, match:class expo-orbit"
       ];
       binds = {
         scroll_event_delay = 0;
