@@ -234,6 +234,7 @@ in {
     kwalletcli
     tor-browser
     jetbrains-toolbox
+    just
 
     # Secrets management
     sops
