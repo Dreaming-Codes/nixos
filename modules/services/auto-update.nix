@@ -42,6 +42,10 @@
     # We want to update on Sunday (0) or any day after if we haven't updated this week yet
     # Since we already checked if we updated this week, we can proceed
 
+    # Wait a bit after boot to ensure system activation is complete
+    echo "Waiting for system to stabilize..."
+    sleep 30
+
     notify_users "NixOS Auto-Update" "Starting weekly system update..." "low"
     echo "Starting NixOS auto-update for week $CURRENT_WEEK..."
 
@@ -82,7 +86,26 @@
 
     echo "Applying configuration for next boot..."
     HOSTNAME=$(${pkgs.hostname}/bin/hostname)
-    if /run/current-system/sw/bin/nixos-rebuild boot --flake "$CONFIG_DIR#$HOSTNAME" --impure --accept-flake-config; then
+
+    # Retry logic for nixos-rebuild (handles transient lock issues)
+    MAX_RETRIES=3
+    RETRY_DELAY=60
+    REBUILD_SUCCESS=false
+
+    for i in $(seq 1 $MAX_RETRIES); do
+      echo "Attempt $i of $MAX_RETRIES..."
+      if /run/current-system/sw/bin/nixos-rebuild boot --flake "$CONFIG_DIR#$HOSTNAME" --impure --accept-flake-config; then
+        REBUILD_SUCCESS=true
+        break
+      else
+        if [ $i -lt $MAX_RETRIES ]; then
+          echo "Rebuild failed, waiting $RETRY_DELAY seconds before retry..."
+          sleep $RETRY_DELAY
+        fi
+      fi
+    done
+
+    if [ "$REBUILD_SUCCESS" = true ]; then
       mkdir -p "$(dirname "$STATE_FILE")"
       echo "$CURRENT_WEEK" > "$STATE_FILE"
       notify_users "NixOS Auto-Update" "Update complete! Changes will apply on next reboot." "normal"
@@ -97,8 +120,15 @@ in {
   # NixOS auto-update service (runs on boot, applies weekly updates)
   systemd.services.nixos-auto-update = {
     description = "NixOS Weekly Auto-Update";
-    after = ["network-online.target"];
+    # Wait for network and ensure system activation is complete
+    after = [
+      "network-online.target"
+      "nixos-upgrade.service" # Don't conflict with manual upgrades
+      "nix-daemon.service"
+    ];
     wants = ["network-online.target"];
+    # Conflict with any other nixos-rebuild operations
+    conflicts = ["nixos-upgrade.service"];
     wantedBy = ["multi-user.target"];
     path = [
       pkgs.gitFull
