@@ -251,8 +251,7 @@ in {
           "$mod, L, exec, hyprlock"
           "$mod, F, fullscreen"
           "$mod, M, exec, toggleMixer"
-          "$mod, comma, exec, wpaperctl previous"
-          "$mod, period, exec, wpaperctl next"
+
           ", code:121, exec, toggleMic"
           # Move focus with arrow keys or hjkl
           "$mod, left, movefocus, l"
@@ -330,16 +329,12 @@ in {
   };
 
   # Hyprland-related services
-  services.wpaperd.enable = true;
-  services.wpaperd.settings = {
-    any = {
-      duration = "30m";
-      mode = "center";
-      sorting = "random";
-      path = "~/Pictures/wallpaper";
-    };
+  services.hyprpaper.enable = true;
+  services.hyprpaper.settings = {
+    preload = ["~/Pictures/wallpaper"];
+    wallpaper = [",~/Pictures/wallpaper"];
   };
-  systemd.user.services.wpaperd = {
+  systemd.user.services.hyprpaper = {
     Unit = {
       PartOf = lib.mkForce ["hyprland-session.target"];
       After = lib.mkForce ["hyprland-session.target"];
