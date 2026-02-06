@@ -229,6 +229,10 @@ in {
       workspace = [
         "special:obsidian, on-created-empty:obsidian"
       ];
+      misc = {
+        disable_hyprland_logo = true;
+        disable_splash_rendering = true;
+      };
       bind =
         [
           "$mod, mouse_down, exec, hyprctl -q keyword cursor:zoom_factor $(hyprctl getoption cursor:zoom_factor | awk '/^float.*/ {val = $2 * 1.2; if (val < 1) val=1; print val}')"
