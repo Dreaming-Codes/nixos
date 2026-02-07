@@ -347,7 +347,7 @@ in {
         pkgs.writeShellScript "swww-random-wallpaper" ''
           WALLPAPER_DIR="$HOME/Pictures/wallpaper"
           if [ -d "$WALLPAPER_DIR" ] && [ "$(ls -A "$WALLPAPER_DIR")" ]; then
-            WALLPAPER=$(find "$WALLPAPER_DIR" -type f \( -name '*.jpg' -o -name '*.jpeg' -o -name '*.png' -o -name '*.gif' -o -name '*.bmp' -o -name '*.webp' \) | shuf -n 1)
+            WALLPAPER=$(find -L "$WALLPAPER_DIR" -type f \( -name '*.jpg' -o -name '*.jpeg' -o -name '*.png' -o -name '*.gif' -o -name '*.bmp' -o -name '*.webp' \) | shuf -n 1)
             if [ -n "$WALLPAPER" ]; then
               ${pkgs.swww}/bin/swww img "$WALLPAPER" --transition-type grow --transition-pos "0.925,0.977" --transition-step 200
             fi
