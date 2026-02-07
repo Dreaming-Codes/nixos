@@ -10,7 +10,6 @@
   vibeCommit = pkgs.writeShellScriptBin "vibe-commit" (builtins.readFile ../scripts/vibeCommit.sh);
   razerPower = pkgs.writeShellScriptBin "razer-power" (builtins.readFile ../scripts/razerpower.sh);
   mimes = import ../lib/mimes.nix;
-  awww = pkgs.callPackage ../packages/awww {};
 in {
   imports = [
     inputs.vicinae.homeManagerModules.default
@@ -252,8 +251,8 @@ in {
           "$mod, L, exec, hyprlock"
           "$mod, F, fullscreen"
           "$mod, M, exec, toggleMixer"
-          "$mod, comma, exec, awww prev"
-          "$mod, period, exec, awww next"
+          "$mod, comma, exec, swww prev"
+          "$mod, period, exec, swww next"
 
           ", code:121, exec, toggleMic"
           # Move focus with arrow keys or hjkl
@@ -332,21 +331,8 @@ in {
   };
 
   # Hyprland-related services
-  # awww wallpaper daemon - installed via packages
-  systemd.user.services.awww = {
-    Unit = {
-      Description = "Awww wallpaper daemon";
-      PartOf = ["hyprland-session.target"];
-      After = ["hyprland-session.target"];
-    };
-    Install.WantedBy = ["hyprland-session.target"];
-    Service = {
-      Type = "simple";
-      ExecStartPre = "${pkgs.coreutils}/bin/sleep 2";
-      ExecStart = "${awww}/bin/awww -p ~/Pictures/wallpaper -d 30m -m center -s random";
-      Restart = "on-failure";
-    };
-  };
+  # swww wallpaper daemon
+  services.swww.enable = true;
 
   services.swaync.enable = true;
   systemd.user.services.swaync = {
@@ -450,7 +436,6 @@ in {
     vibeMerge
     vibeCommit
     razerPower
-    awww
   ];
 
   # Services
