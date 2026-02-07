@@ -251,6 +251,8 @@ in {
           "$mod, L, exec, hyprlock"
           "$mod, F, fullscreen"
           "$mod, M, exec, toggleMixer"
+          "$mod, comma, exec, awww prev"
+          "$mod, period, exec, awww next"
 
           ", code:121, exec, toggleMic"
           # Move focus with arrow keys or hjkl
@@ -329,17 +331,22 @@ in {
   };
 
   # Hyprland-related services
-  services.hyprpaper.enable = true;
-  services.hyprpaper.settings = {
-    preload = ["~/Pictures/wallpaper"];
-    wallpaper = [",~/Pictures/wallpaper"];
+  services.awww.enable = true;
+  services.awww.settings = {
+    path = "~/Pictures/wallpaper";
+    duration = "30m";
+    mode = "center";
+    sorting = "random";
   };
-  systemd.user.services.hyprpaper = {
+  systemd.user.services.awww = {
     Unit = {
       PartOf = lib.mkForce ["hyprland-session.target"];
       After = lib.mkForce ["hyprland-session.target"];
     };
     Install.WantedBy = lib.mkForce ["hyprland-session.target"];
+    Service = {
+      ExecStartPre = "${pkgs.coreutils}/bin/sleep 2";
+    };
   };
 
   services.swaync.enable = true;
