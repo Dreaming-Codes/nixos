@@ -251,8 +251,7 @@ in {
           "$mod, L, exec, hyprlock"
           "$mod, F, fullscreen"
           "$mod, M, exec, toggleMixer"
-          "$mod, comma, exec, swww prev"
-          "$mod, period, exec, swww next"
+          "$mod, period, exec, systemctl --user start swww-random-wallpaper.service"
 
           ", code:121, exec, toggleMic"
           # Move focus with arrow keys or hjkl
@@ -333,6 +332,39 @@ in {
   # Hyprland-related services
   # swww wallpaper daemon
   services.swww.enable = true;
+
+  # Randomly cycle wallpapers every 10 minutes
+  systemd.user.services.swww-random-wallpaper = {
+    Unit = {
+      Description = "Set a random wallpaper using swww";
+      After = ["swww.service"];
+      Requires = ["swww.service"];
+    };
+    Service = {
+      Type = "oneshot";
+      Environment = "PATH=/run/current-system/sw/bin";
+      ExecStart = toString (
+        pkgs.writeShellScript "swww-random-wallpaper" ''
+          WALLPAPER_DIR="$HOME/Pictures/wallpaper"
+          if [ -d "$WALLPAPER_DIR" ] && [ "$(ls -A "$WALLPAPER_DIR")" ]; then
+            WALLPAPER=$(find "$WALLPAPER_DIR" -type f \( -name '*.jpg' -o -name '*.jpeg' -o -name '*.png' -o -name '*.gif' -o -name '*.bmp' -o -name '*.webp' \) | shuf -n 1)
+            if [ -n "$WALLPAPER" ]; then
+              ${pkgs.swww}/bin/swww img "$WALLPAPER" --transition-type grow --transition-pos "0.925,0.977" --transition-step 200
+            fi
+          fi
+        ''
+      );
+    };
+  };
+  systemd.user.timers.swww-random-wallpaper = {
+    Unit.Description = "Cycle wallpaper randomly every 10 minutes";
+    Timer = {
+      OnActiveSec = "0s";
+      OnUnitActiveSec = "10m";
+      Unit = "swww-random-wallpaper.service";
+    };
+    Install.WantedBy = ["swww.service"];
+  };
 
   services.swaync.enable = true;
   systemd.user.services.swaync = {
