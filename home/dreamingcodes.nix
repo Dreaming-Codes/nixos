@@ -10,6 +10,7 @@
   vibeCommit = pkgs.writeShellScriptBin "vibe-commit" (builtins.readFile ../scripts/vibeCommit.sh);
   razerPower = pkgs.writeShellScriptBin "razer-power" (builtins.readFile ../scripts/razerpower.sh);
   mimes = import ../lib/mimes.nix;
+  awww = pkgs.callPackage ../packages/awww {};
 in {
   imports = [
     inputs.vicinae.homeManagerModules.default
@@ -331,21 +332,19 @@ in {
   };
 
   # Hyprland-related services
-  services.awww.enable = true;
-  services.awww.settings = {
-    path = "~/Pictures/wallpaper";
-    duration = "30m";
-    mode = "center";
-    sorting = "random";
-  };
+  # awww wallpaper daemon - installed via packages
   systemd.user.services.awww = {
     Unit = {
-      PartOf = lib.mkForce ["hyprland-session.target"];
-      After = lib.mkForce ["hyprland-session.target"];
+      Description = "Awww wallpaper daemon";
+      PartOf = ["hyprland-session.target"];
+      After = ["hyprland-session.target"];
     };
-    Install.WantedBy = lib.mkForce ["hyprland-session.target"];
+    Install.WantedBy = ["hyprland-session.target"];
     Service = {
+      Type = "simple";
       ExecStartPre = "${pkgs.coreutils}/bin/sleep 2";
+      ExecStart = "${awww}/bin/awww -p ~/Pictures/wallpaper -d 30m -m center -s random";
+      Restart = "on-failure";
     };
   };
 
@@ -451,6 +450,7 @@ in {
     vibeMerge
     vibeCommit
     razerPower
+    awww
   ];
 
   # Services
