@@ -8,6 +8,7 @@
 
   imports = [
     ../modules/core/boot.nix
+    ../modules/core/ram.nix
     ../modules/core/networking.nix
     ../modules/core/nix.nix
     ../modules/core/security.nix

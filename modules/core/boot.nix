@@ -7,8 +7,10 @@
       systemd.enable = true;
       verbose = false;
     };
-    tmp.useTmpfs = true;
-    kernelParams = ["acpi_call" "quiet"];
+    kernelParams = [
+      "acpi_call"
+      "quiet"
+    ];
   };
 
   # Console font
