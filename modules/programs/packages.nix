@@ -74,6 +74,8 @@ in {
 
     hplipWithPlugin
 
+    onlyoffice-desktopeditors
+
     uv
 
     zed-editor
