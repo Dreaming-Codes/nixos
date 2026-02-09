@@ -13,7 +13,7 @@
   systemd.mounts = [
     # 1. RAM-backed branch (1GB cap)
     {
-      where = "/tmp/.ram";
+      where = "/run/tmp-ram";
       what = "tmpfs";
       type = "tmpfs";
       mountConfig.Options = "mode=1777,strictatime,rw,nosuid,nodev,size=1G";
@@ -25,7 +25,7 @@
     # 2. mergerfs union: RAM branch (preferred) + disk overflow
     {
       where = "/tmp";
-      what = "/tmp/.ram:/var/tmp/overflow";
+      what = "/run/tmp-ram:/var/tmp/overflow";
       type = "fuse.mergerfs";
       mountConfig.Options = lib.concatStringsSep "," [
         "category.create=epff" # use first branch (tmpfs) that has enough space
@@ -41,8 +41,8 @@
       unitConfig = {
         DefaultDependencies = false;
         ConditionPathIsSymbolicLink = "!/tmp";
-        Requires = "tmp-.ram.mount";
-        After = "tmp-.ram.mount";
+        Requires = "run-tmp\\x2dram.mount";
+        After = "run-tmp\\x2dram.mount";
       };
     }
   ];
@@ -60,17 +60,17 @@
     description = "Move closed oversized files from tmpfs to disk overflow";
     after = [
       "tmp.mount"
-      "tmp-.ram.mount"
+      "run-tmp\\x2dram.mount"
     ];
     requires = [
       "tmp.mount"
-      "tmp-.ram.mount"
+      "run-tmp\\x2dram.mount"
     ];
     serviceConfig = {
       Type = "oneshot";
       ExecStart = pkgs.writeShellScript "tmp-overflow-monitor" ''
         set -euo pipefail
-        RAM="/tmp/.ram"
+        RAM="/run/tmp-ram"
         DISK="/var/tmp/overflow"
         THRESHOLD=$((200 * 1024)) # 200MB in KB
 
