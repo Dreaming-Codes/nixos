@@ -41,5 +41,8 @@ name = "java"
 language-servers = ["jdtls"]
 auto-format = true
 
+[language-server.rust-analyzer.config]
+check.command = "clippy"
+
 [language-server.jdtls]
 command = "jdtls"

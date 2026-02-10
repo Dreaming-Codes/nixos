@@ -1,0 +1,4 @@
+- You're running on NixOS/Nix. If a tool or command is not installed on my system, use `nix-shell -p <package>` to make it available. For example: `nix-shell -p jq --run 'jq . file.json'`.
+- Never use /tmp folder for cloning repo or stuff like that, my tmp is in ram you'll fill RAM. Feel free to use the Downloads folder as temporary folder
+- Always default to **bun** for JavaScript/TypeScript package management (install, run, build, test, etc.) unless the project already has a lockfile from another package manager (`package-lock.json` for npm, `yarn.lock` for yarn, `pnpm-lock.yaml` for pnpm). If one of those lockfiles exists, use the corresponding package manager instead.
+- Use webfetch instead of the google search tool whenever is possible
