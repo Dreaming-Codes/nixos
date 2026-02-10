@@ -20,6 +20,16 @@ in {
     ${mimes.bindMimes "Helix.desktop" mimes.textMimes}
   '';
 
+  # Install Rust toolchains (stable + nightly) and set nightly as default
+  home.activation.rustupToolchains = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    export PATH="/home/dreamingcodes/.cargo/bin:$PATH"
+    if command -v rustup &> /dev/null; then
+      run rustup toolchain install stable --profile default
+      run rustup toolchain install nightly --profile default
+      run rustup default nightly
+    fi
+  '';
+
   programs.fish = {
     completions = {
       vibe-merge = ''
