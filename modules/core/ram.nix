@@ -35,8 +35,6 @@
         "cache.files=partial" # cache metadata but not full content
         "nonempty" # allow mounting over existing /tmp
         "allow_other" # let all users access
-        "mode=1777"
-        "defaults"
       ];
       unitConfig = {
         DefaultDependencies = false;
