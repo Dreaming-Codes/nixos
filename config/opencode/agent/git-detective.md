@@ -75,6 +75,7 @@ permission:
     "awk *": "allow"
     "find *": "allow"
     "cat *": "allow"
+    "cargo metadata *": "allow"
   external_directory:
     "~/Downloads/**": "allow"
 ---
