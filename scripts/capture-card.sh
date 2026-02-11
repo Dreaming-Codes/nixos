@@ -31,5 +31,6 @@ exec ffplay \
   -framedrop \
   -strict experimental \
   -vf setpts=0 \
+  -fs \
   -window_title 'Capture Card 60fps' \
   "$CAPTURE_DEV"

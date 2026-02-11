@@ -241,7 +241,6 @@ in {
       windowrule = [
         "opacity 0.0 override, no_anim on, no_initial_focus on, max_size 1 1, no_blur on, no_focus on, match:class ^(xwaylandvideobridge)$"
         "stay_focused on, match:class expo-orbit"
-        "fullscreen on, match:title:^(Capture Card)"
       ];
       binds = {
         scroll_event_delay = 0;
