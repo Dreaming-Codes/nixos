@@ -9,6 +9,19 @@
   vibeMerge = pkgs.writeShellScriptBin "vibe-merge" (builtins.readFile ../scripts/vibeMerge.sh);
   vibeCommit = pkgs.writeShellScriptBin "vibe-commit" (builtins.readFile ../scripts/vibeCommit.sh);
   razerPower = pkgs.writeShellScriptBin "razer-power" (builtins.readFile ../scripts/razerpower.sh);
+  captureCardScript = pkgs.writeShellScript "capture-card-inner" (
+    builtins.readFile ../scripts/capture-card.sh
+  );
+  captureCard = pkgs.writeShellScriptBin "capture-card" ''
+    export PATH="${
+      lib.makeBinPath [
+        pkgs.v4l-utils
+        pkgs.ffmpeg
+        pkgs.libnotify
+      ]
+    }:$PATH"
+    exec ${captureCardScript}
+  '';
   mimes = import ../lib/mimes.nix;
 in {
   imports = [
@@ -238,6 +251,7 @@ in {
       ];
       workspace = [
         "special:obsidian, on-created-empty:obsidian"
+        "special:capture-card, on-created-empty:capture-card"
       ];
       misc = {
         disable_hyprland_logo = true;
@@ -337,6 +351,10 @@ in {
             builtins.concatLists (numWorkspaces ++ fWorkspaces ++ altWorkspaces)
         );
     };
+    extraConfig = ''
+      # Capture card - both Super keys together (keysym combo bind)
+      binds = Super_L, Super_R, togglespecialworkspace, capture-card
+    '';
   };
 
   # Hyprland-related services
@@ -478,6 +496,7 @@ in {
     vibeMerge
     vibeCommit
     razerPower
+    captureCard
   ];
 
   # Services
