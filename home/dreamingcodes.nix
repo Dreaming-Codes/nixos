@@ -241,6 +241,7 @@ in {
       windowrule = [
         "opacity 0.0 override, no_anim on, no_initial_focus on, max_size 1 1, no_blur on, no_focus on, match:class ^(xwaylandvideobridge)$"
         "stay_focused on, match:class expo-orbit"
+        "fullscreen, match:title:^(Capture Card)"
       ];
       binds = {
         scroll_event_delay = 0;
@@ -288,6 +289,7 @@ in {
           "$mod SHIFT, up, movewindow, u"
           "$mod SHIFT, down, movewindow, d"
           "$mod, N, togglespecialworkspace, obsidian"
+          "$mod, Home, togglespecialworkspace, capture-card"
           # Audio keys
           ", XF86AudioMicMute, exec, toggleMic"
           ", XF86AudioPlay, exec, playerctl play-pause"
@@ -351,10 +353,6 @@ in {
             builtins.concatLists (numWorkspaces ++ fWorkspaces ++ altWorkspaces)
         );
     };
-    extraConfig = ''
-      # Capture card - both Super keys together (keysym combo bind)
-      binds = Super_L, Super_R, togglespecialworkspace, capture-card
-    '';
   };
 
   # Hyprland-related services
