@@ -1,21 +1,15 @@
 {
-  config,
   pkgs,
-  inputs,
   ...
 }: {
-  nixpkgs.overlays = [inputs.nix-cachyos-kernel.overlays.pinned];
-
   imports = [
     ../modules/core/boot.nix
-    ../modules/core/ram.nix
     ../modules/core/networking.nix
     ../modules/core/nix.nix
     ../modules/core/security.nix
     ../modules/core/sops.nix
     ../modules/hardware/audio.nix
     ../modules/hardware/graphics.nix
-    ../modules/hardware/optimization.nix
     ../modules/desktop/hyprland.nix
     ../modules/desktop/fonts.nix
     ../modules/desktop/xdg.nix
@@ -44,6 +38,8 @@
     enable = true;
     package = pkgs.espanso-wayland;
   };
+
+  dreamingoptimal.optimization.enable = true;
 
   # Ensure geoclue starts after wpa_supplicant to reduce WiFi scan race condition
   systemd.services.geoclue.after = ["wpa_supplicant.service"];

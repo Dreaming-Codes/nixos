@@ -74,6 +74,18 @@
     pkgs = import nixpkgs {inherit system;};
     lib = import ./lib/mkHost.nix {inherit inputs;};
   in {
+    nixosModules = {
+      dreamingoptimal = ./modules/dreamingoptimal;
+      dreamingoptimal-ram = ./modules/dreamingoptimal/ram.nix;
+      dreamingoptimal-tmp = ./modules/dreamingoptimal/tmp.nix;
+      dreamingoptimal-swap-fallback = ./modules/dreamingoptimal/swap-fallback.nix;
+      dreamingoptimal-process-tuning = ./modules/dreamingoptimal/process-tuning.nix;
+      dreamingoptimal-sysctl = ./modules/dreamingoptimal/sysctl.nix;
+      dreamingoptimal-bpftune = ./modules/dreamingoptimal/bpftune.nix;
+      dreamingoptimal-cachykernel = ./modules/dreamingoptimal/cachykernel.nix;
+      dreamingoptimal-fstrim = ./modules/dreamingoptimal/fstrim.nix;
+    };
+
     nixosConfigurations = {
       DreamingDesk = lib.mkHost {
         hostname = "DreamingDesk";
