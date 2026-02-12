@@ -5,6 +5,7 @@
     inputs.home-manager.nixosModules.home-manager
     inputs.determinate.nixosModules.default
     inputs.sops-nix.nixosModules.sops
+    ../modules/dreamingoptimal
   ];
 in {
   mkHost = {
