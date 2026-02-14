@@ -33,12 +33,25 @@ in {
     ${mimes.bindMimes "Helix.desktop" mimes.textMimes}
   '';
 
-  # Install Rust toolchains (stable + nightly) and set nightly as default
+  # Install Rust toolchains and required components for Helix/rust-analyzer
   home.activation.rustupToolchains = lib.hm.dag.entryAfter ["writeBoundary"] ''
     export PATH="/home/dreamingcodes/.cargo/bin:$PATH"
     if command -v rustup &> /dev/null; then
       run rustup toolchain install stable --profile default
       run rustup toolchain install nightly --profile default
+
+      # Keep analyzer and sources available on nightly (default toolchain)
+      run rustup component add rust-src --toolchain nightly
+      run rustup component add rust-analyzer --toolchain nightly
+      run rustup component add clippy --toolchain nightly
+      run rustup component add rustfmt --toolchain nightly
+
+      # Also keep stable ready for projects that pin stable
+      run rustup component add rust-src --toolchain stable
+      run rustup component add rust-analyzer --toolchain stable
+      run rustup component add clippy --toolchain stable
+      run rustup component add rustfmt --toolchain stable
+
       run rustup default nightly
     fi
   '';
