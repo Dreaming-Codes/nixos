@@ -1,5 +1,5 @@
 ---
-model: github-copilot/claude-sonnet-4.5
+model: anthropic/claude-sonnet-4-5
 description: >-
   Use this agent when you need to answer specific questions about a library,
   tool, or codebase that requires cloning and inspecting its external git
