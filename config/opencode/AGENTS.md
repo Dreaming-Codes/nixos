@@ -2,3 +2,4 @@
 - Always default to **bun** for JavaScript/TypeScript package management (install, run, build, test, etc.) unless the project already has a lockfile from another package manager (`package-lock.json` for npm, `yarn.lock` for yarn, `pnpm-lock.yaml` for pnpm). If one of those lockfiles exists, use the corresponding package manager instead.
 - Always use the related package manager to add new deps like bun add or cargo add when possible, try to not edit the file manually, this ensure last version of every deps.
 - Use webfetch instead of the google search tool whenever is possible
+- Avoid excessive comments, when code is written correctly it's already readable enough.
