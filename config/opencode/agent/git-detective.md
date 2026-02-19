@@ -74,6 +74,7 @@ permission:
     "sed *": "allow"
     "awk *": "allow"
     "find *": "allow"
+    "xargs *": "allow"
     "cat *": "allow"
     "cargo metadata *": "allow"
     "gh search *": "allow"
