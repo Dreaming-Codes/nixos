@@ -16,6 +16,7 @@ in {
     ./bpftune.nix
     ./cachykernel.nix
     ./fstrim.nix
+    ./envfs.nix
   ];
 
   options.dreamingoptimal.optimization = {
@@ -29,6 +30,7 @@ in {
     bpftune.enable = mkEnableOption "bpftune";
     cachykernel.enable = mkEnableOption "CachyOS kernel";
     fstrim.enable = mkEnableOption "periodic SSD TRIM";
+    envfs.enable = mkEnableOption "envfs mount timeout fix";
   };
 
   config = mkIf cfg.enable {
@@ -41,6 +43,7 @@ in {
       bpftune.enable = mkDefault true;
       cachykernel.enable = mkDefault true;
       fstrim.enable = mkDefault true;
+      envfs.enable = mkDefault true;
     };
   };
 }
