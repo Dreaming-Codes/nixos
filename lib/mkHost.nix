@@ -6,6 +6,7 @@
     inputs.determinate.nixosModules.default
     inputs.sops-nix.nixosModules.sops
     ../modules/dreamingoptimal
+    ../modules/nix-file-overlay
   ];
 in {
   mkHost = {

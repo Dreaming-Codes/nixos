@@ -29,8 +29,18 @@
 
   mimes = import ../lib/mimes.nix;
 in {
+  imports = [
+    ../modules/nix-file-overlay/hm-module.nix
+  ];
+
   home.shell.enableShellIntegration = true;
   programs.home-manager.enable = true;
+
+  programs.nix-file-overlay = {
+    enable = true;
+    repoPath = "/home/dreamingcodes/.nixos";
+    systemRepoPath = "/home/dreamingcodes/.nixos";
+  };
 
   home.activation.mimeApps = lib.hm.dag.entryAfter ["writeBoundary"] ''
     ${mimes.bindMimes "helium.desktop" [

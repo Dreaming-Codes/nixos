@@ -75,6 +75,7 @@
     lib = import ./lib/mkHost.nix {inherit inputs;};
   in {
     nixosModules = {
+      nix-file-overlay = ./modules/nix-file-overlay;
       dreamingoptimal = ./modules/dreamingoptimal;
       dreamingoptimal-ram = ./modules/dreamingoptimal/ram.nix;
       dreamingoptimal-tmp = ./modules/dreamingoptimal/tmp.nix;
@@ -85,6 +86,10 @@
       dreamingoptimal-cachykernel = ./modules/dreamingoptimal/cachykernel.nix;
       dreamingoptimal-fstrim = ./modules/dreamingoptimal/fstrim.nix;
       dreamingoptimal-envfs = ./modules/dreamingoptimal/envfs.nix;
+    };
+
+    hmModules = {
+      nix-file-overlay = ./modules/nix-file-overlay/hm-module.nix;
     };
 
     nixosConfigurations = {

@@ -1,7 +1,4 @@
-{
-  pkgs,
-  ...
-}: {
+{pkgs, ...}: {
   imports = [
     ../modules/core/boot.nix
     ../modules/core/networking.nix
@@ -40,6 +37,12 @@
   };
 
   dreamingoptimal.optimization.enable = true;
+
+  nix-file-overlay = {
+    enable = true;
+    systemRepoPath = "/home/dreamingcodes/.nixos";
+    users = ["dreamingcodes"];
+  };
 
   # Ensure geoclue starts after wpa_supplicant to reduce WiFi scan race condition
   systemd.services.geoclue.after = ["wpa_supplicant.service"];
