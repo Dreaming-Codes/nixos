@@ -2,6 +2,7 @@
   imports = [
     ../modules/core/boot.nix
     ../modules/core/networking.nix
+    ../modules/core/campus-switch.nix
     ../modules/core/nix.nix
     ../modules/core/security.nix
     ../modules/core/sops.nix
