@@ -107,6 +107,7 @@ in {
       libmikmod
       libogg
       libpng
+      libgbm
       libpng12
       libpulseaudio
       librsvg
