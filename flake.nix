@@ -84,6 +84,7 @@
       dreamingoptimal-bpftune = ./modules/dreamingoptimal/bpftune.nix;
       dreamingoptimal-cachykernel = ./modules/dreamingoptimal/cachykernel.nix;
       dreamingoptimal-fstrim = ./modules/dreamingoptimal/fstrim.nix;
+      dreamingoptimal-envfs = ./modules/dreamingoptimal/envfs.nix;
     };
 
     nixosConfigurations = {
