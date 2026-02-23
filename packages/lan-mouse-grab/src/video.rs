@@ -7,56 +7,38 @@ pub struct VideoPipeline {
     appsink: gstreamer_app::AppSink,
 }
 
+use std::process::Command;
+
 pub fn detect_capture_card() -> Result<String> {
     gstreamer::init().context("failed to init GStreamer")?;
 
-    let monitor = gstreamer::DeviceMonitor::new();
-    monitor.add_filter(Some("Video/Source"), None);
-    monitor
-        .start()
-        .map_err(|_| anyhow::anyhow!("failed to start device monitor"))?;
+    let output = Command::new("v4l2-ctl")
+        .arg("--list-devices")
+        .output()
+        .context("failed to execute v4l2-ctl --list-devices")?;
 
-    let devices = monitor.devices();
-    monitor.stop();
+    let output_str = String::from_utf8_lossy(&output.stdout);
 
-    for device in &devices {
-        let caps = device.caps().unwrap_or_else(gstreamer::Caps::new_empty);
-        let name = device.display_name();
-        let props = device.properties();
+    // We want to find a device that supports MJPEG 1920x1080@60fps
+    for line in output_str.lines() {
+        let line = line.trim();
+        if line.starts_with("/dev/video") {
+            let device = line;
+            let format_output = Command::new("v4l2-ctl")
+                .args(["-d", device, "--list-formats-ext"])
+                .output();
 
-        let device_path = props
-            .as_ref()
-            .and_then(|p| p.get::<String>("device.path").ok())
-            .or_else(|| {
-                props
-                    .as_ref()
-                    .and_then(|p| p.get::<String>("object.path").ok())
-            })
-            .or_else(|| {
-                props
-                    .as_ref()
-                    .and_then(|p| p.get::<String>("api.v4l2.path").ok())
-            });
+            if let Ok(fmt_out) = format_output {
+                let fmt_str = String::from_utf8_lossy(&fmt_out.stdout);
 
-        log::debug!("found device: {name}, caps: {caps}, path: {device_path:?}");
-
-        let has_mjpeg_1080p60 = (0..caps.size()).any(|i| {
-            let s = caps.structure(i).unwrap();
-            let is_jpeg = s.name().as_str() == "image/jpeg";
-            let is_1080p = s.get::<i32>("width").ok() == Some(1920)
-                && s.get::<i32>("height").ok() == Some(1080);
-            let is_60fps = s
-                .get::<gstreamer::Fraction>("framerate")
-                .ok()
-                .map(|f| f.numer() >= 60 && f.denom() == 1)
-                .unwrap_or(false);
-            is_jpeg && is_1080p && is_60fps
-        });
-
-        if has_mjpeg_1080p60 {
-            if let Some(path) = device_path {
-                log::info!("detected capture card: {name} at {path}");
-                return Ok(path);
+                // Extremely simple check: does the output contain MJPG, 1920x1080, and 60.000 fps?
+                if fmt_str.contains("MJPG")
+                    && fmt_str.contains("1920x1080")
+                    && fmt_str.contains("60.000 fps")
+                {
+                    log::info!("detected capture card at {device}");
+                    return Ok(device.to_string());
+                }
             }
         }
     }
