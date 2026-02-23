@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-MODEL="github-copilot/gemini-3-flash-preview"
+MODEL="google/gemini-flash-latest"
 COMMIT_ADDITIONAL_INFO="$*"
 CONTEXT=$(git log --oneline -n 10)
 

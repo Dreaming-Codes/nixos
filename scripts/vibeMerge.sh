@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 PATH_TO_WORKTREES=".rsworktree"
-MODEL="github-copilot/gemini-3-flash-preview"
+MODEL="google/gemini-flash-latest"
 WT_NAME="$1"
 WT_PATH="$PATH_TO_WORKTREES/$WT_NAME"
 
