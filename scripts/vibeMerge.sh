@@ -25,4 +25,4 @@ if [ -n "$(git -C "$WT_PATH" status --porcelain)" ]; then
   )
 fi
 
-bunx opencode-ai@latest run "Merge the branch $WT_NAME into the current branch, resolve any potential conflicts (avoid commiting local changes, stash them and then merge them back if needed), and then delete the worktree using \`rsworktree rm $WT_NAME\`." -m "$MODEL"
+opencode run "Merge the branch $WT_NAME into the current branch, resolve any potential conflicts (avoid commiting local changes, stash them and then merge them back if needed), and then delete the worktree using \`rsworktree rm $WT_NAME\`." -m "$MODEL"

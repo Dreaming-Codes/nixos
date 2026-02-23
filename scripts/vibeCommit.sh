@@ -12,7 +12,7 @@ fi
 
 if [ -n "$(git status --porcelain)" ]; then
   STAGED_FILES=$(git diff --cached --name-only)
-  bunx opencode-ai@latest run "Create a commit message for the following modified files:
+  opencode run "Create a commit message for the following modified files:
   $STAGED_FILES
   
   Ensure the style of the commit message is similar to the existing one in the repo history:
