@@ -4,9 +4,9 @@ mod video;
 
 use connection::{ConnectionEvent, ConnectionManager};
 use lan_mouse_proto::ProtoEvent;
-use surface::{CaptureMsg, WaylandCapture};
 use std::process::Command;
 use std::time::Duration;
+use surface::{CaptureMsg, WaylandCapture};
 use tokio::sync::mpsc;
 
 const REMOTE_HOST: &str = "DreamingWinzoz.local";
@@ -154,8 +154,7 @@ async fn run(device: String) -> anyhow::Result<()> {
                             log::warn!("send failed, marking disconnected");
                             conn_mgr.disconnect().await;
                             reconnect_delay = RECONNECT_DELAY;
-                            reconnect_timer =
-                                Some(tokio::time::Instant::now() + reconnect_delay);
+                            reconnect_timer = Some(tokio::time::Instant::now() + reconnect_delay);
                         }
                     }
                 }
@@ -167,7 +166,11 @@ async fn run(device: String) -> anyhow::Result<()> {
             match event {
                 ConnectionEvent::Connected => {
                     log::info!("connected to {REMOTE_HOST}");
-                    notify("Capture Card", &format!("Connected to {REMOTE_HOST}"), "normal");
+                    notify(
+                        "Capture Card",
+                        &format!("Connected to {REMOTE_HOST}"),
+                        "normal",
+                    );
                     reconnect_timer = None;
                     reconnect_delay = RECONNECT_DELAY;
                 }
@@ -192,10 +195,8 @@ async fn run(device: String) -> anyhow::Result<()> {
                     }
                     Err(e) => {
                         log::warn!("reconnection failed: {e}");
-                        reconnect_delay =
-                            (reconnect_delay * 2).min(RECONNECT_MAX_DELAY);
-                        reconnect_timer =
-                            Some(tokio::time::Instant::now() + reconnect_delay);
+                        reconnect_delay = (reconnect_delay * 2).min(RECONNECT_MAX_DELAY);
+                        reconnect_timer = Some(tokio::time::Instant::now() + reconnect_delay);
                     }
                 }
             }
