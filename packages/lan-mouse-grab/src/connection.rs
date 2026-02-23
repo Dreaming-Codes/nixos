@@ -1,5 +1,5 @@
-use anyhow::{Context, Result, bail};
-use lan_mouse_proto::{MAX_EVENT_SIZE, ProtoEvent};
+use anyhow::{bail, Context, Result};
+use lan_mouse_proto::{ProtoEvent, MAX_EVENT_SIZE};
 use sha2::{Digest, Sha256};
 use std::io::{BufReader, BufWriter, Read, Write};
 use std::net::SocketAddr;
@@ -83,10 +83,13 @@ impl DtlsConnection {
             ..Default::default()
         };
 
-        let conn = tokio::time::timeout(Duration::from_secs(10), DTLSConn::new(udp, config, true, None))
-            .await
-            .context("DTLS connection timed out")?
-            .map_err(|e| anyhow::anyhow!("DTLS handshake failed: {e}"))?;
+        let conn = tokio::time::timeout(
+            Duration::from_secs(10),
+            DTLSConn::new(udp, config, true, None),
+        )
+        .await
+        .context("DTLS connection timed out")?
+        .map_err(|e| anyhow::anyhow!("DTLS handshake failed: {e}"))?;
 
         Ok(Self {
             conn: Arc::new(conn),
@@ -107,7 +110,9 @@ impl DtlsConnection {
     pub async fn recv(&self) -> Result<ProtoEvent> {
         let mut buf = [0u8; MAX_EVENT_SIZE];
         self.conn.recv(&mut buf).await?;
-        Ok(buf.try_into().map_err(|e| anyhow::anyhow!("protocol error: {e}"))?)
+        Ok(buf
+            .try_into()
+            .map_err(|e| anyhow::anyhow!("protocol error: {e}"))?)
     }
 
     pub async fn ping_until_alive(&self) -> Result<()> {
@@ -195,7 +200,8 @@ impl ConnectionManager {
         conn.ping_until_alive().await?;
         log::info!("remote is alive, sending Enter...");
 
-        conn.send(ProtoEvent::Enter(lan_mouse_proto::Position::Right)).await?;
+        conn.send(ProtoEvent::Enter(lan_mouse_proto::Position::Right))
+            .await?;
         conn.wait_for_ack().await?;
         log::info!("capture session established");
 
