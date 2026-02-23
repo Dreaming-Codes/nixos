@@ -9,18 +9,16 @@
   vibeMerge = pkgs.writeShellScriptBin "vibe-merge" (builtins.readFile ../scripts/vibeMerge.sh);
   vibeCommit = pkgs.writeShellScriptBin "vibe-commit" (builtins.readFile ../scripts/vibeCommit.sh);
   razerPower = pkgs.writeShellScriptBin "razer-power" (builtins.readFile ../scripts/razerpower.sh);
-  captureCardScript = pkgs.writeShellScript "capture-card-inner" (
-    builtins.readFile ../scripts/capture-card.sh
-  );
-  captureCard = pkgs.writeShellScriptBin "capture-card" ''
+  captureCardToggle = pkgs.writeShellScriptBin "capture-card-toggle" ''
     export PATH="${
       lib.makeBinPath [
-        pkgs.v4l-utils
-        pkgs.ffmpeg
+        (pkgs.callPackage ../packages/lan-mouse-grab {})
+        pkgs.hyprland
+        pkgs.jq
         pkgs.libnotify
       ]
     }:$PATH"
-    exec ${captureCardScript}
+    ${builtins.readFile ../scripts/capture-card-toggle.sh}
   '';
   mimes = import ../lib/mimes.nix;
 in {
@@ -264,7 +262,7 @@ in {
       ];
       workspace = [
         "special:obsidian, on-created-empty:obsidian"
-        "special:capture-card, on-created-empty:capture-card"
+        "special:capture-card"
       ];
       misc = {
         disable_hyprland_logo = true;
@@ -301,7 +299,7 @@ in {
           "$mod SHIFT, up, movewindow, u"
           "$mod SHIFT, down, movewindow, d"
           "$mod, N, togglespecialworkspace, obsidian"
-          "$mod, Home, togglespecialworkspace, capture-card"
+          "$mod, Home, exec, capture-card-toggle"
           # Audio keys
           ", XF86AudioMicMute, exec, toggleMic"
           ", XF86AudioPlay, exec, playerctl play-pause"
@@ -506,7 +504,8 @@ in {
     vibeMerge
     vibeCommit
     razerPower
-    captureCard
+    captureCardToggle
+    (pkgs.callPackage ../packages/lan-mouse-grab {})
   ];
 
   # Services

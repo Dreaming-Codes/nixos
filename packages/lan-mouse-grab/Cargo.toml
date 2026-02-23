@@ -1,0 +1,36 @@
+[package]
+name = "lan-mouse-grab"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+input-event = { git = "https://github.com/feschber/lan-mouse", default-features = false }
+lan-mouse-proto = { git = "https://github.com/feschber/lan-mouse" }
+
+wayland-client = "0.31"
+wayland-protocols = { version = "0.32", features = ["client", "staging", "unstable"] }
+wayland-protocols-wlr = { version = "0.3", features = ["client"] }
+
+gstreamer = { version = "0.23", features = ["v1_24"] }
+gstreamer-app = { version = "0.23", features = ["v1_24"] }
+gstreamer-video = { version = "0.23", features = ["v1_24"] }
+gstreamer-allocators = { version = "0.23", features = ["v1_24"] }
+
+webrtc-dtls = { version = "0.12", features = ["pem"] }
+webrtc-util = "0.11"
+rcgen = "0.13"
+sha2 = "0.10"
+
+tokio = { version = "1", features = ["rt", "net", "sync", "time", "signal", "macros"] }
+
+libc = "0.2"
+anyhow = "1"
+log = "0.4"
+env_logger = "0.11"
+tempfile = "3"
+
+[profile.release]
+codegen-units = 1
+lto = "fat"
+strip = true
+panic = "abort"
