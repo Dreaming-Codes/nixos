@@ -1,9 +1,0 @@
-/home/dreamingcodes/.nixos/packages/lan-mouse-grab/target/debug/deps/num_enum_derive-bd6b63a9b3c34762.d: /home/dreamingcodes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.5/src/lib.rs /home/dreamingcodes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.5/src/enum_attributes.rs /home/dreamingcodes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.5/src/parsing.rs /home/dreamingcodes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.5/src/utils.rs /home/dreamingcodes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.5/src/variant_attributes.rs
-
-/home/dreamingcodes/.nixos/packages/lan-mouse-grab/target/debug/deps/libnum_enum_derive-bd6b63a9b3c34762.so: /home/dreamingcodes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.5/src/lib.rs /home/dreamingcodes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.5/src/enum_attributes.rs /home/dreamingcodes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.5/src/parsing.rs /home/dreamingcodes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.5/src/utils.rs /home/dreamingcodes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.5/src/variant_attributes.rs
-
-/home/dreamingcodes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.5/src/lib.rs:
-/home/dreamingcodes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.5/src/enum_attributes.rs:
-/home/dreamingcodes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.5/src/parsing.rs:
-/home/dreamingcodes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.5/src/utils.rs:
-/home/dreamingcodes/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.5/src/variant_attributes.rs:
