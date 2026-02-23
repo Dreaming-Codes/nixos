@@ -71,23 +71,19 @@ fn main() -> anyhow::Result<()> {
                 match msg.view() {
                     MessageView::Eos(..) => {
                         log::info!("capture card: end of stream");
-                        notify("Capture Card", "Capture card disconnected", "critical");
-                        pipeline.stop();
-                        drop(input_tx);
-                        let _ = conn_handle.join();
-                        std::process::exit(1);
+                    notify("Capture Card", "Capture card disconnected", "critical");
+                    pipeline.stop();
+                    std::process::exit(1);
                     }
                     MessageView::Error(err) => {
                         log::error!("GStreamer error: {:?}", err.error());
-                        notify(
-                            "Capture Card",
-                            &format!("GStreamer error: {}", err.error()),
-                            "critical",
-                        );
-                        pipeline.stop();
-                        drop(input_tx);
-                        let _ = conn_handle.join();
-                        std::process::exit(1);
+                    notify(
+                        "Capture Card",
+                        &format!("GStreamer error: {}", err.error()),
+                        "critical",
+                    );
+                    pipeline.stop();
+                    std::process::exit(1);
                     }
                     _ => {}
                 }
@@ -110,9 +106,7 @@ fn main() -> anyhow::Result<()> {
                 CaptureMsg::Exit => {
                     log::info!("exit combo pressed, shutting down");
                     pipeline.stop();
-                    drop(input_tx);
-                    let _ = conn_handle.join();
-                    return Ok(());
+                    std::process::exit(0);
                 }
                 CaptureMsg::Input(event) => {
                     // Send to connection thread (non-blocking, drop if full)
