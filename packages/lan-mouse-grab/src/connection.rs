@@ -3,7 +3,7 @@ use lan_mouse_proto::{ProtoEvent, MAX_EVENT_SIZE};
 use sha2::{Digest, Sha256};
 use std::io::{BufReader, BufWriter, Read, Write};
 use std::net::SocketAddr;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::net::UdpSocket;
@@ -116,21 +116,28 @@ impl DtlsConnection {
     }
 
     pub async fn ping_until_alive(&self) -> Result<()> {
-        for _ in 0..8 {
+        for attempt in 0..8 {
             self.send(ProtoEvent::Ping).await?;
-            tokio::time::sleep(Duration::from_millis(250)).await;
-        }
-
-        loop {
-            let event = tokio::time::timeout(Duration::from_secs(5), self.recv())
-                .await
-                .context("no Pong received from remote")??;
-            match event {
-                ProtoEvent::Pong(true) => return Ok(()),
-                ProtoEvent::Pong(false) => bail!("remote emulation is disabled"),
-                _ => continue,
+            match tokio::time::timeout(Duration::from_millis(500), async {
+                loop {
+                    match self.recv().await? {
+                        ProtoEvent::Pong(true) => return Ok::<_, anyhow::Error>(()),
+                        ProtoEvent::Pong(false) => bail!("remote emulation is disabled"),
+                        _ => continue,
+                    }
+                }
+            })
+            .await
+            {
+                Ok(Ok(())) => return Ok(()),
+                Ok(Err(e)) => return Err(e),
+                Err(_) => {
+                    log::debug!("ping attempt {attempt} timed out, retrying...");
+                    continue;
+                }
             }
         }
+        bail!("no Pong received after 8 attempts")
     }
 
     pub async fn wait_for_ack(&self) -> Result<()> {
