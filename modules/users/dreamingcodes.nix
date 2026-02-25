@@ -68,7 +68,7 @@ in {
     home-manager.backupFileExtension = "hm-backup";
 
     home-manager.users.dreamingcodes = {
-      home.stateVersion = "25.11";
+      home.stateVersion = "26.05";
 
       imports = [
         nix-index-database.homeModules.nix-index
