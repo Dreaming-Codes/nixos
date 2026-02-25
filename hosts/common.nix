@@ -50,7 +50,7 @@
   systemd.services.geoclue.wants = ["wpa_supplicant.service"];
 
   # State version
-  system.stateVersion = "25.11";
+  system.stateVersion = "26.05";
 
   # Disable NixOS options documentation to avoid builtins.toFile warnings from NUR
   documentation.nixos.enable = false;
