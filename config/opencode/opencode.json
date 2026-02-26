@@ -7,6 +7,7 @@
   "plugin": [
     "@different-ai/opencode-browser",
     "opencode-antigravity-auth@latest",
+    "@ex-machina/opencode-anthropic-auth"
     "@tarquinen/opencode-dcp@latest"
   ],
   "agent": {
