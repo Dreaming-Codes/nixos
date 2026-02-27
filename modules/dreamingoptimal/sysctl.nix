@@ -13,6 +13,7 @@ in {
       "vm.max_map_count" = 16777216;
       "vm.swappiness" = 180;
       "vm.page-cluster" = 0;
+      "kernel.unprivileged_userns_clone" = 1;
     };
   };
 }
