@@ -1,6 +1,6 @@
 use input_event::{Event, KeyboardEvent, PointerEvent};
 use std::collections::{HashSet, VecDeque};
-use std::io::Write;
+use std::io::{ErrorKind, Write};
 use std::os::fd::AsFd;
 use std::os::unix::io::AsRawFd;
 use wayland_client::backend::WaylandError;
@@ -9,7 +9,9 @@ use wayland_client::protocol::{
     wl_buffer, wl_compositor, wl_keyboard, wl_pointer, wl_region, wl_registry, wl_seat, wl_shm,
     wl_shm_pool, wl_surface,
 };
-use wayland_client::{delegate_noop, Connection, Dispatch, EventQueue, QueueHandle, WEnum};
+use wayland_client::{
+    delegate_noop, Connection, Dispatch, DispatchError, EventQueue, QueueHandle, WEnum,
+};
 use wayland_protocols::wp::keyboard_shortcuts_inhibit::zv1::client::{
     zwp_keyboard_shortcuts_inhibit_manager_v1::ZwpKeyboardShortcutsInhibitManagerV1,
     zwp_keyboard_shortcuts_inhibitor_v1::ZwpKeyboardShortcutsInhibitorV1,
@@ -31,16 +33,31 @@ use wayland_protocols_wlr::layer_shell::v1::client::{
 };
 
 const KEY_LEFT_META: u32 = 125;
+const KEY_RIGHT_META: u32 = 126;
+const KEY_LEFT_META_XKB: u32 = 133;
+const KEY_RIGHT_META_XKB: u32 = 134;
 const KEY_HOME: u32 = 102;
+const KEY_HOME_XKB: u32 = 110;
 
-const VIDEO_WIDTH: i32 = 1920;
-const VIDEO_HEIGHT: i32 = 1080;
-const VIDEO_STRIDE: i32 = VIDEO_WIDTH * 4;
-const FRAME_SIZE: usize = (VIDEO_STRIDE * VIDEO_HEIGHT) as usize;
+const FRAME_WIDTH: u32 = 1920;
+const FRAME_HEIGHT: u32 = 1080;
+const FRAME_STRIDE: u32 = FRAME_WIDTH * 4;
+const FRAME_SIZE: usize = (FRAME_STRIDE * FRAME_HEIGHT) as usize;
 
 pub enum CaptureMsg {
     Input(Event),
     Exit,
+}
+
+struct Globals {
+    compositor: wl_compositor::WlCompositor,
+    shm: wl_shm::WlShm,
+    layer_shell: ZwlrLayerShellV1,
+    seat: wl_seat::WlSeat,
+    pointer_constraints: ZwpPointerConstraintsV1,
+    relative_pointer_manager: ZwpRelativePointerManagerV1,
+    shortcut_inhibit_manager: Option<ZwpKeyboardShortcutsInhibitManagerV1>,
+    viewporter: WpViewporter,
 }
 
 struct ShmPool {
@@ -77,18 +94,18 @@ impl ShmPool {
 
         let buf0 = pool.create_buffer(
             0,
-            VIDEO_WIDTH,
-            VIDEO_HEIGHT,
-            VIDEO_STRIDE,
+            FRAME_WIDTH as i32,
+            FRAME_HEIGHT as i32,
+            FRAME_STRIDE as i32,
             wl_shm::Format::Xrgb8888,
             qh,
             0usize,
         );
         let buf1 = pool.create_buffer(
             FRAME_SIZE as i32,
-            VIDEO_WIDTH,
-            VIDEO_HEIGHT,
-            VIDEO_STRIDE,
+            FRAME_WIDTH as i32,
+            FRAME_HEIGHT as i32,
+            FRAME_STRIDE as i32,
             wl_shm::Format::Xrgb8888,
             qh,
             1usize,
@@ -146,14 +163,7 @@ impl Drop for ShmPool {
 }
 
 pub struct State {
-    compositor: wl_compositor::WlCompositor,
-    shm: wl_shm::WlShm,
-    layer_shell: ZwlrLayerShellV1,
-    seat: wl_seat::WlSeat,
-    pointer_constraints: ZwpPointerConstraintsV1,
-    relative_pointer_manager: ZwpRelativePointerManagerV1,
-    shortcut_inhibit_manager: Option<ZwpKeyboardShortcutsInhibitManagerV1>,
-    viewporter: WpViewporter,
+    globals: Globals,
     pointer: Option<wl_pointer::WlPointer>,
     keyboard: Option<wl_keyboard::WlKeyboard>,
     pointer_lock: Option<ZwpLockedPointerV1>,
@@ -171,22 +181,46 @@ pub struct State {
     configured: bool,
     surface_width: u32,
     surface_height: u32,
+    scroll_discrete_pending: bool,
 }
 
 impl State {
     fn create_initial_buffer(&self) -> wl_buffer::WlBuffer {
         let mut file = tempfile::tempfile().expect("tempfile");
-        let pixel: [u8; 4] = [0, 0, 0, 255]; // opaque black
-        file.write_all(&pixel).expect("write");
-        let pool = self.shm.create_pool(file.as_fd(), 4, &self.qh, ());
-        let buffer = pool.create_buffer(0, 1, 1, 4, wl_shm::Format::Xrgb8888, &self.qh, usize::MAX);
+        let size = FRAME_SIZE as u64;
+        file.set_len(size).expect("set_len");
+
+        // Fill full frame with dark gray so mapped surface is visibly present
+        // even before first captured frame arrives.
+        let row = vec![0x22u8, 0x22, 0x22, 0x00]; // XRGB8888 -> dark gray
+        let mut line = Vec::with_capacity(FRAME_STRIDE as usize);
+        for _ in 0..FRAME_WIDTH {
+            line.extend_from_slice(&row);
+        }
+        for _ in 0..FRAME_HEIGHT {
+            file.write_all(&line).expect("write line");
+        }
+
+        let pool = self
+            .globals
+            .shm
+            .create_pool(file.as_fd(), FRAME_SIZE as i32, &self.qh, ());
+        let buffer = pool.create_buffer(
+            0,
+            FRAME_WIDTH as i32,
+            FRAME_HEIGHT as i32,
+            FRAME_STRIDE as i32,
+            wl_shm::Format::Xrgb8888,
+            &self.qh,
+            usize::MAX,
+        );
         pool.destroy();
         buffer
     }
 
     fn create_window(&mut self) {
-        let surface = self.compositor.create_surface(&self.qh, ());
-        let layer_surface = self.layer_shell.get_layer_surface(
+        let surface = self.globals.compositor.create_surface(&self.qh, ());
+        let layer_surface = self.globals.layer_shell.get_layer_surface(
             &surface,
             None,
             Layer::Overlay,
@@ -195,18 +229,18 @@ impl State {
             (),
         );
 
-        layer_surface.set_anchor(Anchor::Left | Anchor::Right | Anchor::Top | Anchor::Bottom);
+        let anchor = Anchor::Left | Anchor::Right | Anchor::Top | Anchor::Bottom;
+        layer_surface.set_anchor(anchor);
         layer_surface.set_size(0, 0);
         layer_surface.set_exclusive_zone(-1);
         layer_surface.set_keyboard_interactivity(KeyboardInteractivity::Exclusive);
-
-        let viewport = self.viewporter.get_viewport(&surface, &self.qh, ());
-        self.viewport = Some(viewport);
-
         surface.commit();
+
+        let viewport = self.globals.viewporter.get_viewport(&surface, &self.qh, ());
 
         self.surface = Some(surface);
         self.layer_surface = Some(layer_surface);
+        self.viewport = Some(viewport);
     }
 
     fn grab(&mut self) {
@@ -222,7 +256,7 @@ impl State {
         self.grabbed = true;
 
         if self.pointer_lock.is_none() {
-            self.pointer_lock = Some(self.pointer_constraints.lock_pointer(
+            self.pointer_lock = Some(self.globals.pointer_constraints.lock_pointer(
                 &surface,
                 &pointer,
                 None,
@@ -233,23 +267,29 @@ impl State {
         }
 
         if self.rel_pointer.is_none() {
-            self.rel_pointer = Some(self.relative_pointer_manager.get_relative_pointer(
+            self.rel_pointer = Some(self.globals.relative_pointer_manager.get_relative_pointer(
                 &pointer,
                 &self.qh,
                 (),
             ));
         }
 
-        if let Some(mgr) = &self.shortcut_inhibit_manager {
+        if let Some(mgr) = &self.globals.shortcut_inhibit_manager {
             if self.shortcut_inhibitor.is_none() {
                 self.shortcut_inhibitor =
-                    Some(mgr.inhibit_shortcuts(&surface, &self.seat, &self.qh, ()));
+                    Some(mgr.inhibit_shortcuts(&surface, &self.globals.seat, &self.qh, ()));
             }
         }
     }
 
     fn check_exit_combo(&self) -> bool {
-        self.pressed_keys.contains(&KEY_LEFT_META) && self.pressed_keys.contains(&KEY_HOME)
+        let meta_down = self.pressed_keys.contains(&KEY_LEFT_META)
+            || self.pressed_keys.contains(&KEY_RIGHT_META)
+            || self.pressed_keys.contains(&KEY_LEFT_META_XKB)
+            || self.pressed_keys.contains(&KEY_RIGHT_META_XKB);
+        let home_down =
+            self.pressed_keys.contains(&KEY_HOME) || self.pressed_keys.contains(&KEY_HOME_XKB);
+        meta_down && home_down
     }
 
     pub fn submit_video_frame(&mut self, data: &[u8]) {
@@ -263,20 +303,19 @@ impl State {
         }
 
         if self.shm_pool.is_none() {
-            self.shm_pool = Some(ShmPool::new(&self.shm, &self.qh));
+            self.shm_pool = Some(ShmPool::new(&self.globals.shm, &self.qh));
         }
 
         let pool = self.shm_pool.as_mut().unwrap();
         if let Some(buffer) = pool.write_frame(data) {
             surface.attach(Some(buffer), 0, 0);
 
-            // Use viewporter to scale 1920x1080 source to the actual surface size
             if let Some(viewport) = &self.viewport {
-                viewport.set_source(0.0, 0.0, VIDEO_WIDTH as f64, VIDEO_HEIGHT as f64);
+                viewport.set_source(0.0, 0.0, FRAME_WIDTH as f64, FRAME_HEIGHT as f64);
                 viewport.set_destination(self.surface_width as i32, self.surface_height as i32);
             }
 
-            surface.damage_buffer(0, 0, VIDEO_WIDTH, VIDEO_HEIGHT);
+            surface.damage_buffer(0, 0, FRAME_WIDTH as i32, FRAME_HEIGHT as i32);
             surface.commit();
         }
     }
@@ -305,14 +344,16 @@ impl WaylandCapture {
         let viewporter: WpViewporter = global_list.bind(&qh, 1..=1, ())?;
 
         let mut state = State {
-            compositor,
-            shm,
-            layer_shell,
-            seat,
-            pointer_constraints,
-            relative_pointer_manager,
-            shortcut_inhibit_manager,
-            viewporter,
+            globals: Globals {
+                compositor,
+                shm,
+                layer_shell,
+                seat,
+                pointer_constraints,
+                relative_pointer_manager,
+                shortcut_inhibit_manager,
+                viewporter,
+            },
             pointer: None,
             keyboard: None,
             pointer_lock: None,
@@ -328,8 +369,9 @@ impl WaylandCapture {
             pending: VecDeque::new(),
             qh,
             configured: false,
-            surface_width: 1920,
-            surface_height: 1080,
+            surface_width: FRAME_WIDTH,
+            surface_height: FRAME_HEIGHT,
+            scroll_discrete_pending: false,
         };
 
         state.create_window();
@@ -338,15 +380,31 @@ impl WaylandCapture {
         Ok(WaylandCapture { state, queue })
     }
 
-    pub fn dispatch(&mut self) -> anyhow::Result<()> {
+    pub fn flush_and_dispatch(&mut self) -> anyhow::Result<()> {
         self.queue.flush()?;
 
-        // Blocking read — wakes on any Wayland event
-        if let Some(guard) = self.queue.prepare_read() {
-            match guard.read() {
-                Ok(_) => {}
-                Err(WaylandError::Io(ref e)) if e.kind() == std::io::ErrorKind::WouldBlock => {}
-                Err(e) => return Err(e.into()),
+        if let Err(e) = self.queue.dispatch_pending(&mut self.state) {
+            match e {
+                DispatchError::Backend(WaylandError::Io(ref io))
+                    if io.kind() == ErrorKind::WouldBlock => {}
+                other => return Err(other.into()),
+            }
+        }
+
+        // Truly non-blocking read: poll fd with zero timeout first.
+        let mut pollfd = libc::pollfd {
+            fd: self.queue.as_fd().as_raw_fd(),
+            events: libc::POLLIN,
+            revents: 0,
+        };
+        let ready = unsafe { libc::poll(&mut pollfd, 1, 0) };
+        if ready > 0 && (pollfd.revents & libc::POLLIN) != 0 {
+            if let Some(guard) = self.queue.prepare_read() {
+                match guard.read() {
+                    Ok(_) => {}
+                    Err(WaylandError::Io(ref e)) if e.kind() == ErrorKind::WouldBlock => {}
+                    Err(e) => return Err(e.into()),
+                }
             }
         }
 
@@ -354,13 +412,12 @@ impl WaylandCapture {
         Ok(())
     }
 
-    #[allow(dead_code)]
     pub fn wayland_fd(&self) -> std::os::unix::io::RawFd {
         self.queue.as_fd().as_raw_fd()
     }
 }
 
-// --- Dispatch implementations ---
+// Dispatch implementations
 
 impl Dispatch<wl_seat::WlSeat, ()> for State {
     fn event(
@@ -380,10 +437,6 @@ impl Dispatch<wl_seat::WlSeat, ()> for State {
                     p.release();
                 }
                 state.pointer = Some(seat.get_pointer(qh, ()));
-                // Surface may already be configured — try to grab now
-                if state.configured {
-                    state.grab();
-                }
             }
             if caps.contains(wl_seat::Capability::Keyboard) {
                 if let Some(k) = state.keyboard.take() {
@@ -445,15 +498,20 @@ impl Dispatch<wl_pointer::WlPointer, ()> for State {
                     })));
             }
             wl_pointer::Event::Axis { time, axis, value } => {
-                state
-                    .pending
-                    .push_back(CaptureMsg::Input(Event::Pointer(PointerEvent::Axis {
-                        time,
-                        axis: u32::from(axis) as u8,
-                        value,
-                    })));
+                if state.scroll_discrete_pending {
+                    state.scroll_discrete_pending = false;
+                } else {
+                    state.pending.push_back(CaptureMsg::Input(Event::Pointer(
+                        PointerEvent::Axis {
+                            time,
+                            axis: u32::from(axis) as u8,
+                            value,
+                        },
+                    )));
+                }
             }
             wl_pointer::Event::AxisValue120 { axis, value120 } => {
+                state.scroll_discrete_pending = true;
                 state.pending.push_back(CaptureMsg::Input(Event::Pointer(
                     PointerEvent::AxisDiscrete120 {
                         axis: u32::from(axis) as u8,
@@ -568,34 +626,28 @@ impl Dispatch<ZwlrLayerSurfaceV1, ()> for State {
         } = event
         {
             layer_surface.ack_configure(serial);
-
-            log::info!("layer surface configured: {width}x{height}");
-
-            state.surface_width = if width > 0 { width } else { 1920 };
-            state.surface_height = if height > 0 { height } else { 1080 };
             state.configured = true;
+            state.surface_width = if width == 0 { FRAME_WIDTH } else { width };
+            state.surface_height = if height == 0 { FRAME_HEIGHT } else { height };
+            log::info!("layer surface configured");
 
-            // Attach an initial opaque black buffer so the surface is mapped
             if let Some(surface) = &state.surface {
                 if state.initial_buffer.is_none() {
                     let buffer = state.create_initial_buffer();
                     surface.attach(Some(&buffer), 0, 0);
 
-                    // Set viewport to stretch 1x1 black pixel to fill surface
                     if let Some(viewport) = &state.viewport {
+                        viewport.set_source(0.0, 0.0, FRAME_WIDTH as f64, FRAME_HEIGHT as f64);
                         viewport.set_destination(
                             state.surface_width as i32,
                             state.surface_height as i32,
                         );
                     }
 
+                    surface.damage_buffer(0, 0, FRAME_WIDTH as i32, FRAME_HEIGHT as i32);
                     surface.commit();
                     state.initial_buffer = Some(buffer);
                 }
-
-                // Grab input immediately — don't wait for wl_pointer::Enter
-                // since on a fullscreen overlay the compositor may not send it
-                state.grab();
             }
         }
     }
@@ -642,6 +694,6 @@ delegate_noop!(State: ZwpPointerConstraintsV1);
 delegate_noop!(State: WpViewporter);
 delegate_noop!(State: ignore wl_shm::WlShm);
 delegate_noop!(State: ignore wl_surface::WlSurface);
+delegate_noop!(State: ignore WpViewport);
 delegate_noop!(State: ignore ZwpKeyboardShortcutsInhibitorV1);
 delegate_noop!(State: ignore ZwpLockedPointerV1);
-delegate_noop!(State: ignore WpViewport);
