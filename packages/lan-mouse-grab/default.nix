@@ -4,6 +4,7 @@
   pkg-config,
   gst_all_1,
   wayland,
+  dbus,
   makeWrapper,
   v4l-utils,
 }:
@@ -13,7 +14,7 @@ rustPlatform.buildRustPackage {
 
   src = ./.;
 
-  cargoHash = "sha256-R9poCrlNm/3QFum8D3jz0LtcWT1oqZ7aPjujUFJP2Q4=";
+  cargoHash = "sha256-wHpfIvuhgYTcPTfC9aiuMOquIoPba0/pdsU8xgeca98=";
 
   nativeBuildInputs = [
     pkg-config
@@ -22,6 +23,7 @@ rustPlatform.buildRustPackage {
 
   buildInputs = [
     wayland
+    dbus
     gst_all_1.gstreamer
     gst_all_1.gst-plugins-base
     gst_all_1.gst-plugins-good
@@ -36,7 +38,7 @@ rustPlatform.buildRustPackage {
   '';
 
   meta = with lib; {
-    description = "Capture card video display + input forwarding via lan-mouse protocol";
+    description = "Capture card video display + Classic BT HID input forwarding";
     license = licenses.gpl3Plus;
     platforms = platforms.linux;
   };
