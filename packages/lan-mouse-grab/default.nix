@@ -5,6 +5,7 @@
   gst_all_1,
   wayland,
   dbus,
+  bluez,
   makeWrapper,
   v4l-utils,
 }:
@@ -34,7 +35,7 @@ rustPlatform.buildRustPackage {
   postInstall = ''
     wrapProgram $out/bin/lan-mouse-grab \
       --prefix GST_PLUGIN_SYSTEM_PATH_1_0 : "$GST_PLUGIN_SYSTEM_PATH_1_0" \
-      --prefix PATH : "${v4l-utils}/bin"
+      --prefix PATH : "${v4l-utils}/bin:${bluez}/bin"
   '';
 
   meta = with lib; {

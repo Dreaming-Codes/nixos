@@ -39,12 +39,12 @@ async fn run(device: String) -> anyhow::Result<()> {
     let mut capture = WaylandCapture::new()?;
     log::info!("wayland layer-shell surface created");
 
-    // Spawn BLE HOGP backend
-    let (ble_hid, input_tx) = bluetooth::BleHid::new();
+    // Spawn Classic BT HID backend
+    let (bt_hid, input_tx) = bluetooth::BtHid::new();
     tokio::spawn(async move {
-        if let Err(e) = ble_hid.run().await {
-            log::error!("BLE HID error: {e:#}");
-            notify("BLE HID", &format!("Bluetooth error: {e}"), "critical");
+        if let Err(e) = bt_hid.run().await {
+            log::error!("BT HID error: {e:#}");
+            notify("BT HID", &format!("Bluetooth error: {e}"), "critical");
         }
     });
 
