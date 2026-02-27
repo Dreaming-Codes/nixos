@@ -61,13 +61,12 @@ fn select_decoder() -> String {
         return "jpegdec".to_string();
     }
 
-    // Hardware-first default order.
     let candidates = [
+        "jpegdec",
         "nvjpegdec",
         "vajpegdec",
         "vaapijpegdec",
         "v4l2jpegdec",
-        "jpegdec",
     ];
     for name in candidates {
         if gstreamer::ElementFactory::find(name).is_some() {

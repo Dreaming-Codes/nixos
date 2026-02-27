@@ -12,12 +12,24 @@
   captureCardToggle = pkgs.writeShellScriptBin "capture-card-toggle" ''
     export PATH="${
       lib.makeBinPath [
-        (pkgs.callPackage ../packages/lan-mouse-grab {})
         pkgs.hyprland
         pkgs.jq
         pkgs.libnotify
+        pkgs.v4l-utils
+        pkgs.bluez
       ]
     }:$PATH"
+    export GST_PLUGIN_SYSTEM_PATH_1_0="${
+      lib.makeSearchPath "lib/gstreamer-1.0" (
+        with pkgs.gst_all_1; [
+          gstreamer.out
+          gst-plugins-base
+          gst-plugins-good
+          gst-plugins-bad
+          gst-vaapi
+        ]
+      )
+    }''${GST_PLUGIN_SYSTEM_PATH_1_0:+:$GST_PLUGIN_SYSTEM_PATH_1_0}"
     ${builtins.readFile ../scripts/capture-card-toggle.sh}
   '';
   mimes = import ../lib/mimes.nix;
@@ -520,7 +532,6 @@ in {
     vibeCommit
     razerPower
     captureCardToggle
-    (pkgs.callPackage ../packages/lan-mouse-grab {})
   ];
 
   # Services
