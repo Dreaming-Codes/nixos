@@ -55,6 +55,16 @@ in {
   '';
 
   programs.fish = {
+    loginShellInit = ''
+      if test -f /run/secrets/cloudflare_api_token_env
+        while read -l line
+          if test -n "$line"
+            set -l parts (string split -m 1 '=' -- $line)
+            set -gx $parts[1] $parts[2]
+          end
+        end < /run/secrets/cloudflare_api_token_env
+      end
+    '';
     completions = {
       vibe-merge = ''
         set -l PATH_TO_WORKTREES ".rsworktree"
@@ -69,6 +79,11 @@ in {
     "/home/dreamingcodes/.cargo/bin"
     "/home/dreamingcodes/.bun/bin"
   ];
+
+  home.sessionVariables = {
+    CLOUDFLARE_ACCOUNT_ID = "de6b8d71384c18545348ad14570b9c5f";
+    CLOUDFLARE_GATEWAY_ID = "nixos";
+  };
 
   services.vicinae = {
     enable = true;
