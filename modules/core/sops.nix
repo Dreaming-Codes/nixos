@@ -24,12 +24,27 @@
         group = "users";
         mode = "0400";
       };
+      cloudflare_api_token = {
+        owner = "dreamingcodes";
+        group = "users";
+        mode = "0400";
+      };
     };
 
     # Template for nix access-tokens configuration
     templates."nix-access-tokens.conf" = {
       content = ''
         access-tokens = github.com=${config.sops.placeholder.github_token}
+      '';
+    };
+
+    templates."cloudflare_api_token_env" = {
+      owner = "dreamingcodes";
+      group = "users";
+      mode = "0400";
+      path = "/run/secrets/cloudflare_api_token_env";
+      content = ''
+        CLOUDFLARE_API_TOKEN=${config.sops.placeholder.cloudflare_api_token}
       '';
     };
 
