@@ -33,7 +33,9 @@ rustPlatform.buildRustPackage {
   ];
 
   postInstall = ''
-    wrapProgram $out/bin/lan-mouse-grab \
+    mkdir -p $out/libexec
+    mv $out/bin/lan-mouse-grab $out/libexec/lan-mouse-grab
+    makeWrapper $out/libexec/lan-mouse-grab $out/bin/lan-mouse-grab \
       --prefix GST_PLUGIN_SYSTEM_PATH_1_0 : "$GST_PLUGIN_SYSTEM_PATH_1_0" \
       --prefix PATH : "${v4l-utils}/bin:${bluez}/bin"
   '';
