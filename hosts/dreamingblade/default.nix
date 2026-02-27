@@ -209,6 +209,9 @@ in {
     KERNEL=="hidraw*", ATTRS{idVendor}=="3434", ATTRS{idProduct}=="0660", MODE="0666", GROUP="plugdev", TAG+="uaccess"
     # Keychron Q6 Pro - disable USB autosuspend (for hotplug)
     ACTION=="add|bind", SUBSYSTEM=="usb", ATTR{idVendor}=="3434", ATTR{idProduct}=="0660", ATTR{power/control}="on"
+    # Saleae Logic analyzers
+    SUBSYSTEM=="usb", ATTR{idVendor}=="0925", ATTR{idProduct}=="3881", MODE="0666"
+    SUBSYSTEM=="usb", ATTR{idVendor}=="21a9", MODE="0666"
   '';
 
   # Disable USB autosuspend for Keychron at boot (runs after powertop which enables autosuspend)
