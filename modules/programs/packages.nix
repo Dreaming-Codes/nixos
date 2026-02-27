@@ -240,6 +240,8 @@ in {
 
     # Secrets management
     sops
+
+    saleae-logic-2
   ];
 
   environment.variables = {
