@@ -1,3 +1,3 @@
 {lib, ...}: {
-  config.dreamingoptimal.optimization.tmp.enable = lib.mkDefault true;
+  config.dreamingoptimal.optimization.tmp.enable = lib.mkDefault false;
 }
