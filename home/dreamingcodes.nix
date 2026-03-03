@@ -108,7 +108,6 @@ in {
       };
     };
     extensions = with inputs.vicinae-extensions.packages.${pkgs.stdenv.hostPlatform.system}; [
-      bluetooth
       it-tools
       nix
       player-pilot
