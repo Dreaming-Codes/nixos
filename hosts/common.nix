@@ -32,10 +32,10 @@
     geoProviderUrl = "https://cloudflare-location-service.dreamingcodes.workers.dev/";
   };
 
-  services.espanso = {
-    enable = true;
-    package = pkgs.espanso-wayland;
-  };
+  # services.espanso = {
+  #   enable = true;
+  #   package = pkgs.espanso-wayland;
+  # };
 
   dreamingoptimal.optimization.enable = true;
 
