@@ -76,6 +76,7 @@ permission:
     "find *": "allow"
     "xargs *": "allow"
     "cat *": "allow"
+    "echo *": "allow"
     "cargo metadata *": "allow"
     "gh search *": "allow"
     "gh status *": "allow"
