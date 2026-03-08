@@ -101,7 +101,6 @@ in {
   home.file.".config/opencode/opencode.json".source = ../config/opencode/opencode.json;
   home.file.".config/opencode/opencode-notifier.json".source = ../config/opencode/opencode-notifier.json;
   home.file.".config/opencode/AGENTS.md".source = ../config/opencode/AGENTS.md;
-  home.file.".config/opencode/dcp.jsonc".source = ../config/opencode/dcp.jsonc;
   home.file.".config/opencode/agent/git-detective.md".source =
     ../config/opencode/agent/git-detective.md;
 
