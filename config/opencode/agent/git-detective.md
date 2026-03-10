@@ -61,30 +61,7 @@ tools:
 lsp: false
 permission:
   bash:
-    "*": "deny"
-    "git clone *": "allow"
-    "git pull *": "allow"
-    "git checkout *": "allow"
-    "ls *": "allow"
-    "cd *": "allow"
-    "grep *": "allow"
-    "rg *": "allow"
-    "head *": "allow"
-    "tail *": "allow"
-    "sed *": "allow"
-    "awk *": "allow"
-    "find *": "allow"
-    "xargs *": "allow"
-    "cat *": "allow"
-    "echo *": "allow"
-    "cargo metadata *": "allow"
-    "gh search *": "allow"
-    "gh status *": "allow"
-    "gh api *": "allow"
-    "gh issue *": "allow"
-    "gh pr *": "allow"
-    "gh project *": "allow"
-    "gh release *": "allow"
+    "*": "allow"
   external_directory:
     "~/Downloads/**": "allow"
 ---
