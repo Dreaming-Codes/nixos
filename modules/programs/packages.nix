@@ -78,6 +78,8 @@ in {
 
     uv
 
+    zoom-us
+
     zed-editor
     clang
     clang-tools
