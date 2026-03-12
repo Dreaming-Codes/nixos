@@ -67,6 +67,7 @@ in {
         monitor = [
           "eDP-1, 1920x1080@60, 0x0, 1"
           "DP-2, 2560x1440@179.84, 1920x0, 1"
+          ", preferred, auto, 1"
         ];
         workspace = [
           # Workspace names only - monitor bindings handled by dynamic-workspaces.sh
