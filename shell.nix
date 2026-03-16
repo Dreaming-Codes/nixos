@@ -153,14 +153,21 @@
   update-system-boot = pkgs.writeShellScriptBin "update-system-boot" ''
     ${update-system-common}/bin/update-system-common boot
   '';
+
+  sops-edit = pkgs.writeShellScriptBin "sops-edit" ''
+    export SOPS_AGE_KEY_FILE="$(git rev-parse --show-toplevel)/secrets/identity.age"
+    exec ${pkgs.sops}/bin/sops "''${@:-secrets/secrets.yaml}"
+  '';
 in
   pkgs.mkShell {
     packages = [
       pkgs.nil
       pkgs.nixd
       pkgs.nixfmt
+      pkgs.sops
       system-current
       update-system
       update-system-boot
+      sops-edit
     ];
   }
