@@ -77,6 +77,7 @@
   hardware.wirelessRegulatoryDatabase = true;
 
   networking.firewall = {
+    checkReversePath = "loose";
     allowedTCPPortRanges = [
       {
         from = 1714;
