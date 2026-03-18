@@ -191,7 +191,7 @@ in {
     jdt-language-server
 
     pwvucontrol
-    helvum
+    crosspipe
 
     scrcpy
 
