@@ -208,21 +208,22 @@ in {
   services.udev.extraRules = ''
     # Keychron Q6 Pro - world read/write for WebHID browser access
     KERNEL=="hidraw*", ATTRS{idVendor}=="3434", ATTRS{idProduct}=="0660", MODE="0666", GROUP="plugdev", TAG+="uaccess"
-    # Keychron Q6 Pro - disable USB autosuspend (for hotplug)
-    ACTION=="add|bind", SUBSYSTEM=="usb", ATTR{idVendor}=="3434", ATTR{idProduct}=="0660", ATTR{power/control}="on"
+    # Disable USB autosuspend for all HID input devices (keyboards, mice, etc.)
+    ACTION=="add", SUBSYSTEM=="usb", ATTR{bInterfaceClass}=="03", TEST=="power/control", ATTR{power/control}="on"
+    ACTION=="add", SUBSYSTEM=="usb", ATTRS{bInterfaceClass}=="03", TEST=="power/control", ATTR{power/control}="on"
     # Saleae Logic analyzers
     SUBSYSTEM=="usb", ATTR{idVendor}=="0925", ATTR{idProduct}=="3881", MODE="0666"
     SUBSYSTEM=="usb", ATTR{idVendor}=="21a9", MODE="0666"
   '';
 
-  # Disable USB autosuspend for Keychron at boot (runs after powertop which enables autosuspend)
-  systemd.services.keychron-no-autosuspend = {
-    description = "Disable USB autosuspend for Keychron keyboard";
+  # Disable USB autosuspend for all HID input devices at boot (runs after powertop which enables autosuspend)
+  systemd.services.usb-input-no-autosuspend = {
+    description = "Disable USB autosuspend for all HID input devices";
     wantedBy = ["powertop.service"];
     after = ["powertop.service"];
     serviceConfig = {
       Type = "oneshot";
-      ExecStart = "${pkgs.bash}/bin/bash -c 'for dev in /sys/bus/usb/devices/*/; do if [ -f \"$dev/idVendor\" ] && [ -f \"$dev/idProduct\" ] && [ \"$(cat \"$dev/idVendor\")\" = \"3434\" ] && [ \"$(cat \"$dev/idProduct\")\" = \"0660\" ]; then echo on > \"$dev/power/control\" 2>/dev/null || true; fi; done'";
+      ExecStart = "${pkgs.bash}/bin/bash -c 'for intf in /sys/bus/usb/devices/*:*/bInterfaceClass; do if [ -f \"$intf\" ] && [ \"$(cat \"$intf\")\" = \"03\" ]; then dev=\"$(dirname \"$(dirname \"$intf\")\")\"; echo on > \"$dev/power/control\" 2>/dev/null || true; fi; done'";
       RemainAfterExit = true;
     };
   };
