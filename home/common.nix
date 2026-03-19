@@ -42,6 +42,12 @@ in {
     systemRepoPath = "/home/dreamingcodes/.nixos";
   };
 
+  # Symlink google-chrome config to helium config to trick Claude Code's Chrome integration
+  home.activation.chromeToHeliumSymlink = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    rm -rf "${config.home.homeDirectory}/.config/google-chrome"
+    ln -sfn "${config.home.homeDirectory}/.config/net.imput.helium" "${config.home.homeDirectory}/.config/google-chrome"
+  '';
+
   home.activation.mimeApps = lib.hm.dag.entryAfter ["writeBoundary"] ''
     ${mimes.bindMimes "helium.desktop" [
       "application/pdf"
