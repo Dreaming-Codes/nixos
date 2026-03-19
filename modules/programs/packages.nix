@@ -154,8 +154,6 @@ in {
     # Not sure what caused this but now this is needed to make bash work
     bashInteractive
 
-    upscayl
-
     psst
     (spotify-player.override {
       withAudioBackend = "pulseaudio";
