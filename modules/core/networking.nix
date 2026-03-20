@@ -10,7 +10,15 @@
 
   services.resolved = {
     enable = true;
-    settings.Resolve.DNSOverTLS = "true";
+    # Use opportunistic DoT so WARP can intercept DNS when connected,
+    # while still encrypting DNS when WARP is off
+    settings.Resolve.DNSOverTLS = "opportunistic";
+    fallbackDns = [
+      "1.1.1.1#cloudflare-dns.com"
+      "1.0.0.1#cloudflare-dns.com"
+      "2606:4700:4700::1111#cloudflare-dns.com"
+      "2606:4700:4700::1001#cloudflare-dns.com"
+    ];
   };
   networking = {
     nameservers = [
@@ -60,8 +68,9 @@
       ];
       dns = "systemd-resolved";
       connectionConfig = {
-        "ipv4.ignore-auto-dns" = true;
-        "ipv6.ignore-auto-dns" = true;
+        # Allow DHCP DNS as fallback, 1.1.1.1 remains primary via networking.nameservers
+        "ipv4.ignore-auto-dns" = false;
+        "ipv6.ignore-auto-dns" = false;
       };
       wifi = {
         powersave = false;
