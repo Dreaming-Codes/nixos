@@ -1,4 +1,6 @@
 {...}: {
+  boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
+
   # Intel AX210 WiFi optimizations - disable power saving for better stability
   boot.extraModprobeConfig = ''
     options iwlwifi power_save=0
