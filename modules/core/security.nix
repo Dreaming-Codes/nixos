@@ -30,5 +30,5 @@
   ];
 
   # Disable man page cache generation since it's very slow and fish enable it by default
-  documentation.man.generateCaches = false;
+  documentation.man.cache.enable = false;
 }

@@ -14,13 +14,17 @@
     enable = true;
     # Use opportunistic DoT so WARP can intercept DNS when connected,
     # while still encrypting DNS when WARP is off
-    settings.Resolve.DNSOverTLS = "opportunistic";
-    fallbackDns = [
-      "1.1.1.1#cloudflare-dns.com"
-      "1.0.0.1#cloudflare-dns.com"
-      "2606:4700:4700::1111#cloudflare-dns.com"
-      "2606:4700:4700::1001#cloudflare-dns.com"
-    ];
+    settings = {
+      Resolve = {
+        DNSOverTLS = "opportunistic";
+        FallbackDNS = [
+          "1.1.1.1#cloudflare-dns.com"
+          "1.0.0.1#cloudflare-dns.com"
+          "2606:4700:4700::1111#cloudflare-dns.com"
+          "2606:4700:4700::1001#cloudflare-dns.com"
+        ];
+      };
+    };
   };
   networking = {
     nameservers = [
