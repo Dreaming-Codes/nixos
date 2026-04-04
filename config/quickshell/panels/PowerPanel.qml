@@ -51,7 +51,7 @@ PanelWindow {
         }
     }
 
-    Process { id: lockProc; command: ["loginctl", "lock-session"] }
+    Process { id: lockProc; command: ["qs-lock"] }
     Process { id: suspendProc; command: ["systemctl", "suspend"] }
     Process { id: rebootProc; command: ["systemctl", "reboot"] }
     Process { id: shutdownProc; command: ["shutdown", "now"] }

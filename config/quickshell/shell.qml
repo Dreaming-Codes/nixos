@@ -130,12 +130,25 @@ ShellRoot {
 
     Lock { id: sessionLock }
 
+    // Lock is triggered directly - no dbus-monitor.
+    // Keybind, power panel, hypridle all call: qs-lock
+    // which writes to this socket/file to trigger lock.
     Process {
         running: true
-        command: ["sh", "-c", "gdbus monitor --system --dest org.freedesktop.login1 2>/dev/null | grep --line-buffered 'Lock'"]
+        command: ["sh", "-c",
+            "PIPE=\"$XDG_RUNTIME_DIR/quickshell-lock\"; " +
+            "rm -f \"$PIPE\"; mkfifo \"$PIPE\"; " +
+            "while true; do " +
+            "  if read line < \"$PIPE\"; then " +
+            "    echo \"$line\"; " +
+            "  fi; " +
+            "done"
+        ]
         stdout: SplitParser {
             onRead: line => {
-                if (line.includes("Lock")) sessionLock.locked = true;
+                if (line === "lock" && !sessionLock.locked) {
+                    sessionLock.locked = true;
+                }
             }
         }
         onRunningChanged: if (!running) running = true
