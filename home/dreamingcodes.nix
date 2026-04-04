@@ -10,6 +10,7 @@
   vibeMerge = pkgs.writeShellScriptBin "vibe-merge" (builtins.readFile ../scripts/vibeMerge.sh);
   vibeCommit = pkgs.writeShellScriptBin "vibe-commit" (builtins.readFile ../scripts/vibeCommit.sh);
   razerPower = pkgs.writeShellScriptBin "razer-power" (builtins.readFile ../scripts/razerpower.sh);
+  qsLock = pkgs.writeShellScriptBin "qs-lock" (builtins.readFile ../scripts/qs-lock.sh);
   captureCardToggle = pkgs.writeShellScriptBin "capture-card-toggle" ''
     export PATH="${
       lib.makeBinPath [
@@ -295,7 +296,7 @@ in {
           "$mod, S, exec, signal-desktop"
           "$mod, O, togglefloating"
           "$mod, C, exec, vicinae deeplink vicinae://extensions/vicinae/clipboard/history"
-          "$mod, L, exec, loginctl lock-session"
+          "$mod, L, exec, qs-lock"
           "$mod, F, fullscreen"
           "$mod, M, exec, toggleMixer"
           "$mod, period, exec, systemctl --user start swww-random-wallpaper.service"
@@ -419,8 +420,8 @@ in {
   services.hypridle.enable = true;
   services.hypridle.settings = {
     general = {
-      lock_cmd = "loginctl lock-session";
-      before_sleep_cmd = "loginctl lock-session";
+      lock_cmd = "qs-lock";
+      before_sleep_cmd = "qs-lock";
       after_sleep_cmd = "hyprctl dispatch dpms on";
     };
 
@@ -432,7 +433,7 @@ in {
       }
       {
         timeout = 300;
-        on-timeout = "loginctl lock-session";
+        on-timeout = "qs-lock";
       }
       {
         timeout = 330;
@@ -514,6 +515,7 @@ in {
     vibeMerge
     vibeCommit
     razerPower
+    qsLock
     captureCardToggle
   ];
 
