@@ -51,7 +51,7 @@ in {
           type = "Doc-View";
         }
         {
-          name = "ashell";
+          name = "quickshell";
           type = "LowLatency_RT";
         }
         {

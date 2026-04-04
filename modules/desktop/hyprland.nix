@@ -31,7 +31,7 @@
   programs.hyprland = {
     enable = true;
   };
-  programs.hyprlock.enable = true;
+  # hyprlock replaced by quickshell session lock
 
   services.xserver.xkb = {
     layout = "us";

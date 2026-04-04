@@ -96,7 +96,7 @@ in {
 
     claude-code
 
-    ashell
+    quickshell
 
     socat
 
