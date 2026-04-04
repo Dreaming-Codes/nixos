@@ -9,7 +9,6 @@
 in {
   imports = [
     ./ram.nix
-    ./tmp.nix
     ./swap-fallback.nix
     ./process-tuning.nix
     ./sysctl.nix
@@ -23,7 +22,6 @@ in {
     enable = mkEnableOption "DreamingOptimal optimization profile";
 
     ram.enable = mkEnableOption "compressed RAM swap (zram)";
-    tmp.enable = mkEnableOption "RAM-backed /tmp with disk overflow fallback";
     swapFallback.enable = mkEnableOption "disk swap fallback when zram is exhausted";
     processTuning.enable = mkEnableOption "process priority and OOM tuning";
     sysctl.enable = mkEnableOption "kernel sysctl tuning";
@@ -36,7 +34,6 @@ in {
   config = mkIf cfg.enable {
     dreamingoptimal.optimization = {
       ram.enable = mkDefault true;
-      tmp.enable = mkDefault true;
       swapFallback.enable = mkDefault true;
       processTuning.enable = mkDefault true;
       sysctl.enable = mkDefault true;
