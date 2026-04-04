@@ -64,7 +64,7 @@ ShellRoot {
         delegate: Bar {
             required property ShellScreen modelData
             screen: modelData
-            showRazerPower: shell.isLaptop
+            isLaptop: shell.isLaptop
             notifManager: notifManager
             notifCenterOpen: shell.notifCenterOpen
             activePanel: shell.activePanel
@@ -124,6 +124,16 @@ ShellRoot {
 
         PowerPanel {
             screen: shell.activeScreen
+            onDismissed: shell.activePanel = ""
+        }
+    }
+
+    LazyLoader {
+        active: shell.activePanel === "profile"
+
+        ProfilePanel {
+            screen: shell.activeScreen
+            showRazer: shell.isLaptop
             onDismissed: shell.activePanel = ""
         }
     }

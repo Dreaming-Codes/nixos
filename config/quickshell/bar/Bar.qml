@@ -10,10 +10,10 @@ import "../notifications"
 PanelWindow {
     id: root
 
-    property bool showRazerPower: false
     property var notifManager: null
     property bool notifCenterOpen: false
     property string activePanel: ""
+    property bool isLaptop: false
     signal toggleNotifCenter()
     signal togglePanel(string panel)
 
@@ -59,12 +59,6 @@ PanelWindow {
             barWindow: root
         }
 
-        Loader {
-            active: root.showRazerPower
-            Layout.fillWidth: true
-            sourceComponent: RazerPower {}
-        }
-
         Battery {
             Layout.fillWidth: true
         }
@@ -86,6 +80,13 @@ PanelWindow {
         }
 
         // Quick action icons
+        ProfileIcon {
+            Layout.fillWidth: true
+            active: root.activePanel === "profile"
+            showRazer: root.isLaptop
+            onClicked: root.togglePanel("profile")
+        }
+
         BarIcon {
             Layout.fillWidth: true
             icon: "\uf028"
