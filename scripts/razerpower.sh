@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Razer power mode control script for ashell custom module
+# Razer power mode control script for quickshell custom module
 # Power modes: 0=Balanced, 1=Gaming, 2=Creator, 3=Silent, 4=Custom
 
 get_power_mode() {

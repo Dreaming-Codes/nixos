@@ -47,7 +47,7 @@ configure_workspaces() {
         for i in 1 2 3 4 5 6 7 8 9 10; do
             hyprctl dispatch moveworkspacetomonitor "name:F$i $secondary" 2>/dev/null
         done
-        # Switch to F2 and then back to F1 to refresh ashell displayed name
+        # Switch to F2 and then back to F1 to refresh bar displayed name
         hyprctl dispatch workspace name:F2
         hyprctl dispatch workspace name:F1
     else

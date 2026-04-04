@@ -59,7 +59,7 @@ in {
     wayland.windowManager.hyprland = {
       settings = {
         bindl = [
-          ",switch:off:Lid Switch, exec, hyprlock --immediate"
+          ",switch:off:Lid Switch, exec, loginctl lock-session"
         ];
         env = [
           "AQ_DRM_DEVICES,/dev/dri/card0:/dev/dri/card1"

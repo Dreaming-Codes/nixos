@@ -2,6 +2,7 @@
   pkgs,
   lib,
   inputs,
+  osConfig,
   ...
 }: let
   toggleMic = pkgs.writeShellScriptBin "toggleMic" (builtins.readFile ../scripts/mictoggle.sh);
@@ -294,7 +295,7 @@ in {
           "$mod, S, exec, signal-desktop"
           "$mod, O, togglefloating"
           "$mod, C, exec, vicinae deeplink vicinae://extensions/vicinae/clipboard/history"
-          "$mod, L, exec, hyprlock"
+          "$mod, L, exec, loginctl lock-session"
           "$mod, F, fullscreen"
           "$mod, M, exec, toggleMixer"
           "$mod, period, exec, systemctl --user start swww-random-wallpaper.service"
@@ -413,19 +414,12 @@ in {
     Install.WantedBy = ["swww.service"];
   };
 
-  services.swaync.enable = true;
-  systemd.user.services.swaync = {
-    Unit = {
-      PartOf = lib.mkForce ["hyprland-session.target"];
-      After = lib.mkForce ["hyprland-session.target"];
-    };
-    Install.WantedBy = lib.mkForce ["hyprland-session.target"];
-  };
+  # swaync replaced by quickshell notification server
 
   services.hypridle.enable = true;
   services.hypridle.settings = {
     general = {
-      lock_cmd = "pidof hyprlock || hyprlock";
+      lock_cmd = "loginctl lock-session";
       before_sleep_cmd = "loginctl lock-session";
       after_sleep_cmd = "hyprctl dispatch dpms on";
     };
@@ -459,9 +453,9 @@ in {
     Install.WantedBy = lib.mkForce ["hyprland-session.target"];
   };
 
-  systemd.user.services.ashell = {
+  systemd.user.services.quickshell = {
     Unit = {
-      Description = "ashell";
+      Description = "QuickShell";
       PartOf = ["hyprland-session.target"];
       After = ["hyprland-session.target"];
     };
@@ -469,8 +463,13 @@ in {
       WantedBy = ["hyprland-session.target"];
     };
     Service = {
-      ExecStart = "/run/current-system/sw/bin/ashell";
-      Restart = "always";
+      ExecStart = "/run/current-system/sw/bin/quickshell";
+      Environment = "QS_PLATFORM=${
+        if osConfig.networking.hostName == "DreamingBlade"
+        then "blade"
+        else "desk"
+      }";
+      Restart = "on-failure";
       Type = "simple";
     };
   };
@@ -534,8 +533,8 @@ in {
   };
 
   # DreamingCodes-specific config files
-  home.file."./.config/ashell" = {
-    source = ../config/ashell;
+  home.file."./.config/quickshell" = {
+    source = ../config/quickshell;
     recursive = true;
   };
 

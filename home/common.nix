@@ -105,7 +105,8 @@ in {
   home.file."./.cargo/config.toml".source = ../config/cargo/config.toml;
 
   home.file.".config/opencode/opencode.json".source = ../config/opencode/opencode.json;
-  home.file.".config/opencode/opencode-notifier.json".source = ../config/opencode/opencode-notifier.json;
+  home.file.".config/opencode/opencode-notifier.json".source =
+    ../config/opencode/opencode-notifier.json;
   home.file.".config/opencode/AGENTS.md".source = ../config/opencode/AGENTS.md;
   home.file.".config/opencode/agent/git-detective.md".source =
     ../config/opencode/agent/git-detective.md;
@@ -164,7 +165,7 @@ in {
           echo "║  Super+F        Fullscreen                                    ║"
           echo "║  Super+O        Toggle floating                               ║"
           echo "║  Super+C        Clipboard (Vicinae)                           ║"
-          echo "║  Super+L        Lock screen (hyprlock)                        ║"
+          echo "║  Super+L        Lock screen                                    ║"
           echo "║  Super+M        Toggle mixer                                  ║"
           echo "║  Super+N        Toggle Obsidian workspace                     ║"
           echo "╠═══════════════════════════════════════════════════════════════╣"
