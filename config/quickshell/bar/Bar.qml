@@ -14,7 +14,7 @@ PanelWindow {
     property bool notifCenterOpen: false
     property string activePanel: ""
     property bool isLaptop: false
-    signal toggleNotifCenter()
+    signal toggleNotifCenter
     signal togglePanel(string panel)
 
     anchors {
@@ -24,8 +24,7 @@ PanelWindow {
     }
 
     implicitWidth: 48
-    exclusiveZone: implicitWidth + margins.left
-    margins { top: 8; bottom: 8; left: 8 }
+    exclusiveZone: implicitWidth
     color: "transparent"
 
     readonly property HyprlandMonitor hyprMonitor: Hyprland.monitorFor(screen)
@@ -33,7 +32,7 @@ PanelWindow {
     Rectangle {
         id: barBg
         anchors.fill: parent
-        radius: 14
+        radius: 0
         color: Colors.withAlpha(Colors.background, Colors.barOpacity)
         border.width: 1
         border.color: Colors.withAlpha(Colors.surface1, 0.3)
@@ -52,7 +51,9 @@ PanelWindow {
             hyprMonitor: root.hyprMonitor
         }
 
-        Item { Layout.fillHeight: true }
+        Item {
+            Layout.fillHeight: true
+        }
 
         Tray {
             Layout.fillWidth: true
@@ -125,7 +126,8 @@ PanelWindow {
             notifCenterOpen: root.notifCenterOpen
             onToggleNotifCenter: root.toggleNotifCenter()
             onToggleDnd: {
-                if (root.notifManager) root.notifManager.dnd = !root.notifManager.dnd;
+                if (root.notifManager)
+                    root.notifManager.dnd = !root.notifManager.dnd;
             }
         }
     }
