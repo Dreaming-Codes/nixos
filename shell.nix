@@ -1,4 +1,7 @@
-{pkgs ? import <nixpkgs> {}}: let
+{
+  pkgs ? import <nixpkgs> { },
+}:
+let
   system-current = pkgs.writeShellScriptBin "system-current" ''
     CACHE_FILE="/var/lib/nixos-config-hash"
 
@@ -159,15 +162,16 @@
     exec ${pkgs.sops}/bin/sops "''${@:-secrets/secrets.yaml}"
   '';
 in
-  pkgs.mkShell {
-    packages = [
-      pkgs.nil
-      pkgs.nixd
-      pkgs.nixfmt
-      pkgs.sops
-      system-current
-      update-system
-      update-system-boot
-      sops-edit
-    ];
-  }
+pkgs.mkShell {
+  packages = [
+    pkgs.nil
+    pkgs.nixd
+    pkgs.nixfmt
+    pkgs.sops
+    pkgs.kdePackages.qtdeclarative
+    system-current
+    update-system
+    update-system-boot
+    sops-edit
+  ];
+}
