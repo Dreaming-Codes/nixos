@@ -3,11 +3,9 @@
   lib,
   config,
   ...
-}:
-let
-  ci-keyboard-leds = pkgs.callPackage ../../packages/ci-keyboard-leds { };
-in
-{
+}: let
+  ci-keyboard-leds = pkgs.callPackage ../../packages/ci-keyboard-leds {};
+in {
   boot.initrd.availableKernelModules = [
     "nvme"
     "xhci_pci"
@@ -32,7 +30,7 @@ in
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
-  environment.systemPackages = with pkgs; [ nrfutil ];
+  environment.systemPackages = with pkgs; [nrfutil];
   nixpkgs.config.segger-jlink.acceptLicense = true;
 
   home-manager.users.dreamingcodes = {
@@ -89,8 +87,8 @@ in
     systemd.user.services.dynamic-workspaces = {
       Unit = {
         Description = "Dynamic workspace configuration for Hyprland";
-        PartOf = [ "hyprland-session.target" ];
-        After = [ "hyprland-session.target" ];
+        PartOf = ["hyprland-session.target"];
+        After = ["hyprland-session.target"];
       };
       Service = {
         Type = "simple";
@@ -102,7 +100,7 @@ in
         RestartSec = 5;
       };
       Install = {
-        WantedBy = [ "hyprland-session.target" ];
+        WantedBy = ["hyprland-session.target"];
       };
     };
 
@@ -111,14 +109,14 @@ in
     systemd.user.services.ci-keyboard-leds = {
       Unit = {
         Description = "Monitor CI status and update keyboard LEDs";
-        PartOf = [ "hyprland-session.target" ];
+        PartOf = ["hyprland-session.target"];
         After = [
           "hyprland-session.target"
           "razerdaemon.service"
         ];
       };
       Install = {
-        WantedBy = [ "hyprland-session.target" ];
+        WantedBy = ["hyprland-session.target"];
       };
       Service = {
         ExecStart = "${ci-keyboard-leds}/bin/ci-keyboard-leds";
@@ -137,20 +135,26 @@ in
 
   services.razer-laptop-control.enable = true;
 
-  # Handle race condition: greeter starts daemon first, then exits when we log in.
-  # Our session's daemon fails initially but retries after greeter's daemon stops.
-  systemd.user.services.razerdaemon.serviceConfig = {
-    Restart = "on-failure";
-    RestartSec = 2;
+  # Only start in a graphical session, not in the greeter or linger manager
+  systemd.user.services.razerdaemon = {
+    partOf = ["graphical-session.target"];
+    after = ["graphical-session.target"];
+    wantedBy = lib.mkForce ["graphical-session.target"];
+    serviceConfig = {
+      Restart = lib.mkForce "on-failure";
+      RestartSec = lib.mkForce 5;
+      StartLimitIntervalSec = 60;
+      StartLimitBurst = 5;
+    };
   };
   # Enable rocm support for the iGPU on the laptop
   nixpkgs.config.rocmSupport = true;
   # Enable cuda support for the dGPU on the laptop
   nixpkgs.config.cudaSupport = true;
 
-  boot.kernelModules = [ "kvm-amd" ];
+  boot.kernelModules = ["kvm-amd"];
   # nvidia.NVreg_EnableGpuFirmware=0
-  boot.kernelParams = [ "nvidia.NVreg_PreserveVideoMemoryAllocations=1" ];
+  boot.kernelParams = ["nvidia.NVreg_PreserveVideoMemoryAllocations=1"];
 
   hardware.nvidia-container-toolkit.enable = true;
 
@@ -215,16 +219,8 @@ in
   '';
 
   # Disable USB autosuspend for all HID input devices at boot (runs after powertop which enables autosuspend)
-  systemd.services.usb-input-no-autosuspend = {
-    description = "Disable USB autosuspend for all HID input devices";
-    wantedBy = [ "multi-user.target" ];
-    after = [ "powertop.service" ];
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = "${pkgs.bash}/bin/bash -c 'for intf in /sys/bus/usb/devices/*:*/bInterfaceClass; do if [ -f \"$intf\" ] && [ \"$(cat \"$intf\")\" = \"03\" ]; then devpath=\"$(dirname \"$intf\")\"; parent=\"$(readlink -f \"$devpath/..\")\"; if [ -f \"$parent/power/control\" ]; then echo on > \"$parent/power/control\"; fi; fi; done'";
-      RemainAfterExit = true;
-    };
-  };
+  # Re-disable USB autosuspend for HID input devices after powertop enables it globally
+  systemd.services.powertop.serviceConfig.ExecStartPost = "${pkgs.bash}/bin/bash -c 'for intf in /sys/bus/usb/devices/*:*/bInterfaceClass; do if [ -f \"$intf\" ] && [ \"$(cat \"$intf\")\" = \"03\" ]; then devpath=\"$(dirname \"$intf\")\"; parent=\"$(readlink -f \"$devpath/..\")\"; if [ -f \"$parent/power/control\" ]; then echo on > \"$parent/power/control\"; fi; fi; done'";
 
   hardware.nvidia.prime = {
     offload = {
@@ -235,48 +231,49 @@ in
     amdgpuBusId = "PCI:4:0:0";
   };
 
-  specialisation =
-    let
-      # Base specialisations (without open/proprietary split)
-      baseSpecialisations = {
-        performance = {
-          system.nixos.tags = [ "performance" ];
-          hardware.nvidia = {
-            powerManagement.finegrained = lib.mkForce false;
-            prime.offload.enable = lib.mkForce false;
-            prime.offload.enableOffloadCmd = lib.mkForce false;
-            prime.sync.enable = lib.mkForce true;
-          };
-        };
-
-        reverse = {
-          system.nixos.tags = [ "reverse" ];
-          hardware.nvidia = {
-            powerManagement.finegrained = lib.mkForce false;
-            prime.offload.enable = lib.mkForce false;
-            prime.offload.enableOffloadCmd = lib.mkForce false;
-            prime.sync.enable = lib.mkForce false;
-            prime.reverseSync.enable = lib.mkForce true;
-          };
+  specialisation = let
+    # Base specialisations (without open/proprietary split)
+    baseSpecialisations = {
+      performance = {
+        system.nixos.tags = ["performance"];
+        hardware.nvidia = {
+          powerManagement.finegrained = lib.mkForce false;
+          prime.offload.enable = lib.mkForce false;
+          prime.offload.enableOffloadCmd = lib.mkForce false;
+          prime.sync.enable = lib.mkForce true;
         };
       };
 
-      # Function to generate open/proprietary variants
-      mkVariants = name: cfg: {
-        "${name}-open".configuration = cfg // {
-          system.nixos.tags = cfg.system.nixos.tags ++ [ "open" ];
+      reverse = {
+        system.nixos.tags = ["reverse"];
+        hardware.nvidia = {
+          powerManagement.finegrained = lib.mkForce false;
+          prime.offload.enable = lib.mkForce false;
+          prime.offload.enableOffloadCmd = lib.mkForce false;
+          prime.sync.enable = lib.mkForce false;
+          prime.reverseSync.enable = lib.mkForce true;
+        };
+      };
+    };
+
+    # Function to generate open/proprietary variants
+    mkVariants = name: cfg: {
+      "${name}-open".configuration =
+        cfg
+        // {
+          system.nixos.tags = cfg.system.nixos.tags ++ ["open"];
           hardware.nvidia.open = lib.mkForce true;
         };
-      };
+    };
 
-      # Merge all generated variants
-      generated = lib.foldl' lib.recursiveUpdate { } (lib.mapAttrsToList mkVariants baseSpecialisations);
-    in
+    # Merge all generated variants
+    generated = lib.foldl' lib.recursiveUpdate {} (lib.mapAttrsToList mkVariants baseSpecialisations);
+  in
     generated
     // {
       # Keep no-gpu as is (no variants)
       no-gpu.configuration = {
-        system.nixos.tags = [ "no-gpu" ];
+        system.nixos.tags = ["no-gpu"];
         boot.extraModprobeConfig = ''
           blacklist nouveau
           options nouveau modeset=0

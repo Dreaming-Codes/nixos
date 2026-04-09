@@ -4,8 +4,7 @@
   inputs,
   osConfig,
   ...
-}:
-let
+}: let
   toggleMic = pkgs.writeShellScriptBin "toggleMic" (builtins.readFile ../scripts/mictoggle.sh);
   toggleMixer = pkgs.writeShellScriptBin "toggleMixer" (builtins.readFile ../scripts/mixer.sh);
   vibeMerge = pkgs.writeShellScriptBin "vibe-merge" (builtins.readFile ../scripts/vibeMerge.sh);
@@ -13,19 +12,18 @@ let
   razerPower = pkgs.writeShellScriptBin "razer-power" (builtins.readFile ../scripts/razerpower.sh);
   qsLock = pkgs.writeShellScriptBin "qs-lock" (builtins.readFile ../scripts/qs-lock.sh);
   mimes = import ../lib/mimes.nix;
-in
-{
+in {
   imports = [
     inputs.vicinae.homeManagerModules.default
   ];
 
   # Set default applications (DreamingCodes specific)
-  home.activation.dreamingCodesMimeApps = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+  home.activation.dreamingCodesMimeApps = lib.hm.dag.entryAfter ["writeBoundary"] ''
     ${mimes.bindMimes "Helix.desktop" mimes.textMimes}
   '';
 
   # Install Rust toolchains and required components for Helix/rust-analyzer
-  home.activation.rustupToolchains = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+  home.activation.rustupToolchains = lib.hm.dag.entryAfter ["writeBoundary"] ''
     export PATH="/home/dreamingcodes/.cargo/bin:$PATH"
     if command -v rustup &> /dev/null; then
       run rustup toolchain install stable --profile default
@@ -88,7 +86,7 @@ in
   home.file.".config/vicinae/base-config.json".text = builtins.toJSON {
     close_on_focus_loss = true;
     pop_to_root_on_close = true;
-    favorites = [ ];
+    favorites = [];
     font = {
       normal = {
         family = "FiraCode Nerd Font";
@@ -184,7 +182,7 @@ in
   };
 
   # Create settings.json with imports if it doesn't exist or doesn't have imports
-  home.activation.vicinaSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+  home.activation.vicinaSettings = lib.hm.dag.entryAfter ["writeBoundary"] ''
     SETTINGS_FILE="$HOME/.config/vicinae/settings.json"
     if [ ! -f "$SETTINGS_FILE" ] || ! grep -q '"imports"' "$SETTINGS_FILE" 2>/dev/null; then
       mkdir -p "$(dirname "$SETTINGS_FILE")"
@@ -195,8 +193,8 @@ in
   # Virt-manager dconf settings (qemu:///system access)
   dconf.settings = {
     "org/virt-manager/virt-manager/connections" = {
-      autoconnect = [ "qemu:///system" ];
-      uris = [ "qemu:///system" ];
+      autoconnect = ["qemu:///system"];
+      uris = ["qemu:///system"];
     };
   };
 
@@ -207,7 +205,7 @@ in
     enable = true;
     systemd = {
       enable = true;
-      variables = [ "--all" ];
+      variables = ["--all"];
       enableXdgAutostart = true;
     };
     # Those are both null since it's installed by the nixos module
@@ -259,124 +257,137 @@ in
         disable_hyprland_logo = true;
         disable_splash_rendering = true;
       };
-      bind = [
-        "$mod, mouse_down, exec, hyprctl -q keyword cursor:zoom_factor $(hyprctl getoption cursor:zoom_factor | awk '/^float.*/ {val = $2 * 1.2; if (val < 1) val=1; print val}')"
-        "$mod, mouse_up, exec, hyprctl -q keyword cursor:zoom_factor $(hyprctl getoption cursor:zoom_factor | awk '/^float.*/ {val = $2 * 0.8; if (val < 1) val=1; print val}')"
-        "$mod, W, exec, helium"
-        "$mod, SPACE, exec, wezterm"
-        ", Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m active"
-        "SHIFT, Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m region"
-        "$mod, X, exec, vicinae open"
-        "$mod, Q, killactive"
-        "$mod, T, exec, Telegram"
-        "$mod, D, exec, discord"
-        "$mod, S, exec, signal-desktop"
-        "$mod, O, togglefloating"
-        "$mod, C, exec, vicinae deeplink vicinae://extensions/vicinae/clipboard/history"
-        "$mod, L, exec, qs-lock"
-        "$mod, F, fullscreen"
-        "$mod, M, exec, toggleMixer"
-        "$mod, period, exec, systemctl --user start swww-random-wallpaper.service"
+      bind =
+        [
+          "$mod, mouse_down, exec, hyprctl -q keyword cursor:zoom_factor $(hyprctl getoption cursor:zoom_factor | awk '/^float.*/ {val = $2 * 1.2; if (val < 1) val=1; print val}')"
+          "$mod, mouse_up, exec, hyprctl -q keyword cursor:zoom_factor $(hyprctl getoption cursor:zoom_factor | awk '/^float.*/ {val = $2 * 0.8; if (val < 1) val=1; print val}')"
+          "$mod, W, exec, helium"
+          "$mod, SPACE, exec, wezterm"
+          ", Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m active"
+          "SHIFT, Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m region"
+          "$mod, X, exec, vicinae open"
+          "$mod, Q, killactive"
+          "$mod, T, exec, Telegram"
+          "$mod, D, exec, discord"
+          "$mod, S, exec, signal-desktop"
+          "$mod, O, togglefloating"
+          "$mod, C, exec, vicinae deeplink vicinae://extensions/vicinae/clipboard/history"
+          "$mod, L, exec, qs-lock"
+          "$mod, F, fullscreen"
+          "$mod, M, exec, toggleMixer"
+          "$mod, period, exec, systemctl --user start awww-random-wallpaper.service"
 
-        ", code:121, exec, toggleMic"
-        # Move focus with arrow keys or hjkl
-        "$mod, left, movefocus, l"
-        "$mod, right, movefocus, r"
-        "$mod, up, movefocus, u"
-        "$mod, down, movefocus, d"
-        "$mod SHIFT, left, movewindow, l"
-        "$mod SHIFT, right, movewindow, r"
-        "$mod SHIFT, up, movewindow, u"
-        "$mod SHIFT, down, movewindow, d"
-        "$mod, N, togglespecialworkspace, obsidian"
-        # Audio keys
-        ", XF86AudioMicMute, exec, toggleMic"
-        ", XF86AudioPlay, exec, playerctl play-pause"
-        ", XF86AudioPrev, exec, playerctl previous"
-        ", XF86AudioNext, exec,playerctl next"
-      ]
-      ++ (
-        # workspaces
-        let
-          # Generate 1–9 and 0 (mapped to 10)
-          numWorkspaces = builtins.genList (
-            i:
-            let
-              ws = if i == 9 then 10 else i + 1;
-              key = if i == 9 then "0" else toString (i + 1);
-            in
-            [
-              "$mod, ${key}, workspace, ${toString ws}"
-              "$mod SHIFT, ${key}, movetoworkspace, ${toString ws}"
-            ]
-          ) 10;
+          ", code:121, exec, toggleMic"
+          # Move focus with arrow keys or hjkl
+          "$mod, left, movefocus, l"
+          "$mod, right, movefocus, r"
+          "$mod, up, movefocus, u"
+          "$mod, down, movefocus, d"
+          "$mod SHIFT, left, movewindow, l"
+          "$mod SHIFT, right, movewindow, r"
+          "$mod SHIFT, up, movewindow, u"
+          "$mod SHIFT, down, movewindow, d"
+          "$mod, N, togglespecialworkspace, obsidian"
+          # Audio keys
+          ", XF86AudioMicMute, exec, toggleMic"
+          ", XF86AudioPlay, exec, playerctl play-pause"
+          ", XF86AudioPrev, exec, playerctl previous"
+          ", XF86AudioNext, exec,playerctl next"
+        ]
+        ++ (
+          # workspaces
+          let
+            # Generate 1–9 and 0 (mapped to 10)
+            numWorkspaces =
+              builtins.genList (
+                i: let
+                  ws =
+                    if i == 9
+                    then 10
+                    else i + 1;
+                  key =
+                    if i == 9
+                    then "0"
+                    else toString (i + 1);
+                in [
+                  "$mod, ${key}, workspace, ${toString ws}"
+                  "$mod SHIFT, ${key}, movetoworkspace, ${toString ws}"
+                ]
+              )
+              10;
 
-          # Generate F1–F12
-          fWorkspaces = builtins.genList (
-            i:
-            let
-              ws = "F${toString (i + 1)}";
-              key = "F${toString (i + 1)}";
-            in
-            [
-              "$mod, ${key}, workspace, name:${ws}"
-              "$mod SHIFT, ${key}, movetoworkspace, name:${ws}"
-            ]
-          ) 12;
+            # Generate F1–F12
+            fWorkspaces =
+              builtins.genList (
+                i: let
+                  ws = "F${toString (i + 1)}";
+                  key = "F${toString (i + 1)}";
+                in [
+                  "$mod, ${key}, workspace, name:${ws}"
+                  "$mod SHIFT, ${key}, movetoworkspace, name:${ws}"
+                ]
+              )
+              12;
 
-          # Generate ALT1–ALT10 (with ALT0 = ALT10)
-          altWorkspaces = builtins.genList (
-            i:
-            let
-              ws = if i == 9 then "ALT10" else "ALT${toString (i + 1)}";
-              key = if i == 9 then "0" else toString (i + 1);
-            in
-            [
-              "$mod ALT, ${key}, workspace, name:${ws}"
-              "$mod SHIFT ALT, ${key}, movetoworkspace, name:${ws}"
-            ]
-          ) 10;
-        in
-        builtins.concatLists (numWorkspaces ++ fWorkspaces ++ altWorkspaces)
-      );
+            # Generate ALT1–ALT10 (with ALT0 = ALT10)
+            altWorkspaces =
+              builtins.genList (
+                i: let
+                  ws =
+                    if i == 9
+                    then "ALT10"
+                    else "ALT${toString (i + 1)}";
+                  key =
+                    if i == 9
+                    then "0"
+                    else toString (i + 1);
+                in [
+                  "$mod ALT, ${key}, workspace, name:${ws}"
+                  "$mod SHIFT ALT, ${key}, movetoworkspace, name:${ws}"
+                ]
+              )
+              10;
+          in
+            builtins.concatLists (numWorkspaces ++ fWorkspaces ++ altWorkspaces)
+        );
     };
   };
 
   # Hyprland-related services
-  # swww wallpaper daemon
-  services.swww.enable = true;
+  # awww wallpaper daemon
+  services.awww.enable = true;
 
   # Randomly cycle wallpapers every 10 minutes
-  systemd.user.services.swww-random-wallpaper = {
+  systemd.user.services.awww-random-wallpaper = {
     Unit = {
-      Description = "Set a random wallpaper using swww";
-      After = [ "swww.service" ];
-      Requires = [ "swww.service" ];
+      Description = "Set a random wallpaper using awww";
+      After = ["awww.service"];
+      Requires = ["awww.service"];
     };
     Service = {
       Type = "oneshot";
       Environment = "PATH=/run/current-system/sw/bin";
       ExecStart = toString (
-        pkgs.writeShellScript "swww-random-wallpaper" ''
+        pkgs.writeShellScript "awww-random-wallpaper" ''
           WALLPAPER_DIR="$HOME/Pictures/wallpaper"
           if [ -d "$WALLPAPER_DIR" ] && [ "$(ls -A "$WALLPAPER_DIR")" ]; then
             WALLPAPER=$(find -L "$WALLPAPER_DIR" -type f \( -name '*.jpg' -o -name '*.jpeg' -o -name '*.png' -o -name '*.gif' -o -name '*.bmp' -o -name '*.webp' \) | shuf -n 1)
             if [ -n "$WALLPAPER" ]; then
-              ${pkgs.swww}/bin/swww img "$WALLPAPER" --transition-type grow --transition-pos "0.925,0.977" --transition-step 200
+              ${pkgs.awww}/bin/awww img "$WALLPAPER" --transition-type grow --transition-pos "0.925,0.977" --transition-step 200
             fi
           fi
         ''
       );
     };
   };
-  systemd.user.timers.swww-random-wallpaper = {
+  systemd.user.timers.awww-random-wallpaper = {
     Unit.Description = "Cycle wallpaper randomly every 10 minutes";
     Timer = {
       OnActiveSec = "0s";
       OnUnitActiveSec = "10m";
-      Unit = "swww-random-wallpaper.service";
+      Unit = "awww-random-wallpaper.service";
     };
-    Install.WantedBy = [ "swww.service" ];
+    Install.WantedBy = ["awww.service"];
   };
 
   # swaync replaced by quickshell notification server
@@ -412,25 +423,27 @@ in
   };
   systemd.user.services.hypridle = {
     Unit = {
-      PartOf = lib.mkForce [ "hyprland-session.target" ];
-      After = lib.mkForce [ "hyprland-session.target" ];
+      PartOf = lib.mkForce ["hyprland-session.target"];
+      After = lib.mkForce ["hyprland-session.target"];
     };
-    Install.WantedBy = lib.mkForce [ "hyprland-session.target" ];
+    Install.WantedBy = lib.mkForce ["hyprland-session.target"];
   };
 
   systemd.user.services.quickshell = {
     Unit = {
       Description = "QuickShell";
-      PartOf = [ "hyprland-session.target" ];
-      After = [ "hyprland-session.target" ];
+      PartOf = ["hyprland-session.target"];
+      After = ["hyprland-session.target"];
     };
     Install = {
-      WantedBy = [ "hyprland-session.target" ];
+      WantedBy = ["hyprland-session.target"];
     };
     Service = {
       ExecStart = "/run/current-system/sw/bin/quickshell";
       Environment = "QS_PLATFORM=${
-        if osConfig.networking.hostName == "DreamingBlade" then "blade" else "desk"
+        if osConfig.networking.hostName == "DreamingBlade"
+        then "blade"
+        else "desk"
       }";
       Restart = "on-failure";
       Type = "simple";
@@ -441,11 +454,11 @@ in
   systemd.user.services.kwallet-pam = {
     Unit = {
       Description = "KWallet PAM Auto-unlock";
-      PartOf = [ "hyprland-session.target" ];
-      After = [ "hyprland-session.target" ];
+      PartOf = ["hyprland-session.target"];
+      After = ["hyprland-session.target"];
     };
     Install = {
-      WantedBy = [ "hyprland-session.target" ];
+      WantedBy = ["hyprland-session.target"];
     };
     Service = {
       ExecStart = "${pkgs.kdePackages.kwallet-pam}/libexec/pam_kwallet_init";
@@ -457,11 +470,11 @@ in
   systemd.user.services.wl-clip-persist = {
     Unit = {
       Description = "Persistent clipboard for Wayland";
-      PartOf = [ "hyprland-session.target" ];
-      After = [ "hyprland-session.target" ];
+      PartOf = ["hyprland-session.target"];
+      After = ["hyprland-session.target"];
     };
     Install = {
-      WantedBy = [ "hyprland-session.target" ];
+      WantedBy = ["hyprland-session.target"];
     };
     Service = {
       ExecStart = "${pkgs.wl-clip-persist}/bin/wl-clip-persist --clipboard regular";
