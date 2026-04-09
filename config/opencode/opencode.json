@@ -5,8 +5,6 @@
     "external_directory": "allow"
   },
   "plugin": [
-    "@different-ai/opencode-browser",
-    "opencode-antigravity-auth@latest",
     "opencode-claude-auth",
     "@mohak34/opencode-notifier@latest"
   ],
