@@ -34,8 +34,7 @@ PanelWindow {
         anchors.fill: parent
         radius: 0
         color: Colors.withAlpha(Colors.background, Colors.barOpacity)
-        border.width: 1
-        border.color: Colors.withAlpha(Colors.surface1, 0.3)
+        border.width: 0
     }
 
     ColumnLayout {
