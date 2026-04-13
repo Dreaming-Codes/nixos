@@ -141,6 +141,9 @@ in {
     after = ["graphical-session.target"];
     wantedBy = lib.mkForce ["graphical-session.target"];
     serviceConfig = {
+      ExecStartPre = lib.mkBefore [
+        "-${pkgs.coreutils}/bin/rm -f /tmp/razercontrol-socket"
+      ];
       Restart = lib.mkForce "on-failure";
       RestartSec = lib.mkForce 5;
       StartLimitIntervalSec = 60;
