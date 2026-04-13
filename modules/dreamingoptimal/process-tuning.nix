@@ -147,6 +147,34 @@ in {
           type = "Service";
           oom_score_adj = -1000;
         }
+        {
+          name = "pipewire";
+          sched = "fifo";
+          rtprio = 88;
+          nice = -20;
+          ioclass = "best-effort";
+        }
+        {
+          name = "pipewire-pulse";
+          sched = "fifo";
+          rtprio = 78;
+          nice = -20;
+          ioclass = "best-effort";
+        }
+        {
+          name = "wireplumber";
+          sched = "fifo";
+          rtprio = 68;
+          nice = -20;
+          ioclass = "best-effort";
+        }
+        {
+          name = "easyeffects";
+          sched = "fifo";
+          rtprio = 68;
+          nice = -20;
+          ioclass = "best-effort";
+        }
       ];
     };
 
