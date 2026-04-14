@@ -5,7 +5,7 @@
     "external_directory": "allow"
   },
   "plugin": [
-    "opencode-claude-auth@latest",
+    "@ex-machina/opencode-anthropic-auth@latest",
     "@mohak34/opencode-notifier@latest"
   ],
   "agent": {
