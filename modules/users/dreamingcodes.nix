@@ -72,6 +72,7 @@ in {
 
       imports = [
         nix-index-database.homeModules.nix-index
+        inputs.meridian.homeManagerModules.default
         ../../home/common.nix
         ../../home/dreamingcodes.nix
       ];
