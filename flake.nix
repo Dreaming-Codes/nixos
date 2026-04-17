@@ -63,7 +63,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     meridian = {
-      url = "github:Dreaming-Codes/meridian/feat/nix-flake";
+      url = "github:rynfar/meridian";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
