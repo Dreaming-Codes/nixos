@@ -1,13 +1,21 @@
 {pkgs ? import <nixpkgs> {}}: let
   system-current = pkgs.writeShellScriptBin "system-current" ''
     CACHE_FILE="/var/lib/nixos-config-hash"
+    CONFIG_DIR="$HOME/.nixos"
+
+    hash_flake_state() {
+      {
+        printf 'HEAD %s\n' "$(${pkgs.gitFull}/bin/git -C "$CONFIG_DIR" rev-parse HEAD)"
+        ${pkgs.gitFull}/bin/git -C "$CONFIG_DIR" status --porcelain=v1 --untracked-files=all
+      } | ${pkgs.gitFull}/bin/git hash-object --stdin
+    }
 
     if [ ! -f "$CACHE_FILE" ]; then
       echo "No previous switch recorded"
       exit 1
     fi
 
-    CURRENT_HASH=$(git ls-files -s | git hash-object --stdin)
+    CURRENT_HASH=$(hash_flake_state)
     STORED_HASH=$(cat "$CACHE_FILE")
 
     if [ "$CURRENT_HASH" = "$STORED_HASH" ]; then
