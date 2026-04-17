@@ -94,7 +94,7 @@
 
     for i in $(seq 1 $MAX_RETRIES); do
       echo "Attempt $i of $MAX_RETRIES..."
-      if /run/current-system/sw/bin/nixos-rebuild boot --flake "$CONFIG_DIR#$HOSTNAME" --impure --accept-flake-config; then
+      if /run/current-system/sw/bin/nixos-rebuild boot --flake "$CONFIG_DIR#$HOSTNAME" --accept-flake-config; then
         REBUILD_SUCCESS=true
         break
       else

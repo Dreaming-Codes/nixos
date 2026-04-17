@@ -1,7 +1,4 @@
-{
-  pkgs ? import <nixpkgs> { },
-}:
-let
+{pkgs ? import <nixpkgs> {}}: let
   system-current = pkgs.writeShellScriptBin "system-current" ''
     CACHE_FILE="/var/lib/nixos-config-hash"
 
@@ -36,7 +33,7 @@ let
         echo "System is already up to date! Skipping $MODE."
       else
         echo "Configuration changed. Running $MODE..."
-        nh os "$MODE" -- --impure --accept-flake-config
+        nh os "$MODE" -- --accept-flake-config
       fi
     }
 
@@ -162,16 +159,16 @@ let
     exec ${pkgs.sops}/bin/sops "''${@:-secrets/secrets.yaml}"
   '';
 in
-pkgs.mkShell {
-  packages = [
-    pkgs.nil
-    pkgs.nixd
-    pkgs.nixfmt
-    pkgs.sops
-    pkgs.kdePackages.qtdeclarative
-    system-current
-    update-system
-    update-system-boot
-    sops-edit
-  ];
-}
+  pkgs.mkShell {
+    packages = [
+      pkgs.nil
+      pkgs.nixd
+      pkgs.nixfmt
+      pkgs.sops
+      pkgs.kdePackages.qtdeclarative
+      system-current
+      update-system
+      update-system-boot
+      sops-edit
+    ];
+  }
