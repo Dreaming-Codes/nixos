@@ -93,7 +93,12 @@
     FLAKE_DIR="${flakeDir}"
     CACHE_FILE="/var/lib/nixos-config-hash"
     if [[ -d "$FLAKE_DIR/.git" ]]; then
-      HASH=$(${pkgs.gitFull}/bin/git -C "$FLAKE_DIR" ls-files -s | ${pkgs.gitFull}/bin/git hash-object --stdin)
+      HASH=$(
+        {
+          printf 'HEAD %s\n' "$(${pkgs.gitFull}/bin/git -C "$FLAKE_DIR" rev-parse HEAD)"
+          ${pkgs.gitFull}/bin/git -C "$FLAKE_DIR" status --porcelain=v1 --untracked-files=all
+        } | ${pkgs.gitFull}/bin/git hash-object --stdin
+      )
       echo "$HASH" > "$CACHE_FILE"
     fi
   '';
