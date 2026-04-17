@@ -493,6 +493,8 @@ in {
     qsLock
   ];
 
+  services.meridian.enable = true;
+
   # Services
   services = {
     easyeffects.enable = true;
