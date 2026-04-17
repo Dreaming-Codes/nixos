@@ -26,7 +26,10 @@
   fileSystems."/boot" = {
     device = "/dev/disk/by-uuid/FF73-5BE2";
     fsType = "vfat";
-    options = ["fmask=0022" "dmask=0022"];
+    options = [
+      "fmask=0022"
+      "dmask=0022"
+    ];
   };
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
@@ -38,6 +41,19 @@
     capSysAdmin = true;
     openFirewall = true;
   };
+
+  services.openssh = {
+    enable = true;
+    openFirewall = true;
+    settings = {
+      PasswordAuthentication = false;
+      PermitRootLogin = "no";
+    };
+  };
+
+  users.users.dreamingcodes.openssh.authorizedKeys.keys = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAVaA+L9bwCFPsPztLCjPa8V/vYgTuXVeEP55LcXS/vi"
+  ];
 
   home-manager.users.dreamingcodes = {
     wayland.windowManager.hyprland = {
@@ -96,7 +112,10 @@
     "amdgpu"
   ];
   # Blacklist nvidia gpu driver to prevent use
-  boot.blacklistedKernelModules = ["nouveau" "nvidia"];
+  boot.blacklistedKernelModules = [
+    "nouveau"
+    "nvidia"
+  ];
 
   nixpkgs.config.rocmSupport = true;
 
@@ -104,7 +123,10 @@
     # Mesa
     enable = true;
     enable32Bit = true;
-    extraPackages = with pkgs; [rocmPackages.clr.icd amf];
+    extraPackages = with pkgs; [
+      rocmPackages.clr.icd
+      amf
+    ];
   };
 
   environment.variables = {
@@ -116,7 +138,9 @@
     description = "AMDGPU Control Daemon";
     after = ["multi-user.target"];
     wantedBy = ["multi-user.target"];
-    serviceConfig = {ExecStart = "${pkgs.lact}/bin/lact daemon";};
+    serviceConfig = {
+      ExecStart = "${pkgs.lact}/bin/lact daemon";
+    };
     enable = true;
   };
 
@@ -124,7 +148,11 @@
   systemd.tmpfiles.rules = let
     rocmEnv = pkgs.symlinkJoin {
       name = "rocm-combined";
-      paths = with pkgs.rocmPackages; [rocblas hipblas clr];
+      paths = with pkgs.rocmPackages; [
+        rocblas
+        hipblas
+        clr
+      ];
     };
   in [
     "L+    /opt/rocm   -    -    -     -    ${rocmEnv}"
