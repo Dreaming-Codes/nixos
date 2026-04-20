@@ -58,7 +58,6 @@ in {
     wget
     any-nix-shell
     inputs.nix-alien.packages.${stdenv.hostPlatform.system}.nix-alien
-    inputs.opencode.packages.${stdenv.hostPlatform.system}.default
     gcc
     openssl
     pkg-config
