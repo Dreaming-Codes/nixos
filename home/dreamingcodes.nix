@@ -1,6 +1,7 @@
 {
   pkgs,
   lib,
+  config,
   inputs,
   osConfig,
   ...
@@ -11,6 +12,9 @@
   vibeCommit = pkgs.writeShellScriptBin "vibe-commit" (builtins.readFile ../scripts/vibeCommit.sh);
   razerPower = pkgs.writeShellScriptBin "razer-power" (builtins.readFile ../scripts/razerpower.sh);
   qsLock = pkgs.writeShellScriptBin "qs-lock" (builtins.readFile ../scripts/qs-lock.sh);
+  opencode = pkgs.writeShellScriptBin "opencode" ''
+    exec ${pkgs.bun}/bin/bunx opencode-ai@latest "$@"
+  '';
   mimes = import ../lib/mimes.nix;
 in {
   imports = [
@@ -60,6 +64,11 @@ in {
     "/home/dreamingcodes/.cargo/bin"
     "/home/dreamingcodes/.bun/bin"
   ];
+
+  home.sessionVariables = {
+    ANTHROPIC_API_KEY = "x";
+    ANTHROPIC_BASE_URL = "http://127.0.0.1:3456";
+  };
 
   services.vicinae = {
     enable = true;
@@ -491,9 +500,12 @@ in {
     vibeCommit
     razerPower
     qsLock
+    opencode
   ];
 
   services.meridian.enable = true;
+
+  xdg.configFile."opencode/plugins/meridian.ts".source = config.services.meridian.opencode.pluginPath;
 
   # Services
   services = {

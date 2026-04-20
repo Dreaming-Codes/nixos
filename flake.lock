@@ -364,16 +364,15 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1776442821,
-        "narHash": "sha256-xoNMcvvnbd12ny4Ckr5GEE0RWdup4jtrMysBczHo4Yw=",
+        "lastModified": 1776698105,
+        "narHash": "sha256-o024OL2++lNemimHBgPlXt8ep5LPgEt8CGDQIIP1CyM=",
         "owner": "Dreaming-Codes",
         "repo": "meridian",
-        "rev": "6d051312bd81daf33fc3bfa1368ec7cd2e69558c",
+        "rev": "fb834136dc66d700dc8d947e0a8e4605dd957582",
         "type": "github"
       },
       "original": {
         "owner": "Dreaming-Codes",
-        "ref": "feat/nix-flake",
         "repo": "meridian",
         "type": "github"
       }
@@ -688,26 +687,6 @@
         "type": "github"
       }
     },
-    "opencode": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1776185360,
-        "narHash": "sha256-nzjGt7RIiVOUjzH2X4ph5MPpH/hjTnDNvzpKoOfkJCc=",
-        "owner": "anomalyco",
-        "repo": "opencode",
-        "rev": "020c47a055532c024eba2089bfea11adea7a545d",
-        "type": "github"
-      },
-      "original": {
-        "owner": "anomalyco",
-        "repo": "opencode",
-        "type": "github"
-      }
-    },
     "razer-laptop-controller": {
       "inputs": {
         "flake-utils": "flake-utils",
@@ -742,7 +721,6 @@
         "nixpkgs": "nixpkgs_6",
         "nixpkgs-davinci": "nixpkgs-davinci",
         "nur": "nur",
-        "opencode": "opencode",
         "razer-laptop-controller": "razer-laptop-controller",
         "sops-nix": "sops-nix",
         "vicinae": "vicinae",
