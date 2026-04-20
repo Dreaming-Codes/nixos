@@ -65,11 +65,6 @@ in {
     "/home/dreamingcodes/.bun/bin"
   ];
 
-  home.sessionVariables = {
-    ANTHROPIC_API_KEY = "x";
-    ANTHROPIC_BASE_URL = "http://127.0.0.1:3456";
-  };
-
   services.vicinae = {
     enable = true;
     package = pkgs.vicinae;
@@ -502,10 +497,6 @@ in {
     qsLock
     opencode
   ];
-
-  services.meridian.enable = true;
-
-  xdg.configFile."opencode/plugins/meridian.ts".source = config.services.meridian.opencode.pluginPath;
 
   # Services
   services = {
