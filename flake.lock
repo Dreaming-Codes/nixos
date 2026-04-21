@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "brave-origin": {
+      "locked": {
+        "lastModified": 1776510089,
+        "narHash": "sha256-hYsromg1TVnDFfvy4nxHP1zXteljBD4Wwfm9EPvxm+w=",
+        "owner": "WitteShadovv",
+        "repo": "nixpkgs",
+        "rev": "4b6816af3244809e21414516e2cfd4f6d22531d4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "WitteShadovv",
+        "ref": "brave-origin",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "cachyos-kernel": {
       "flake": false,
       "locked": {
@@ -612,6 +628,7 @@
     },
     "root": {
       "inputs": {
+        "brave-origin": "brave-origin",
         "determinate": "determinate",
         "dolphin-overlay": "dolphin-overlay",
         "home-manager": "home-manager",
