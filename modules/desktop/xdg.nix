@@ -3,10 +3,10 @@
   xdg.mime = {
     enable = true;
     defaultApplications = {
-      "application/pdf" = "helium.desktop";
-      "x-scheme-handler/http" = "helium.desktop";
-      "x-scheme-handler/https" = "helium.desktop";
-      "text/html" = "helium.desktop";
+      "application/pdf" = "brave-origin-nightly.desktop";
+      "x-scheme-handler/http" = "brave-origin-nightly.desktop";
+      "x-scheme-handler/https" = "brave-origin-nightly.desktop";
+      "text/html" = "brave-origin-nightly.desktop";
     };
   };
 

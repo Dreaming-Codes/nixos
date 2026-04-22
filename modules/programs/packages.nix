@@ -88,11 +88,6 @@ in {
     libimobiledevice
     ifuse
 
-    # Alias helium as google-chrome-stable to trick Claude Code's Chrome integration
-    (pkgs.writeShellScriptBin "google-chrome-stable" ''
-      exec ${pkgs.nur.repos.forkprince.helium-nightly}/bin/helium "$@"
-    '')
-
     claude-code
 
     quickshell
