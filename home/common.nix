@@ -42,14 +42,8 @@ in {
     systemRepoPath = "/home/dreamingcodes/.nixos";
   };
 
-  # Symlink google-chrome config to helium config to trick Claude Code's Chrome integration
-  home.activation.chromeToHeliumSymlink = lib.hm.dag.entryAfter ["writeBoundary"] ''
-    rm -rf "${config.home.homeDirectory}/.config/google-chrome"
-    ln -sfn "${config.home.homeDirectory}/.config/net.imput.helium" "${config.home.homeDirectory}/.config/google-chrome"
-  '';
-
   home.activation.mimeApps = lib.hm.dag.entryAfter ["writeBoundary"] ''
-    ${mimes.bindMimes "helium.desktop" [
+    ${mimes.bindMimes "brave-origin-nightly.desktop" [
       "application/pdf"
       "x-scheme-handler/http"
       "x-scheme-handler/https"
@@ -159,13 +153,13 @@ in {
           echo "║  HYPRLAND                                                     ║"
           echo "╠═══════════════════════════════════════════════════════════════╣"
           echo "║  Super+Space    Open terminal (wezterm)                       ║"
-          echo "║  Super+W        Open browser (helium)                         ║"
+          echo "║  Super+W        Open browser (brave)                          ║"
           echo "║  Super+X        Open Vicinae                                  ║"
           echo "║  Super+Q        Kill active window                            ║"
           echo "║  Super+F        Fullscreen                                    ║"
           echo "║  Super+O        Toggle floating                               ║"
           echo "║  Super+C        Clipboard (Vicinae)                           ║"
-          echo "║  Super+L        Lock screen                                    ║"
+          echo "║  Super+L        Lock screen                                   ║"
           echo "║  Super+M        Toggle mixer                                  ║"
           echo "║  Super+N        Toggle Obsidian workspace                     ║"
           echo "╠═══════════════════════════════════════════════════════════════╣"
