@@ -1,4 +1,4 @@
-- Avoid excessive comments, when code is written correctly it's already readable enough.
+- Avoid excessive comments, when code is written correctly it's already readable enough. Avoid over detailed explanations.
 - You're running on NixOS/Nix. If a tool or command is not installed on my system, use `nix-shell -p <package>` to make it available. For example: `nix-shell -p jq --run 'jq . file.json'`.
 - Always default to **bun** for JavaScript/TypeScript package management (install, run, build, test, etc.) unless the project already has a lockfile from another package manager (`package-lock.json` for npm, `yarn.lock` for yarn, `pnpm-lock.yaml` for pnpm). If one of those lockfiles exists, use the corresponding package manager instead.
 - When inside a project you use a complex command to do something frequently enough add it to the justfile
