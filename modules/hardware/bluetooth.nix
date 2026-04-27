@@ -24,9 +24,23 @@
     };
   };
 
+  # Intel AX210 SCO mic fix:
+  # - enable_autosuspend=N: stops the controller from autosuspending mid-SCO,
+  #   which breaks the isochronous USB alt-setting selection
+  # - force_scofix=Y: forces the kernel to apply the SCO frame size fixup
+  #   regardless of the controller's claimed quirks; without this the kernel
+  #   leaves the SCO interface at alt 0 (no audio endpoint) on AX210 firmware.
+  boot.extraModprobeConfig = ''
+    options btusb enable_autosuspend=N force_scofix=Y
+  '';
+
   services.pipewire.wireplumber.extraConfig."51-bluez" = {
     "monitor.bluez.properties" = {
-      "bluez5.hw-offload-sco" = false;
+      # On Intel AX210 the USB-ISO SCO endpoint (alt 6) gets dropped by the
+      # kernel mid-stream, breaking the mic. Routing SCO via HCI ("offload"
+      # naming is misleading: it sends SCO frames over the HCI USB endpoint,
+      # not the iso endpoint) avoids the alt-setting churn entirely.
+      "bluez5.hw-offload-sco" = true;
       "bluez5.auto-connect" = [
         "hfp_hf"
         "hsp_hs"
@@ -36,15 +50,6 @@
 
   services.pipewire.wireplumber.extraConfig."52-bluez-suspend" = {
     "monitor.bluez.rules" = [
-      {
-        matches = [{"device.name" = "~bluez_card.*";}];
-        actions = {
-          update-props = {
-            "session.suspend-timeout-seconds" = 1;
-            "bluez5.auto-connect" = false;
-          };
-        };
-      }
       {
         matches = [
           {"node.name" = "~bluez_input.*";}
