@@ -7,6 +7,7 @@
     ../modules/core/security.nix
     ../modules/core/sops.nix
     ../modules/hardware/audio.nix
+    ../modules/hardware/bluetooth.nix
     ../modules/hardware/graphics.nix
     ../modules/desktop/hyprland.nix
     ../modules/desktop/fonts.nix
