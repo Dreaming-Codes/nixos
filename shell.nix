@@ -55,8 +55,12 @@
           "New NixOS configuration is staged for next boot. Press y in the terminal to activate it now."
 
         echo ""
-        printf "Activate the new configuration on the running system now? [y/N] "
-        read -r response
+        if [ ! -t 0 ] && [ ! -r /dev/tty ]; then
+          echo "No interactive terminal available; skipping live activation."
+          return 0
+        fi
+        printf "Activate the new configuration on the running system now? [y/N] " > /dev/tty
+        read -r response < /dev/tty
         case "$response" in
           [yY][eE][sS]|[yY])
             echo "Activating new configuration live..."
