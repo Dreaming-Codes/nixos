@@ -26,7 +26,7 @@
 
   services.pipewire.wireplumber.extraConfig."51-bluez" = {
     "monitor.bluez.properties" = {
-      "bluez5.hw-offload-sco" = true;
+      "bluez5.hw-offload-sco" = false;
       "bluez5.auto-connect" = [
         "hfp_hf"
         "hsp_hs"
