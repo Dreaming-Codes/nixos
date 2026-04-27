@@ -25,14 +25,47 @@
     MODEL="github-copilot/gemini-3-flash-preview"
     MODE="$1"
 
-    if [ "$MODE" != "switch" ] && [ "$MODE" != "boot" ]; then
-      echo "Usage: update-system-common <switch|boot>"
+    if [ "$MODE" != "switch" ] && [ "$MODE" != "boot" ] && [ "$MODE" != "interactive" ]; then
+      echo "Usage: update-system-common <switch|boot|interactive>"
       exit 1
     fi
 
+    notify() {
+      if command -v notify-send > /dev/null 2>&1; then
+        notify-send -a "update-system" -u "$1" "$2" "$3" || true
+      fi
+    }
+
     apply_if_needed() {
       if ${system-current}/bin/system-current > /dev/null 2>&1; then
-        echo "System is already up to date! Skipping $MODE."
+        echo "System is already up to date! Skipping."
+        return 0
+      fi
+
+      if [ "$MODE" = "interactive" ]; then
+        echo "Configuration changed. Building and staging for next boot..."
+        if ! nh os boot -- --accept-flake-config; then
+          echo "Boot stage failed."
+          return 1
+        fi
+
+        echo ""
+        echo "New configuration is queued for the next boot."
+        notify "normal" "System update ready" \
+          "New NixOS configuration is staged for next boot. Press y in the terminal to activate it now."
+
+        echo ""
+        printf "Activate the new configuration on the running system now? [y/N] "
+        read -r response
+        case "$response" in
+          [yY][eE][sS]|[yY])
+            echo "Activating new configuration live..."
+            sudo /nix/var/nix/profiles/system/bin/switch-to-configuration test
+            ;;
+          *)
+            echo "Skipping live activation. New configuration will be used on next boot."
+            ;;
+        esac
       else
         echo "Configuration changed. Running $MODE..."
         nh os "$MODE" -- --accept-flake-config
@@ -149,6 +182,10 @@
   '';
 
   update-system = pkgs.writeShellScriptBin "update-system" ''
+    ${update-system-common}/bin/update-system-common interactive
+  '';
+
+  update-system-unattended = pkgs.writeShellScriptBin "update-system-unattended" ''
     ${update-system-common}/bin/update-system-common switch
   '';
 
@@ -171,6 +208,7 @@ in
       system-current
       hashFlakeState
       update-system
+      update-system-unattended
       update-system-boot
       sops-edit
     ];
