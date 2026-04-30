@@ -2,16 +2,16 @@
   "nodes": {
     "brave-origin": {
       "locked": {
-        "lastModified": 1777016841,
-        "narHash": "sha256-ClzTmewKZ2qJH6ukN/cRk6AvXJ+7lUVEKIO0aj3JIHU=",
-        "owner": "WitteShadovv",
+        "lastModified": 1777057028,
+        "narHash": "sha256-UAGHUCvcVq1n+9Ya+58GaJkceUz7jHspvq9Lm4MDN6M=",
+        "owner": "Dreaming-Codes",
         "repo": "nixpkgs",
-        "rev": "cfc309238360a9f5e5e7612b87df8083fb69ef09",
+        "rev": "fb7226221c2d7510377541b748a3a2b8d49cb5f0",
         "type": "github"
       },
       "original": {
-        "owner": "WitteShadovv",
-        "ref": "brave-origin",
+        "owner": "Dreaming-Codes",
+        "ref": "brave-channels",
         "repo": "nixpkgs",
         "type": "github"
       }
