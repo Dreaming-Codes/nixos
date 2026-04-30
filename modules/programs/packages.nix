@@ -66,7 +66,7 @@ in {
     unzip
     # Ark dep
     unrar
-    bottles
+    # bottles
     libcamera
 
     android-tools
