@@ -1,4 +1,10 @@
-{pkgs, ...}: {
+{
+  pkgs,
+  lib,
+  ...
+}: let
+  ee-bluez-autoswitch = pkgs.callPackage ../../pkgs/ee-bluez-autoswitch {};
+in {
   hardware.bluetooth = {
     enable = true;
     disabledPlugins = ["sap"];
@@ -36,15 +42,22 @@
 
   services.pipewire.wireplumber.extraConfig."51-bluez" = {
     "monitor.bluez.properties" = {
-      # On Intel AX210 the USB-ISO SCO endpoint (alt 6) gets dropped by the
-      # kernel mid-stream, breaking the mic. Routing SCO via HCI ("offload"
-      # naming is misleading: it sends SCO frames over the HCI USB endpoint,
-      # not the iso endpoint) avoids the alt-setting churn entirely.
-      "bluez5.hw-offload-sco" = true;
+      # AX210: keep hw-offload disabled. Kernel always routes SCO via the USB
+      # ISO endpoint (alt 6), and force_scofix=Y + enable_autosuspend=N keeps
+      # that endpoint active.
+      "bluez5.hw-offload-sco" = false;
       "bluez5.auto-connect" = [
         "hfp_hf"
         "hsp_hs"
       ];
+    };
+    # Disable the upstream autoswitch script. It cannot traverse EasyEffects'
+    # virtual filter chain, so it incorrectly reverts the bluez card to A2DP
+    # while we are actually recording through EE.
+    # See: https://github.com/wwmm/easyeffects/issues/4878
+    # Our ee-bluez-autoswitch user service handles the EE case explicitly.
+    "wireplumber.settings" = {
+      "bluetooth.autoswitch-to-headset-profile" = false;
     };
   };
 
@@ -52,17 +65,48 @@
     "monitor.bluez.rules" = [
       {
         matches = [
-          {"node.name" = "~bluez_input.*";}
           {"node.name" = "~bluez_output.*";}
         ];
         actions = {
           update-props = {
-            "session.suspend-timeout-seconds" = 1;
+            # Quick suspend on output to avoid stealing A2DP from phone in
+            # multipoint when nothing is actually playing on Linux.
+            "session.suspend-timeout-seconds" = 2;
             "node.pause-on-idle" = true;
           };
         };
       }
+      {
+        matches = [
+          {"node.name" = "~bluez_input.*";}
+        ];
+        actions = {
+          update-props = {
+            # Keep mic SCO link alive longer; tearing it down too quickly
+            # causes alt-setting churn on AX210 and breaks recording when
+            # the input pipeline (e.g. EasyEffects) briefly idles.
+            "session.suspend-timeout-seconds" = 30;
+            "node.pause-on-idle" = false;
+          };
+        };
+      }
     ];
+  };
+
+  # User systemd service running the EasyEffects bluez autoswitch watcher.
+  # Started after wireplumber and runs as the user.
+  systemd.user.services.ee-bluez-autoswitch = {
+    description = "EasyEffects Bluetooth profile autoswitch workaround";
+    after = [
+      "wireplumber.service"
+      "pipewire.service"
+    ];
+    wantedBy = ["default.target"];
+    serviceConfig = {
+      ExecStart = lib.getExe ee-bluez-autoswitch;
+      Restart = "on-failure";
+      RestartSec = 5;
+    };
   };
 
   environment.systemPackages = [pkgs.overskride];
