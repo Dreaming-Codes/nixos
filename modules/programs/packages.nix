@@ -118,7 +118,8 @@ in {
     rustscan
 
     nur.repos.forkprince.helium-nightly
-    inputs.brave-origin.legacyPackages.${pkgs.system}.brave-origin
+    inputs.brave-origin.legacyPackages.${pkgs.system}.brave-origin-nightly
+    inputs.brave-origin.legacyPackages.${pkgs.system}.brave-nightly
 
     playerctl
     brightnessctl

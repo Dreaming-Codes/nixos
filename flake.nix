@@ -58,7 +58,7 @@
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    brave-origin.url = "github:WitteShadovv/nixpkgs/brave-origin";
+    brave-origin.url = "github:Dreaming-Codes/nixpkgs/brave-channels";
   };
 
   outputs = inputs @ {
