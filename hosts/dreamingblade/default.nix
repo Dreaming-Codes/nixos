@@ -133,6 +133,15 @@ in {
     };
   };
 
+  # howdy (IR scanner)
+  services = {
+    howdy.enable = true;
+    linux-enable-ir-emitter.enable = true;
+  };
+  security.pam.howdy.enable = true;
+  security.pam.services.sddm.howdy.enable = false;
+  security.pam.services.login.howdy.enable = false;
+
   services.razer-laptop-control.enable = true;
 
   # Only start in a graphical session, not in the greeter or linger manager
