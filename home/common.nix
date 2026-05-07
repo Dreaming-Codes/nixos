@@ -79,10 +79,7 @@ in {
   systemd.user.services.rbw-unlock = {
     Unit = {
       Description = "Unlock rbw on session start";
-      After = [
-        "graphical-session.target"
-        "plasma-kwallet-pam.service"
-      ];
+      After = ["graphical-session.target"];
       PartOf = ["graphical-session.target"];
     };
     Service = {
