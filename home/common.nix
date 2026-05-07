@@ -71,6 +71,8 @@ in {
   # Bitwarden SSH agent (path is user-specific via home.homeDirectory)
   home.sessionVariables = {
     SSH_AUTH_SOCK = "${config.home.homeDirectory}/.bitwarden-ssh-agent.sock";
+    OPENCODE_EXPERIMENTAL = "1";
+    OPENCODE_EXPERIMENTAL_PLAN_MODE = "1";
   };
 
   # Common session paths
