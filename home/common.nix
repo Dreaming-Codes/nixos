@@ -68,11 +68,29 @@ in {
   # Comma integration with nix-index
   programs.nix-index-database.comma.enable = true;
 
-  # Bitwarden SSH agent (path is user-specific via home.homeDirectory)
+  # rbw SSH agent
   home.sessionVariables = {
-    SSH_AUTH_SOCK = "${config.home.homeDirectory}/.bitwarden-ssh-agent.sock";
+    SSH_AUTH_SOCK = "$XDG_RUNTIME_DIR/rbw/ssh-agent-socket";
     OPENCODE_EXPERIMENTAL = "1";
     OPENCODE_EXPERIMENTAL_PLAN_MODE = "1";
+  };
+
+  # Auto-unlock rbw on graphical session start (uses pinentry-kwallet)
+  systemd.user.services.rbw-unlock = {
+    Unit = {
+      Description = "Unlock rbw on session start";
+      After = [
+        "graphical-session.target"
+        "plasma-kwallet-pam.service"
+      ];
+      PartOf = ["graphical-session.target"];
+    };
+    Service = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.rbw}/bin/rbw unlock";
+      RemainAfterExit = true;
+    };
+    Install.WantedBy = ["graphical-session.target"];
   };
 
   # Common session paths
