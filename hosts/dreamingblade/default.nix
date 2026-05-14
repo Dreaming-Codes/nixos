@@ -160,9 +160,11 @@ in {
       StartLimitBurst = 5;
     };
   };
-  # Enable rocm support for the iGPU on the laptop
-  nixpkgs.config.rocmSupport = true;
-  # Enable cuda support for the dGPU on the laptop
+  # Enable cuda support for the dGPU on the laptop. The AMD iGPU works fine
+  # without rocmSupport for display/graphics (Vulkan/OpenGL/VAAPI). We avoid
+  # global rocmSupport because no binary cache covers rocm-tainted closures
+  # broadly — enabling it would force vtk/opencv4Full/etc. to compile locally.
+  # If a specific package needs ROCm compute later, override it per-package.
   nixpkgs.config.cudaSupport = true;
 
   boot.kernelModules = ["kvm-amd"];
