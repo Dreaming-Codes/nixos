@@ -142,7 +142,8 @@ in {
   security.pam.services.sddm.howdy.enable = false;
   security.pam.services.login.howdy.enable = false;
 
-  services.razer-laptop-control.enable = true;
+  # TODO: fix this, broken with new linux versions
+  # services.razer-laptop-control.enable = true;
 
   # Only start in a graphical session, not in the greeter or linger manager
   systemd.user.services.razerdaemon = {
