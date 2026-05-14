@@ -28,8 +28,11 @@
   };
 
   inputs = {
-    # NixOS official package source, using the nixos-unstable branch here
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # NixOS official package source. We use nixos-unstable-small (not
+    # nixos-unstable) because cache.nixos-cuda.org tracks unstable-small —
+    # pinning here means CUDA-enabled packages (vtk, opencv4Full, pytorch, etc.)
+    # come prebuilt from the cuda cache instead of compiling locally.
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable-small";
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
     nix-cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/release";
     nur = {
