@@ -75,7 +75,6 @@
       nix-file-overlay = ./modules/nix-file-overlay;
       dreamingoptimal = ./modules/dreamingoptimal;
       dreamingoptimal-ram = ./modules/dreamingoptimal/ram.nix;
-      dreamingoptimal-tmp = ./modules/dreamingoptimal/tmp.nix;
       dreamingoptimal-swap-fallback = ./modules/dreamingoptimal/swap-fallback.nix;
       dreamingoptimal-process-tuning = ./modules/dreamingoptimal/process-tuning.nix;
       dreamingoptimal-sysctl = ./modules/dreamingoptimal/sysctl.nix;
