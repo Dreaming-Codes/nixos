@@ -75,7 +75,7 @@ in {
     OPENCODE_EXPERIMENTAL_PLAN_MODE = "1";
   };
 
-  # Auto-unlock rbw on graphical session start (uses pinentry-kwallet)
+  # Auto-unlock rbw on graphical session start (uses pinentry-qt)
   systemd.user.services.rbw-unlock = {
     Unit = {
       Description = "Unlock rbw on session start";
