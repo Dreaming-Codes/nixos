@@ -508,8 +508,8 @@ in {
     };
     gpg-agent = {
       enable = true;
-      pinentry.package = pkgs.kwalletcli;
-      extraConfig = "pinentry-program ${pkgs.kwalletcli}/bin/pinentry-kwallet";
+      pinentry.package = pkgs.pinentry-qt;
+      extraConfig = "pinentry-program ${pkgs.pinentry-qt}/bin/pinentry-qt";
     };
   };
 

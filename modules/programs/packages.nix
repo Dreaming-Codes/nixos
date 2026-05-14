@@ -234,7 +234,7 @@ in {
     sccache
     kdePackages.kleopatra
     gnupg
-    kwalletcli
+    pinentry-qt
     tor-browser
     jetbrains-toolbox
     just
