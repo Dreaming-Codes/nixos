@@ -4,7 +4,11 @@
   lib,
   inputs,
   ...
-}: {
+}: let
+  # Single source of truth: flake.nix's nixConfig. We import the flake file
+  # directly (not via the flake machinery) to read its literal attrs.
+  flakeNixConfig = (import ../../flake.nix).nixConfig;
+in {
   nix = rec {
     # Channels are dead, long live flakes
     channel.enable = false;
@@ -29,6 +33,17 @@
       # Use available binary caches, this is not Gentoo
       # this also allows us to use remote builders to reduce build times and batter usage
       builders-use-substitutes = true;
+
+      # Binary caches (system-level, no per-invocation prompt needed).
+      # Source of truth: flake.nix nixConfig (re-used here).
+      substituters = flakeNixConfig.substituters;
+      # trusted-public-keys replaces (does not extend), so we must include the
+      # default nixos cache key alongside the flake's extra-trusted-public-keys.
+      trusted-public-keys =
+        [
+          "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+        ]
+        ++ flakeNixConfig.extra-trusted-public-keys;
 
       # We are using flakes, so enable the experimental features
       experimental-features = [

@@ -1,6 +1,10 @@
 {
   description = "NixOS system flake";
 
+  # Binary caches. This is the single source of truth; modules/core/nix.nix
+  # imports this same attrset via `(import ./flake.nix).nixConfig`.
+  # Note: per Nix flake spec, `nixConfig` must be a literal attrset — we cannot
+  # compute it from JSON or another file, so the literal lives here.
   nixConfig = {
     substituters = [
       "https://install.determinate.systems?priority=20"
