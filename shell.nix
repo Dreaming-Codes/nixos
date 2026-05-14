@@ -1,6 +1,15 @@
 {pkgs ? import <nixpkgs> {}}: let
   hashFlakeState = import ./lib/hash-flake-state.nix {inherit pkgs;};
 
+  # Reuse flake.nix's nixConfig as the single source of truth for caches.
+  flakeNixConfig = (import ./flake.nix).nixConfig;
+  cacheFlags = builtins.concatStringsSep " " [
+    "--option extra-substituters"
+    "\"${builtins.concatStringsSep " " flakeNixConfig.substituters}\""
+    "--option extra-trusted-public-keys"
+    "\"${builtins.concatStringsSep " " flakeNixConfig.extra-trusted-public-keys}\""
+  ];
+
   system-current = pkgs.writeShellScriptBin "system-current" ''
     CACHE_FILE="/var/lib/nixos-config-hash"
 
@@ -44,7 +53,7 @@
 
       if [ "$MODE" = "interactive" ]; then
         echo "Configuration changed. Building and staging for next boot..."
-        if ! nh os boot -- --accept-flake-config; then
+        if ! nh os boot -- --accept-flake-config ${cacheFlags}; then
           echo "Boot stage failed."
           return 1
         fi
@@ -72,7 +81,7 @@
         esac
       else
         echo "Configuration changed. Running $MODE..."
-        nh os "$MODE" -- --accept-flake-config
+        nh os "$MODE" -- --accept-flake-config ${cacheFlags}
       fi
     }
 
