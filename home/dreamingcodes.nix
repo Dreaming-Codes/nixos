@@ -207,6 +207,11 @@ in {
   # Hyprland window manager configuration
   wayland.windowManager.hyprland = {
     enable = true;
+    # Home-manager flipped the default from "hyprlang" (writes hyprland.conf)
+    # to "lua" (writes hyprland.lua) for stateVersion >= 26.05. Hyprland still
+    # reads hyprland.conf by default, so keep the hyprlang format until we
+    # explicitly migrate to the lua config.
+    configType = "hyprlang";
     systemd = {
       enable = true;
       variables = ["--all"];
