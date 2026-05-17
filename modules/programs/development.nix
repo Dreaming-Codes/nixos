@@ -127,6 +127,7 @@ in {
       mesa
       nspr
       nss
+      ocl-icd
       openssl
       p11-kit
       pango
