@@ -15,6 +15,9 @@
   opencode = pkgs.writeShellScriptBin "opencode" ''
     exec ${pkgs.bun}/bin/bunx opencode-ai@latest "$@"
   '';
+  codex = pkgs.writeShellScriptBin "codex" ''
+    exec ${pkgs.bun}/bin/bunx @openai/codex "$@"
+  '';
   mimes = import ../lib/mimes.nix;
 in {
   imports = [
@@ -501,6 +504,7 @@ in {
     razerPower
     qsLock
     opencode
+    codex
   ];
 
   # Services
