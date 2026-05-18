@@ -6,6 +6,10 @@
 }: let
   ci-keyboard-leds = pkgs.callPackage ../../packages/ci-keyboard-leds {};
 in {
+  imports = [
+    ../../modules/core/campus-switch.nix
+  ];
+
   boot.initrd.availableKernelModules = [
     "nvme"
     "xhci_pci"
