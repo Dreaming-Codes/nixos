@@ -42,6 +42,8 @@
     openFirewall = true;
   };
 
+  services.displayManager.sddm.wayland.enable = lib.mkForce false;
+
   services.openssh = {
     enable = true;
     openFirewall = true;
