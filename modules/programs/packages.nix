@@ -4,6 +4,8 @@
   lib,
   ...
 }: let
+  unstableSmallPkgs = inputs.nixpkgs-unstable-small.legacyPackages.${pkgs.system};
+
   rsworktree = pkgs.rustPlatform.buildRustPackage rec {
     pname = "rsworktree";
     version = "0.7.1";
@@ -83,7 +85,7 @@ in {
     clang
     clang-tools
 
-    signal-desktop
+    unstableSmallPkgs.signal-desktop
 
     libimobiledevice
     ifuse
