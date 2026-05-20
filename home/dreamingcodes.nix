@@ -15,6 +15,26 @@
   opencode = pkgs.writeShellScriptBin "opencode" ''
     exec ${pkgs.bun}/bin/bunx opencode-ai@latest "$@"
   '';
+  codexRemoteControlMonitor = pkgs.writeShellScript "codex-remote-control-monitor" ''
+    set -euo pipefail
+
+    codex_bin="$HOME/.local/bin/codex"
+    settings="$HOME/.codex/app-server-daemon/settings.json"
+
+    if ! ${pkgs.gnugrep}/bin/grep -q '"remoteControlEnabled": true' "$settings" 2>/dev/null; then
+      ${pkgs.coreutils}/bin/timeout 30s "$codex_bin" app-server daemon enable-remote-control
+    fi
+    ${pkgs.coreutils}/bin/timeout 30s "$codex_bin" app-server daemon start
+
+    while true; do
+      if ! output="$(${pkgs.coreutils}/bin/timeout 10s "$codex_bin" app-server daemon version 2>&1)" ||
+        [[ "$output" != *'"status":"running"'* ]]; then
+        ${pkgs.coreutils}/bin/timeout 30s "$codex_bin" app-server daemon restart
+      fi
+
+      ${pkgs.coreutils}/bin/sleep 60
+    done
+  '';
   mimes = import ../lib/mimes.nix;
 in {
   imports = [
@@ -46,6 +66,12 @@ in {
       run rustup component add rustfmt --toolchain stable
 
       run rustup default nightly
+    fi
+  '';
+
+  home.activation.codexStandalone = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    if [ ! -x /home/dreamingcodes/.local/bin/codex ]; then
+      ${pkgs.curl}/bin/curl -fsSL https://chatgpt.com/codex/install.sh | sh
     fi
   '';
 
@@ -456,6 +482,28 @@ in {
       }";
       Restart = "on-failure";
       Type = "simple";
+    };
+  };
+
+  systemd.user.services.codex-remote-control = {
+    Unit = {
+      Description = "Codex remote-control app-server";
+      Documentation = "file:%h/.codex/packages/standalone/current/codex";
+      After = ["network-online.target"];
+      Wants = ["network-online.target"];
+      StartLimitIntervalSec = 300;
+      StartLimitBurst = 5;
+    };
+    Install = {
+      WantedBy = ["default.target"];
+    };
+    Service = {
+      Type = "simple";
+      ExecStart = "${codexRemoteControlMonitor}";
+      KillMode = "control-group";
+      Restart = "always";
+      RestartSec = 10;
+      TimeoutStopSec = 10;
     };
   };
 
