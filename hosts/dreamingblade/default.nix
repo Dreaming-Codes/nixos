@@ -1,10 +1,21 @@
 {
+  inputs,
   pkgs,
   lib,
   config,
   ...
 }: let
   ci-keyboard-leds = pkgs.callPackage ../../packages/ci-keyboard-leds {};
+  razer-laptop-control =
+    inputs.razer-laptop-controller.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs
+    (old: {
+      postPatch =
+        (old.postPatch or "")
+        + ''
+          substituteInPlace Cargo.toml \
+            --replace-fail 'features = ["linux-native"]' 'features = ["linux-static-hidraw"]'
+        '';
+    });
 in {
   imports = [
     ../../modules/core/campus-switch.nix
@@ -146,22 +157,26 @@ in {
   security.pam.services.sddm.howdy.enable = false;
   security.pam.services.login.howdy.enable = false;
 
-  # TODO: fix this, broken with new linux versions
-  # services.razer-laptop-control.enable = true;
+  services.razer-laptop-control = {
+    enable = true;
+    package = razer-laptop-control;
+  };
 
   # Only start in a graphical session, not in the greeter or linger manager
   systemd.user.services.razerdaemon = {
     partOf = ["graphical-session.target"];
     after = ["graphical-session.target"];
     wantedBy = lib.mkForce ["graphical-session.target"];
+    unitConfig = {
+      StartLimitIntervalSec = 60;
+      StartLimitBurst = 5;
+    };
     serviceConfig = {
       ExecStartPre = lib.mkBefore [
         "-${pkgs.coreutils}/bin/rm -f /tmp/razercontrol-socket"
       ];
       Restart = lib.mkForce "on-failure";
       RestartSec = lib.mkForce 5;
-      StartLimitIntervalSec = 60;
-      StartLimitBurst = 5;
     };
   };
   # Enable cuda support for the dGPU on the laptop. The AMD iGPU works fine
