@@ -9,7 +9,23 @@ PanelWindow {
     id: root
 
     property var notifManager: null
+    property var notifications: []
     signal dismissed()
+
+    function syncNotifications() {
+        notifications = notifManager?.notifications ?? [];
+    }
+
+    onNotifManagerChanged: syncNotifications()
+    Component.onCompleted: syncNotifications()
+
+    Connections {
+        target: root.notifManager
+
+        function onNotificationsChanged() {
+            root.syncNotifications();
+        }
+    }
 
     WlrLayershell.layer: WlrLayer.Overlay
     exclusionMode: ExclusionMode.Ignore
@@ -55,7 +71,7 @@ PanelWindow {
                 Item { Layout.fillWidth: true }
 
                 Text {
-                    text: root.notifManager?.dnd ? "" : ""
+                    text: root.notifManager?.dnd ? "\uf1f6" : "\uf0f3"
                     font.family: Colors.iconFont
                     font.pixelSize: 14
                     color: root.notifManager?.dnd ? Colors.danger : Colors.subtext1
@@ -71,11 +87,11 @@ PanelWindow {
                 }
 
                 Text {
-                    text: ""
+                    text: "\uf1f8"
                     font.family: Colors.iconFont
                     font.pixelSize: 14
                     color: Colors.subtext1
-                    visible: (root.notifManager?.notifications.length ?? 0) > 0
+                    visible: root.notifications.length > 0
 
                     MouseArea {
                         anchors.fill: parent
@@ -87,7 +103,7 @@ PanelWindow {
                 }
 
                 Text {
-                    text: ""
+                    text: "\uf00d"
                     font.family: Colors.iconFont
                     font.pixelSize: 14
                     color: Colors.subtext1
@@ -126,11 +142,11 @@ PanelWindow {
                         font.pixelSize: Colors.fontSizeNormal
                         color: Colors.overlay1
                         horizontalAlignment: Text.AlignHCenter
-                        visible: (root.notifManager?.notifications.length ?? 0) === 0
+                        visible: root.notifications.length === 0
                     }
 
                     Repeater {
-                        model: root.notifManager?.notifications ?? []
+                        model: root.notifications
 
                         delegate: Rectangle {
                             id: notifItem
@@ -160,7 +176,7 @@ PanelWindow {
                                     }
 
                                     Text {
-                                        text: ""
+                                        text: "\uf00d"
                                         font.family: Colors.iconFont
                                         font.pixelSize: 10
                                         color: Colors.overlay1
