@@ -1,5 +1,6 @@
 import Quickshell
 import Quickshell.Services.Notifications
+import Quickshell.Wayland
 import QtQuick
 import QtQuick.Layouts
 
@@ -9,6 +10,8 @@ PanelWindow {
     id: root
 
     property var notifManager: null
+    property var popups: []
+    readonly property int popupCount: popups.length
 
     anchors {
         top: true
@@ -19,9 +22,19 @@ PanelWindow {
 
     implicitWidth: 360
     implicitHeight: popupCol.implicitHeight
+    visible: popupCount > 0
 
     color: "transparent"
     exclusionMode: ExclusionMode.Ignore
+    WlrLayershell.layer: WlrLayer.Overlay
+
+    Connections {
+        target: root.notifManager
+
+        function onPopupQueueChanged() {
+            root.popups = root.notifManager?.popupQueue ?? [];
+        }
+    }
 
     ColumnLayout {
         id: popupCol
@@ -32,7 +45,7 @@ PanelWindow {
         spacing: 8
 
         Repeater {
-            model: root.notifManager?.popupQueue ?? []
+            model: root.popups
 
             delegate: Rectangle {
                 id: popup
@@ -69,7 +82,7 @@ PanelWindow {
                         Item { Layout.fillWidth: true }
 
                         Text {
-                            text: ""
+                            text: "\uf00d"
                             font.family: Colors.iconFont
                             font.pixelSize: 12
                             color: Colors.overlay1

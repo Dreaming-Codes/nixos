@@ -11,6 +11,10 @@ Scope {
     // Popup queue: newest first, max 5 shown
     property list<Notification> popupQueue: []
 
+    function shouldKeepInHistory(notif) {
+        return !notif.transient;
+    }
+
     NotificationServer {
         id: server
         actionsSupported: true
@@ -22,13 +26,14 @@ Scope {
 
         onNotification: notif => {
             notif.tracked = true;
-            root.notifications = [notif, ...root.notifications];
+            if (root.shouldKeepInHistory(notif))
+                root.notifications = [notif, ...root.notifications];
 
             if (!root.dnd) {
                 root.popupQueue = [notif, ...root.popupQueue].slice(0, 5);
 
-                // Auto-expire popup after timeout or 5s default
-                const timeout = notif.expireTimeout > 0 ? notif.expireTimeout * 1000 : 5000;
+                // Auto-expire popup after timeout or 5s default.
+                const timeout = notif.expireTimeout > 0 ? notif.expireTimeout : 5000;
                 Qt.callLater(() => {
                     popupTimer.createObject(root, { notification: notif, interval: timeout });
                 });

@@ -73,23 +73,16 @@ ShellRoot {
         }
     }
 
-    LazyLoader {
-        active: (notifManager.popupQueue?.length ?? 0) > 0
-
-        NotifPopups {
-            screen: shell.activeScreen
-            notifManager: notifManager
-        }
+    NotifPopups {
+        screen: shell.activeScreen
+        notifManager: notifManager
     }
 
-    LazyLoader {
-        active: shell.notifCenterOpen
-
-        NotifCenterPanel {
-            screen: shell.activeScreen
-            notifManager: notifManager
-            onDismissed: shell.notifCenterOpen = false
-        }
+    NotifCenterPanel {
+        screen: shell.activeScreen
+        visible: shell.notifCenterOpen
+        notifManager: notifManager
+        onDismissed: shell.notifCenterOpen = false
     }
 
     LazyLoader {
