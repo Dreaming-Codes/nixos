@@ -15,26 +15,6 @@
   opencode = pkgs.writeShellScriptBin "opencode" ''
     exec ${pkgs.bun}/bin/bunx opencode-ai@latest "$@"
   '';
-  codexRemoteControlMonitor = pkgs.writeShellScript "codex-remote-control-monitor" ''
-    set -euo pipefail
-
-    codex_bin="$HOME/.local/bin/codex"
-    settings="$HOME/.codex/app-server-daemon/settings.json"
-
-    if ! ${pkgs.gnugrep}/bin/grep -q '"remoteControlEnabled": true' "$settings" 2>/dev/null; then
-      ${pkgs.coreutils}/bin/timeout 30s "$codex_bin" app-server daemon enable-remote-control
-    fi
-    ${pkgs.coreutils}/bin/timeout 30s "$codex_bin" app-server daemon start
-
-    while true; do
-      if ! output="$(${pkgs.coreutils}/bin/timeout 10s "$codex_bin" app-server daemon version 2>&1)" ||
-        [[ "$output" != *'"status":"running"'* ]]; then
-        ${pkgs.coreutils}/bin/timeout 30s "$codex_bin" app-server daemon restart
-      fi
-
-      ${pkgs.coreutils}/bin/sleep 60
-    done
-  '';
   mimes = import ../lib/mimes.nix;
 in {
   imports = [
@@ -499,7 +479,12 @@ in {
     };
     Service = {
       Type = "simple";
-      ExecStart = "${codexRemoteControlMonitor}";
+      ExecStartPre = "-${pkgs.coreutils}/bin/rm -f %h/.codex/app-server-control/app-server-control.sock";
+      ExecStart = "%h/.local/bin/codex app-server --remote-control --listen unix://";
+      Environment = [
+        "LOG_FORMAT=json"
+        "RUST_LOG=info,codex_app_server_transport::transport::remote_control=debug"
+      ];
       KillMode = "control-group";
       Restart = "always";
       RestartSec = 10;
