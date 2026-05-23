@@ -178,7 +178,11 @@
   "brightnessDevicePins": {},
   "browserPickerViewMode": "grid",
   "browserUsageHistory": {},
-  "builtInPluginSettings": {},
+  "builtInPluginSettings": {
+    "dms_settings_search": {
+      "trigger": "?"
+    }
+  },
   "buttonColorMode": "primary",
   "centeringMode": "index",
   "clipboardEnterToPaste": false,
@@ -238,11 +242,21 @@
       "enabled": true,
       "id": "darkMode",
       "width": 50
+    },
+    {
+      "enabled": true,
+      "id": "builtin_cups",
+      "width": 50
+    },
+    {
+      "enabled": true,
+      "id": "idleInhibitor",
+      "width": 50
     }
   ],
   "cornerRadius": 12,
-  "currentThemeCategory": "generic",
-  "currentThemeName": "blue",
+  "currentThemeCategory": "dynamic",
+  "currentThemeName": "dynamic",
   "cursorSettings": {
     "dwl": {
       "cursorHideTimeout": 0
@@ -357,9 +371,9 @@
   "groupWorkspaceApps": true,
   "gtkThemingEnabled": false,
   "hideBrightnessSlider": false,
-  "hyprlandLayoutBorderSize": -1,
-  "hyprlandLayoutGapsOverride": -1,
-  "hyprlandLayoutRadiusOverride": -1,
+  "hyprlandLayoutBorderSize": 2,
+  "hyprlandLayoutGapsOverride": 4,
+  "hyprlandLayoutRadiusOverride": 12,
   "hyprlandOutputSettings": {
     "desc:Dell Inc. AW2725DM 67C0C94": {}
   },
@@ -563,8 +577,8 @@
   "showSystemTray": true,
   "showWeather": true,
   "showWorkspaceApps": false,
-  "showWorkspaceIndex": false,
-  "showWorkspaceName": false,
+  "showWorkspaceIndex": true,
+  "showWorkspaceName": true,
   "showWorkspacePadding": false,
   "showWorkspaceSwitcher": true,
   "sortAppsAlphabetically": false,

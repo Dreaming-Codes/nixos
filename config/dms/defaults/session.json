@@ -27,7 +27,7 @@
   "lastBrightnessDevice": "",
   "latitude": 0,
   "launchPrefix": "",
-  "launcherLastMode": "plugins",
+  "launcherLastMode": "all",
   "longitude": 0,
   "monitorCyclingSettings": {},
   "monitorWallpaperFillModes": {},
@@ -68,10 +68,12 @@
   "wallpaperCyclingInterval": 600,
   "wallpaperCyclingMode": "interval",
   "wallpaperCyclingTime": "06:00",
-  "wallpaperPath": "/home/dreamingcodes/Pictures/wallpaper/43.jpg",
+  "wallpaperPath": "/home/dreamingcodes/Pictures/wallpaper/anime-scenery.jpg",
   "wallpaperPathDark": "",
   "wallpaperPathLight": "",
-  "wallpaperTransition": "fade",
+  "wallpaperTransition": "portal",
+  "weatherCoordinates": "",
   "weatherHourlyDetailed": true,
+  "weatherLocation": "New York, NY",
   "wifiDeviceOverride": ""
 }

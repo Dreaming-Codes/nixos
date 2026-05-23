@@ -1,4 +1,8 @@
-{pkgs, ...}: {
+{
+  lib,
+  pkgs,
+  ...
+}: {
   # System-wide MIME associations to ensure consistency with portal usage
   xdg.mime = {
     enable = true;
@@ -24,6 +28,18 @@
         "org.freedesktop.impl.portal.FileChooser" = "kde";
         "org.freedesktop.impl.portal.OpenURI" = "kde";
       };
+      niri = lib.mkForce {
+        default = [
+          "gnome"
+          "gtk"
+          "kde"
+        ];
+        "org.freedesktop.impl.portal.Access" = "gtk";
+        "org.freedesktop.impl.portal.FileChooser" = "kde";
+        "org.freedesktop.impl.portal.Notification" = "gtk";
+        "org.freedesktop.impl.portal.OpenURI" = "kde";
+        "org.freedesktop.impl.portal.Secret" = "gnome-keyring";
+      };
       plasma = {
         default = [
           "kde"
@@ -36,6 +52,7 @@
 
     extraPortals = with pkgs; [
       xdg-desktop-portal-hyprland
+      xdg-desktop-portal-gnome
       # Add xdg-desktop-portal-gtk for Wayland GTK apps (font issues etc.)
       xdg-desktop-portal-gtk
       kdePackages.xdg-desktop-portal-kde

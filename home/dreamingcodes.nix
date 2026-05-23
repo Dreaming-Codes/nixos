@@ -146,6 +146,36 @@ in {
     ensure_source "source = ./dms/binds.conf" "binds.conf"
   '';
 
+  home.activation.niriDmsIncludes = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    NIRI_DIR="$HOME/.config/niri"
+    NIRI_CONF="$NIRI_DIR/config.kdl"
+    DMS_DIR="$NIRI_DIR/dms"
+    mkdir -p "$DMS_DIR"
+
+    make_writable_file() {
+      path="$1"
+      if [ -L "$path" ]; then
+        GENERATED="$(${pkgs.coreutils}/bin/readlink -f "$path")"
+        TMP="$(${pkgs.coreutils}/bin/mktemp)"
+        ${pkgs.coreutils}/bin/cp "$GENERATED" "$TMP"
+        ${pkgs.coreutils}/bin/mv "$TMP" "$path"
+        ${pkgs.coreutils}/bin/chmod u+w "$path"
+      elif [ -e "$path" ]; then
+        ${pkgs.coreutils}/bin/chmod u+w "$path"
+      else
+        ${pkgs.coreutils}/bin/touch "$path"
+      fi
+    }
+
+    make_writable_file "$NIRI_CONF"
+    for target in alttab.kdl binds.kdl colors.kdl cursor.kdl layout.kdl outputs.kdl windowrules.kdl; do
+      make_writable_file "$DMS_DIR/$target"
+      if ! ${pkgs.gnugrep}/bin/grep -Eq "^[[:space:]]*include[[:space:]]+\"dms/$target\"[[:space:]]*$" "$NIRI_CONF"; then
+        printf '\ninclude "dms/%s"\n' "$target" >> "$NIRI_CONF"
+      fi
+    done
+  '';
+
   # Virt-manager dconf settings (qemu:///system access)
   dconf.settings = {
     "org/virt-manager/virt-manager/connections" = {
@@ -442,6 +472,11 @@ in {
   # DreamingCodes-specific config files
   home.file."./.config/hypr" = {
     source = ../config/hypr;
+    recursive = true;
+  };
+
+  home.file."./.config/niri" = {
+    source = ../config/niri;
     recursive = true;
   };
 
