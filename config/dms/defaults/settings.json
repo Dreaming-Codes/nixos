@@ -150,7 +150,14 @@
     "dankTranslate",
     "nixPackageRunner",
     "nixMonitor",
-    "RazerEnergy"
+    "RazerEnergy",
+    "dockerManager",
+    "codeIsland",
+    "githubNotifier",
+    "canvasGrades",
+    "easyEffects",
+    "dmsScreenshot",
+    "aiOverviewControl"
   ],
   "launcherPluginVisibility": {
     "RazerEnergy": {
@@ -169,6 +176,27 @@
       "allowWithoutTrigger": true
     },
     "nixPackageRunner": {
+      "allowWithoutTrigger": true
+    },
+    "dockerManager": {
+      "allowWithoutTrigger": true
+    },
+    "codeIsland": {
+      "allowWithoutTrigger": true
+    },
+    "githubNotifier": {
+      "allowWithoutTrigger": true
+    },
+    "canvasGrades": {
+      "allowWithoutTrigger": true
+    },
+    "easyEffects": {
+      "allowWithoutTrigger": true
+    },
+    "dmsScreenshot": {
+      "allowWithoutTrigger": true
+    },
+    "aiOverviewControl": {
       "allowWithoutTrigger": true
     }
   },

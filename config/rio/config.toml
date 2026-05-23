@@ -1,0 +1,7 @@
+# See the full configuration reference: https://rioterm.com/docs/config
+
+confirm-before-quit = false
+
+[window]
+opacity = 0.8
+blur = true

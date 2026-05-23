@@ -19,5 +19,38 @@
   },
   "razerEnergy": {
     "enabled": true
+  },
+  "dockerManager": {
+    "enabled": true
+  },
+  "codeIsland": {
+    "enabled": true
+  },
+  "githubNotifier": {
+    "enabled": true
+  },
+  "canvasGrades": {
+    "enabled": true
+  },
+  "easyEffects": {
+    "enabled": true
+  },
+  "dmsScreenshot": {
+    "enabled": true,
+    "mode": "interactive",
+    "showPointer": true,
+    "saveToDisk": true,
+    "format": "png",
+    "quality": 90,
+    "copyToClipboard": true,
+    "showNotify": true,
+    "showToast": true,
+    "stdout": false,
+    "pipeCommand": "",
+    "filename": "",
+    "delaySeconds": 0
+  },
+  "aiOverviewControl": {
+    "enabled": true
   }
 }
