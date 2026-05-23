@@ -17,7 +17,7 @@ PluginSettings {
 
     StyledText {
         width: parent.width
-        text: "Controls razer-cli power modes from the bar. Custom args are passed after the power source, for example: 4 3 2."
+        text: "Controls razer-cli power modes from the bar. Leave custom args empty to use the CPU/GPU boost selectors in the popout."
         font.pixelSize: Theme.fontSizeSmall
         color: Theme.surfaceVariantText
         wrapMode: Text.WordWrap
@@ -25,9 +25,9 @@ PluginSettings {
 
     StringSetting {
         settingKey: "customPowerArgs"
-        label: "Custom Power Args"
-        description: "Arguments used by the Custom AC and Custom Battery buttons."
+        label: "Override Custom Args"
+        description: "Optional raw args after the power source, for example: 4 3 2."
         placeholder: "4 3 2"
-        defaultValue: "4 3 2"
+        defaultValue: ""
     }
 }

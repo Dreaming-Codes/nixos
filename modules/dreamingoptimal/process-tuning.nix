@@ -123,10 +123,6 @@ in {
           type = "Service";
         }
         {
-          name = "vicinae";
-          type = "Service";
-        }
-        {
           name = "warp-svc";
           type = "IN_DIFF";
         }

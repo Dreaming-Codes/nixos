@@ -18,10 +18,23 @@ PluginComponent {
     property string statusBuffer: ""
     property string actionLabel: ""
     property string errorText: ""
+    property int customCpuBoost: parseInt(pluginData.customCpuBoost ?? 3)
+    property int customGpuBoost: parseInt(pluginData.customGpuBoost ?? 2)
 
     function customArgs() {
-        var raw = (pluginData.customPowerArgs || "4 3 2").trim()
-        return raw.length === 0 ? ["4"] : raw.split(/\s+/)
+        var raw = (pluginData.customPowerArgs || "").trim()
+        if (raw.length > 0)
+            return raw.split(/\s+/)
+        return ["4", String(customCpuBoost), String(customGpuBoost)]
+    }
+
+    function setCustomBoost(kind, value) {
+        if (kind === "cpu")
+            customCpuBoost = value
+        else
+            customGpuBoost = value
+        if (pluginService)
+            pluginService.savePluginData("razerEnergy", kind === "cpu" ? "customCpuBoost" : "customGpuBoost", value)
     }
 
     function refresh() {
@@ -156,7 +169,7 @@ PluginComponent {
     }
 
     popoutWidth: 420
-    popoutHeight: 430
+    popoutHeight: 560
 
     popoutContent: Component {
         PopoutComponent {
@@ -253,6 +266,86 @@ PluginComponent {
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: root.applyMode("current", modelData.mode, modelData.label)
                             }
+                        }
+                    }
+                }
+
+                StyledRect {
+                    width: parent.width
+                    height: customColumn.implicitHeight + Theme.spacingM * 2
+                    radius: Theme.cornerRadius
+                    color: Theme.surfaceContainerHigh
+
+                    Column {
+                        id: customColumn
+                        anchors.fill: parent
+                        anchors.margins: Theme.spacingM
+                        spacing: Theme.spacingS
+
+                        StyledText {
+                            text: "Custom boost"
+                            color: Theme.surfaceText
+                            font.pixelSize: Theme.fontSizeMedium
+                            font.weight: Font.Bold
+                        }
+
+                        Repeater {
+                            model: [
+                                { label: "CPU", kind: "cpu", value: root.customCpuBoost },
+                                { label: "GPU", kind: "gpu", value: root.customGpuBoost }
+                            ]
+
+                            Row {
+                                id: boostRow
+                                required property var modelData
+                                width: parent.width
+                                spacing: Theme.spacingS
+
+                                StyledText {
+                                    width: 42
+                                    text: modelData.label
+                                    color: Theme.surfaceVariantText
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+
+                                Repeater {
+                                    model: [0, 1, 2, 3]
+
+                                    StyledRect {
+                                        required property int modelData
+                                        property bool selected: modelData === boostRow.modelData.value
+                                        width: 44
+                                        height: 34
+                                        radius: Theme.cornerRadius
+                                        color: selected ? Theme.primary : boostArea.containsMouse ? Theme.surfaceContainerHighest : Theme.surfaceContainer
+
+                                        StyledText {
+                                            anchors.centerIn: parent
+                                            text: String(modelData)
+                                            color: parent.selected ? Theme.onPrimary : Theme.surfaceText
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            font.weight: Font.Medium
+                                        }
+
+                                        MouseArea {
+                                            id: boostArea
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: root.setCustomBoost(boostRow.modelData.kind, modelData)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        StyledText {
+                            width: parent.width
+                            text: "Command: razer-cli write power <source> 4 " + root.customCpuBoost + " " + root.customGpuBoost
+                            color: Theme.surfaceVariantText
+                            font.pixelSize: Theme.fontSizeSmall
+                            wrapMode: Text.WordWrap
                         }
                     }
                 }

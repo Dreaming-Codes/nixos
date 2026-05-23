@@ -2,7 +2,6 @@
   pkgs,
   lib,
   config,
-  inputs,
   osConfig,
   ...
 }: let
@@ -14,11 +13,45 @@
     exec ${pkgs.bun}/bin/bunx opencode-ai@latest "$@"
   '';
   mimes = import ../lib/mimes.nix;
+  dmsSettingsDefaults = {
+    currentThemeName = "blue";
+    displayNameMode = "system";
+    displayProfileAutoSelect = false;
+    launcherPluginOrder = [
+      "applications"
+      "dankBitwarden"
+      "dankSpotify"
+      "dankTranslate"
+      "nixPackageRunner"
+      "nixMonitor"
+      "openTrackerBar"
+      "RazerEnergy"
+    ];
+    launcherPluginVisibility = {
+      dankBitwarden.allowWithoutTrigger = true;
+      dankSpotify.allowWithoutTrigger = true;
+      dankTranslate.allowWithoutTrigger = true;
+      nixPackageRunner.allowWithoutTrigger = true;
+      nixMonitor.allowWithoutTrigger = true;
+      openTrackerBar.allowWithoutTrigger = true;
+      RazerEnergy.allowWithoutTrigger = true;
+    };
+    matugenTemplateHyprland = true;
+    showClipboard = true;
+    showNotificationButton = true;
+    wallpaperFillMode = "Fill";
+  };
+  dmsSessionDefaults = {
+    launchPrefix = "";
+    perMonitorWallpaper = false;
+    showThirdPartyPlugins = true;
+    wallpaperCyclingEnabled = true;
+    wallpaperCyclingInterval = 600;
+    wallpaperCyclingMode = "interval";
+    wallpaperPath = "/home/dreamingcodes/Pictures/wallpaper/42.jpg";
+    wallpaperTransition = "fade";
+  };
 in {
-  imports = [
-    inputs.vicinae.homeManagerModules.default
-  ];
-
   # Set default applications (DreamingCodes specific)
   home.activation.dreamingCodesMimeApps = lib.hm.dag.entryAfter ["writeBoundary"] ''
     ${mimes.bindMimes "Helix.desktop" mimes.textMimes}
@@ -69,133 +102,28 @@ in {
     "/home/dreamingcodes/.bun/bin"
   ];
 
-  services.vicinae = {
-    enable = true;
-    package = pkgs.vicinae;
-    systemd = {
-      enable = true;
-      autoStart = true;
-      environment = {
-        USE_LAYER_SHELL = 1;
-      };
-    };
-    extensions = with inputs.vicinae-extensions.packages.${pkgs.stdenv.hostPlatform.system}; [
-      it-tools
-      nix
-      player-pilot
-      port-killer
-      power-profile
-      process-manager
-      wifi-commander
-    ];
-  };
+  home.activation.dmsDefaults = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    DMS_CONFIG="$HOME/.config/DankMaterialShell"
+    DMS_STATE="$HOME/.local/state/DankMaterialShell"
+    mkdir -p "$DMS_CONFIG" "$DMS_STATE"
 
-  # Vicinae base config (read-only, imported by user settings.json)
-  home.file.".config/vicinae/base-config.json".text = builtins.toJSON {
-    close_on_focus_loss = true;
-    pop_to_root_on_close = true;
-    favorites = [];
-    font = {
-      normal = {
-        family = "FiraCode Nerd Font";
-      };
-    };
-    providers = {
-      "@Gelei/bluetooth-0" = {
-        preferences.connectionToggleable = true;
-      };
-      "@gebeto/store.raycast.translate" = {
-        preferences.autoInput = true;
-        entrypoints = {
-          instant-translate-copy.enabled = false;
-          instant-translate-paste.enabled = false;
-          instant-translate-view.enabled = false;
-          quick-translate.enabled = true;
-          translate.enabled = false;
-          translate-form.enabled = false;
-        };
-      };
-      "@knoopx/nix-0" = {
-        entrypoints.flake-packages.enabled = true;
-      };
-      "@marcjulian/store.raycast.obsidian" = {
-        preferences = {
-          removeLatex = false;
-          removeLinks = false;
-          removeYAML = false;
-          vaultPath = "/home/dreamingcodes/Documents/Obsidian Vault";
-        };
-        entrypoints = {
-          appendTaskCommand.enabled = false;
-          dailyNoteAppendCommand.enabled = false;
-          dailyNoteCommand.enabled = false;
-          openVaultCommand.enabled = false;
-          openWorkspaceCommand.enabled = false;
-          randomNoteCommand.enabled = false;
-          searchMedia.enabled = false;
-        };
-      };
-      "@mattisssa/store.raycast.spotify-player" = {
-        entrypoints = {
-          findLyrics.enabled = false;
-          generatePlaylist.enabled = false;
-          next.enabled = false;
-          previous.enabled = false;
-          search.preferences.musicOnly = true;
-          togglePlayPause.enabled = false;
-          volume.enabled = true;
-        };
-      };
-      "@ratoru/store.raycast.google-maps-search" = {
-        preferences = {
-          preferredMode = "driving";
-          preferredOrigin = "home";
-          useSelected = true;
-        };
-        entrypoints = {
-          find.enabled = false;
-          quickSearchMaps.enabled = false;
-          travelHome.enabled = false;
-          travelTo.alias = "driveto";
-        };
-      };
-      clipboard = {
-        preferences.encryption = true;
-        entrypoints.history.preferences.defaultAction = "copy";
-      };
-      core = {
-        entrypoints = {
-          about.enabled = false;
-          documentation.enabled = false;
-          keybind-settings.enabled = false;
-          list-extensions.enabled = false;
-          open-config-file.enabled = false;
-          open-default-config.enabled = false;
-          report-bug.enabled = false;
-          sponsor.enabled = false;
-        };
-      };
-      files = {
-        enabled = false;
-        preferences.autoIndexing = true;
-      };
-      power = {
-        entrypoints = {
-          hibernate.enabled = false;
-          sleep.enabled = false;
-        };
-      };
-      theme.enabled = false;
-    };
-  };
+    merge_defaults() {
+      target="$1"
+      defaults="$2"
+      if [ ! -s "$target" ]; then
+        printf '%s\n' "$defaults" > "$target"
+        return
+      fi
+      tmp="$(mktemp)"
+      if ${pkgs.jq}/bin/jq --argjson defaults "$defaults" '$defaults * .' "$target" > "$tmp"; then
+        mv "$tmp" "$target"
+      else
+        rm -f "$tmp"
+      fi
+    }
 
-  # Create settings.json with imports if it doesn't exist or doesn't have imports
-  home.activation.vicinaSettings = lib.hm.dag.entryAfter ["writeBoundary"] ''
-    SETTINGS_FILE="$HOME/.config/vicinae/settings.json"
-    if [ ! -f "$SETTINGS_FILE" ] || ! grep -q '"imports"' "$SETTINGS_FILE" 2>/dev/null; then
-      mkdir -p "$(dirname "$SETTINGS_FILE")"
-      echo '{"imports": ["base-config.json"]}' > "$SETTINGS_FILE"
-    fi
+    merge_defaults "$DMS_CONFIG/settings.json" '${builtins.toJSON dmsSettingsDefaults}'
+    merge_defaults "$DMS_STATE/session.json" '${builtins.toJSON dmsSessionDefaults}'
   '';
 
   # Virt-manager dconf settings (qemu:///system access)
@@ -263,13 +191,13 @@ in {
         "$mod, mouse:272, movewindow"
         "$mod, mouse:273, resizewindow"
       ];
-      workspace = [
-        "special:obsidian, on-created-empty:obsidian"
-      ];
       misc = {
         disable_hyprland_logo = true;
         disable_splash_rendering = true;
       };
+      source = [
+        "./dms/outputs.conf"
+      ];
       bind =
         [
           "$mod, mouse_down, exec, hyprctl -q keyword cursor:zoom_factor $(hyprctl getoption cursor:zoom_factor | awk '/^float.*/ {val = $2 * 1.2; if (val < 1) val=1; print val}')"
@@ -278,7 +206,6 @@ in {
           "$mod, SPACE, exec, wezterm"
           ", Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m active"
           "SHIFT, Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m region"
-          "$mod, X, exec, vicinae open"
           "$mod, Q, killactive"
           "$mod, T, exec, Telegram"
           "$mod, D, exec, discord"
@@ -288,7 +215,8 @@ in {
           "$mod, L, exec, dms ipc call lock lock"
           "$mod, F, fullscreen"
           "$mod, M, exec, toggleMixer"
-          "$mod, period, exec, systemctl --user start awww-random-wallpaper.service"
+          "$mod, X, exec, dms ipc call spotlight toggle"
+          "$mod, period, exec, dms ipc call wallpaper next"
 
           ", code:121, exec, toggleMic"
           # Move focus with arrow keys or hjkl
@@ -300,7 +228,6 @@ in {
           "$mod SHIFT, right, movewindow, r"
           "$mod SHIFT, up, movewindow, u"
           "$mod SHIFT, down, movewindow, d"
-          "$mod, N, togglespecialworkspace, obsidian"
           # Audio keys
           ", XF86AudioMicMute, exec, toggleMic"
           ", XF86AudioPlay, exec, playerctl play-pause"
@@ -364,43 +291,6 @@ in {
             builtins.concatLists (numWorkspaces ++ fWorkspaces ++ altWorkspaces)
         );
     };
-  };
-
-  # Hyprland-related services
-  # awww wallpaper daemon
-  services.awww.enable = true;
-
-  # Randomly cycle wallpapers every 10 minutes
-  systemd.user.services.awww-random-wallpaper = {
-    Unit = {
-      Description = "Set a random wallpaper using awww";
-      After = ["awww.service"];
-      Requires = ["awww.service"];
-    };
-    Service = {
-      Type = "oneshot";
-      Environment = "PATH=/run/current-system/sw/bin";
-      ExecStart = toString (
-        pkgs.writeShellScript "awww-random-wallpaper" ''
-          WALLPAPER_DIR="$HOME/Pictures/wallpaper"
-          if [ -d "$WALLPAPER_DIR" ] && [ "$(ls -A "$WALLPAPER_DIR")" ]; then
-            WALLPAPER=$(find -L "$WALLPAPER_DIR" -type f \( -name '*.jpg' -o -name '*.jpeg' -o -name '*.png' -o -name '*.gif' -o -name '*.bmp' -o -name '*.webp' \) | shuf -n 1)
-            if [ -n "$WALLPAPER" ]; then
-              ${pkgs.awww}/bin/awww img "$WALLPAPER" --transition-type grow --transition-pos "0.925,0.977" --transition-step 200
-            fi
-          fi
-        ''
-      );
-    };
-  };
-  systemd.user.timers.awww-random-wallpaper = {
-    Unit.Description = "Cycle wallpaper randomly every 10 minutes";
-    Timer = {
-      OnActiveSec = "0s";
-      OnUnitActiveSec = "10m";
-      Unit = "awww-random-wallpaper.service";
-    };
-    Install.WantedBy = ["awww.service"];
   };
 
   services.hypridle.enable = true;
