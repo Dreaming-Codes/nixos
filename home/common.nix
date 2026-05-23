@@ -58,11 +58,11 @@ in {
     ${mimes.bindMimes "org.kde.dolphin.desktop" ["inode/directory"]}
   '';
 
-  # Configure KDE to use wezterm as the default terminal
+  # Configure KDE to use Rio as the default terminal
   # This runs on every activation to ensure the setting is applied
   home.activation.configureKdeTerminal = lib.hm.dag.entryAfter ["writeBoundary"] ''
-    /run/current-system/sw/bin/kwriteconfig6 --file kdeglobals --group General --key TerminalApplication "wezterm"
-    /run/current-system/sw/bin/kwriteconfig6 --file kdeglobals --group General --key TerminalService "org.wezfurlong.wezterm.desktop"
+    /run/current-system/sw/bin/kwriteconfig6 --file kdeglobals --group General --key TerminalApplication "rio"
+    /run/current-system/sw/bin/kwriteconfig6 --file kdeglobals --group General --key TerminalService "rio.desktop"
   '';
 
   # Comma integration with nix-index
@@ -73,6 +73,7 @@ in {
     SSH_AUTH_SOCK = "$XDG_RUNTIME_DIR/rbw/ssh-agent-socket";
     OPENCODE_EXPERIMENTAL = "1";
     OPENCODE_EXPERIMENTAL_PLAN_MODE = "1";
+    TERMINAL = "rio";
   };
 
   # Auto-unlock rbw on graphical session start (uses pinentry-qt)
@@ -101,14 +102,17 @@ in {
     recursive = true;
   };
 
-  home.file."./.config/wezterm" = {
-    source = ../config/wezterm;
-    recursive = true;
-  };
-
   home.file."./.config/helix" = {
     source = ../config/helix;
     recursive = true;
+  };
+
+  xdg.desktopEntries.rio = {
+    name = "Rio";
+    genericName = "Terminal";
+    exec = "rio";
+    terminal = false;
+    categories = ["System" "TerminalEmulator"];
   };
 
   home.file.".config/clangd/config.yaml".source = clangdConfig;
@@ -124,7 +128,6 @@ in {
 
   programs = {
     # Shell and CLI tools
-    wezterm.enable = true;
     helix.enable = true;
 
     fzf = {
@@ -169,7 +172,7 @@ in {
           echo "╠═══════════════════════════════════════════════════════════════╣"
           echo "║  HYPRLAND                                                     ║"
           echo "╠═══════════════════════════════════════════════════════════════╣"
-          echo "║  Super+Space    Open terminal (wezterm)                       ║"
+          echo "║  Super+Space    Open terminal (rio)                           ║"
           echo "║  Super+W        Open browser (brave)                          ║"
            echo "║  Super+X        Open DMS Spotlight                            ║"
           echo "║  Super+Q        Kill active window                            ║"

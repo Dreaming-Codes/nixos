@@ -1,0 +1,23 @@
+{
+  "dankBitwarden": {
+    "enabled": true,
+    "trigger": "["
+  },
+  "dankSpotify": {
+    "enabled": true
+  },
+  "dankTranslate": {
+    "enabled": true
+  },
+  "nixMonitor": {
+    "enabled": true
+  },
+  "nixPackageRunner": {
+    "enabled": true,
+    "runInTerminal": true,
+    "terminal": "rio"
+  },
+  "razerEnergy": {
+    "enabled": true
+  }
+}

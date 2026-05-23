@@ -1,0 +1,10 @@
+{
+  "launchPrefix": "",
+  "perMonitorWallpaper": false,
+  "showThirdPartyPlugins": true,
+  "wallpaperCyclingEnabled": true,
+  "wallpaperCyclingInterval": 600,
+  "wallpaperCyclingMode": "interval",
+  "wallpaperPath": "/home/dreamingcodes/Pictures/wallpaper/42.jpg",
+  "wallpaperTransition": "fade"
+}

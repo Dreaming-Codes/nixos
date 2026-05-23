@@ -1,0 +1,181 @@
+{
+  "barConfigs": [
+    {
+      "autoHide": false,
+      "autoHideDelay": 250,
+      "borderColor": "surfaceText",
+      "borderEnabled": false,
+      "borderOpacity": 1,
+      "borderThickness": 1,
+      "bottomGap": 0,
+      "centerWidgets": [
+        "music",
+        "clock",
+        "weather"
+      ],
+      "clickThrough": false,
+      "enabled": true,
+      "fontScale": 1,
+      "gothCornerRadiusOverride": false,
+      "gothCornerRadiusValue": 12,
+      "gothCornersEnabled": false,
+      "iconScale": 1,
+      "id": "default",
+      "innerPadding": 4,
+      "leftWidgets": [
+        "launcherButton",
+        "workspaceSwitcher",
+        "focusedWindow"
+      ],
+      "maximizeDetection": true,
+      "maximizeWidgetIcons": false,
+      "maximizeWidgetText": false,
+      "name": "Main Bar",
+      "noBackground": false,
+      "openOnOverview": false,
+      "popupGapsAuto": true,
+      "popupGapsManual": 4,
+      "position": 2,
+      "removeWidgetPadding": false,
+      "rightWidgets": [
+        {
+          "enabled": true,
+          "id": "idleInhibitor"
+        },
+        {
+          "enabled": true,
+          "id": "systemTray"
+        },
+        {
+          "enabled": true,
+          "id": "clipboard"
+        },
+        {
+          "enabled": true,
+          "id": "cpuUsage"
+        },
+        {
+          "enabled": true,
+          "id": "memUsage"
+        },
+        {
+          "enabled": true,
+          "id": "notificationButton"
+        },
+        {
+          "enabled": true,
+          "id": "razerEnergy"
+        },
+        {
+          "enabled": true,
+          "id": "battery"
+        },
+        {
+          "enabled": true,
+          "id": "controlCenterButton"
+        }
+      ],
+      "screenPreferences": [
+        "all"
+      ],
+      "scrollEnabled": true,
+      "scrollXBehavior": "column",
+      "scrollYBehavior": "workspace",
+      "shadowColorMode": "text",
+      "shadowCustomColor": "#000000",
+      "shadowIntensity": 0,
+      "shadowOpacity": 60,
+      "showOnLastDisplay": true,
+      "showOnWindowsOpen": false,
+      "spacing": 0,
+      "squareCorners": true,
+      "transparency": 1,
+      "visible": true,
+      "widgetOutlineColor": "primary",
+      "widgetOutlineEnabled": false,
+      "widgetOutlineOpacity": 1,
+      "widgetOutlineThickness": 1,
+      "widgetPadding": 8,
+      "widgetTransparency": 1
+    }
+  ],
+  "controlCenterWidgets": [
+    {
+      "enabled": true,
+      "id": "volumeSlider",
+      "width": 50
+    },
+    {
+      "enabled": true,
+      "id": "brightnessSlider",
+      "width": 50
+    },
+    {
+      "enabled": true,
+      "id": "wifi",
+      "width": 50
+    },
+    {
+      "enabled": true,
+      "id": "bluetooth",
+      "width": 50
+    },
+    {
+      "enabled": true,
+      "id": "audioOutput",
+      "width": 50
+    },
+    {
+      "enabled": true,
+      "id": "audioInput",
+      "width": 50
+    },
+    {
+      "enabled": true,
+      "id": "nightMode",
+      "width": 50
+    },
+    {
+      "enabled": true,
+      "id": "darkMode",
+      "width": 50
+    }
+  ],
+  "displayNameMode": "system",
+  "displayProfileAutoSelect": false,
+  "launcherPluginOrder": [
+    "applications",
+    "dankBitwarden",
+    "dankSpotify",
+    "dankTranslate",
+    "nixPackageRunner",
+    "nixMonitor",
+    "RazerEnergy"
+  ],
+  "launcherPluginVisibility": {
+    "RazerEnergy": {
+      "allowWithoutTrigger": true
+    },
+    "dankBitwarden": {
+      "allowWithoutTrigger": true
+    },
+    "dankSpotify": {
+      "allowWithoutTrigger": true
+    },
+    "dankTranslate": {
+      "allowWithoutTrigger": true
+    },
+    "nixMonitor": {
+      "allowWithoutTrigger": true
+    },
+    "nixPackageRunner": {
+      "allowWithoutTrigger": true
+    }
+  },
+  "matugenTemplateHyprland": true,
+  "muxType": "zellij",
+  "showClipboard": true,
+  "showNotificationButton": true,
+  "useAutoLocation": true,
+  "wallpaperFillMode": "Fill"
+}

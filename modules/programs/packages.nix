@@ -68,6 +68,7 @@ in {
     wget
     any-nix-shell
     inputs.nix-alien.packages.${stdenv.hostPlatform.system}.nix-alien
+    rio
     gcc
     openssl
     pkg-config
@@ -255,7 +256,7 @@ in {
 
     EDITOR = "hx";
     VISUAL = "hx";
-    TERMINAL = "wezterm";
+    TERMINAL = "rio";
     # Hint Electron apps to use Wayland:
     NIXOS_OZONE_WL = "1";
     QT_QPA_PLATFORMTHEME = "kde";
