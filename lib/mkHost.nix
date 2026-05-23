@@ -3,6 +3,7 @@
     inputs.nixos-facter-modules.nixosModules.facter
     inputs.nur.modules.nixos.default
     inputs.home-manager.nixosModules.home-manager
+    inputs.dms-plugin-registry.modules.default
     inputs.determinate.nixosModules.default
     inputs.sops-nix.nixosModules.sops
     ../modules/dreamingoptimal
@@ -24,7 +25,6 @@ in {
           dolphin-overlay
           home-manager
           nix-index-database
-          vicinae
           ;
       };
       modules =

@@ -13,7 +13,6 @@
       "https://nix-community.cachix.org?priority=41"
       "https://attic.xuyh0120.win/lantian?priority=42"
       "https://numtide.cachix.org?priority=43"
-      "https://vicinae.cachix.org?priority=44"
       "https://cache.nixos-cuda.org?priority=45"
     ];
     extra-trusted-public-keys = [
@@ -22,7 +21,6 @@
       "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       "numtide.cachix.org-1:2ps1kLBUWjxIneOy1Ik6cQjb41X0iXVXeHigGmycPPE="
-      "vicinae.cachix.org-1:1kDrfienkGHPYbkpNj1mWTr7Fm1+zcenzgTizIcI3oc="
       "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M="
     ];
   };
@@ -36,12 +34,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixpkgs-davinci.url = "github:nixos/nixpkgs/d457818da697aa7711ff3599be23ab8850573a46";
-    vicinae = {
-      url = "github:vicinaehq/vicinae";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    vicinae-extensions = {
-      url = "github:vicinaehq/extensions";
+    dms-plugin-registry = {
+      url = "github:AvengeMedia/dms-plugin-registry";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-index-database = {

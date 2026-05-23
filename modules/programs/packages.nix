@@ -114,10 +114,6 @@ in {
     gimp3-with-plugins
 
     fvm
-    obsidian
-
-    # required for obsidian cpp code run to work
-    cling
 
     lurk
     cartero
