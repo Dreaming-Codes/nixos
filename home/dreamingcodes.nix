@@ -17,6 +17,8 @@
   dmsSessionDefaults = builtins.fromJSON (builtins.readFile ../config/dms/defaults/session.json);
   dmsPluginDefaults = builtins.fromJSON (builtins.readFile ../config/dms/defaults/plugin_settings.json);
 in {
+  xdg.configFile."hypr/hyprland.conf".force = true;
+
   # Set default applications (DreamingCodes specific)
   home.activation.dreamingCodesMimeApps = lib.hm.dag.entryAfter ["writeBoundary"] ''
     ${mimes.bindMimes "Helix.desktop" mimes.textMimes}
@@ -219,8 +221,8 @@ in {
           "$mod, mouse_up, exec, hyprctl -q keyword cursor:zoom_factor $(hyprctl getoption cursor:zoom_factor | awk '/^float.*/ {val = $2 * 0.8; if (val < 1) val=1; print val}')"
           "$mod, W, exec, brave-origin-nightly"
           "$mod, SPACE, exec, rio"
-          ", Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m active"
-          "SHIFT, Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m region"
+          ", Print, exec, dms screenshot full"
+          "SHIFT, Print, exec, dms screenshot"
           "$mod, Q, killactive"
           "$mod, T, exec, Telegram"
           "$mod, D, exec, discord"

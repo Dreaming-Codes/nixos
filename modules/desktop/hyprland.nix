@@ -49,6 +49,13 @@
         dankBitwarden.enable = true;
         dankSpotify.enable = true;
         dankTranslate.enable = true;
+        aiOverviewControl.enable = true;
+        canvasGrades.enable = true;
+        codeIsland.enable = true;
+        dmsScreenshot.enable = true;
+        dockerManager.enable = true;
+        easyEffects.enable = true;
+        githubNotifier.enable = true;
         nixMonitor.enable = true;
         nixPackageRunner.enable = true;
       }
