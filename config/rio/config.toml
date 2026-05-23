@@ -2,6 +2,11 @@
 
 confirm-before-quit = false
 
+[fonts]
+family = "FiraCode Nerd Font"
+size = 14
+
 [window]
 opacity = 0.8
+opacity-cells = true
 blur = true
