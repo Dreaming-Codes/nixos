@@ -49,15 +49,13 @@
         dankBitwarden.enable = true;
         dankSpotify.enable = true;
         dankTranslate.enable = true;
-        aiOverviewControl.enable = true;
         canvasGrades.enable = true;
-        codeIsland.enable = true;
         dmsScreenshot.enable = true;
         dockerManager.enable = true;
         easyEffects.enable = true;
         githubNotifier.enable = true;
-        nixMonitor.enable = true;
         nixPackageRunner.enable = true;
+        volumeMixer.enable = true;
       }
       // lib.optionalAttrs (config.networking.hostName == "DreamingBlade") {
         RazerEnergy = {
@@ -67,9 +65,17 @@
       };
   };
 
+  systemd.user.services.dms.environment = let
+    qt5CompatQmlPath = "${pkgs.qt6.qt5compat}/lib/qt-6/qml";
+  in {
+    QML2_IMPORT_PATH = qt5CompatQmlPath;
+    QML_IMPORT_PATH = qt5CompatQmlPath;
+  };
+
   environment.systemPackages = with pkgs; [
     jq
     ncspot
+    qt6.qt5compat
     rbw
     translate-shell
     wl-clipboard

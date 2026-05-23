@@ -1,4 +1,7 @@
 {
+  "canvasGrades": {
+    "enabled": true
+  },
   "dankBitwarden": {
     "enabled": true,
     "trigger": "["
@@ -9,7 +12,20 @@
   "dankTranslate": {
     "enabled": true
   },
-  "nixMonitor": {
+  "dmsScreenshot": {
+    "enabled": true,
+    "saveToDisk": false,
+    "stdout": false
+  },
+  "dockerManager": {
+    "enabled": true
+  },
+  "easyEffects": {
+    "currentInputIndex": 0,
+    "currentOutputIndex": -1,
+    "enabled": true
+  },
+  "githubNotifier": {
     "enabled": true
   },
   "nixPackageRunner": {
@@ -18,39 +34,11 @@
     "terminal": "rio"
   },
   "razerEnergy": {
+    "customCpuBoost": 3,
+    "customGpuBoost": 2,
     "enabled": true
   },
-  "dockerManager": {
-    "enabled": true
-  },
-  "codeIsland": {
-    "enabled": true
-  },
-  "githubNotifier": {
-    "enabled": true
-  },
-  "canvasGrades": {
-    "enabled": true
-  },
-  "easyEffects": {
-    "enabled": true
-  },
-  "dmsScreenshot": {
-    "enabled": true,
-    "mode": "interactive",
-    "showPointer": true,
-    "saveToDisk": true,
-    "format": "png",
-    "quality": 90,
-    "copyToClipboard": true,
-    "showNotify": true,
-    "showToast": true,
-    "stdout": false,
-    "pipeCommand": "",
-    "filename": "",
-    "delaySeconds": 0
-  },
-  "aiOverviewControl": {
+  "volumeMixer": {
     "enabled": true
   }
 }
