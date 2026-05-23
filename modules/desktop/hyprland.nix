@@ -1,4 +1,9 @@
-{pkgs, ...}: {
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}: {
   services.envfs.enable = true;
 
   services.xserver.enable = true;
@@ -31,7 +36,33 @@
   programs.hyprland = {
     enable = true;
   };
-  # hyprlock replaced by quickshell session lock
+
+  programs.dms-shell = {
+    enable = true;
+    systemd = {
+      enable = true;
+      restartIfChanged = true;
+    };
+    enableClipboardPaste = true;
+    plugins =
+      {
+        OpenTrackerBar = {
+          enable = true;
+          src = pkgs.fetchFromGitHub {
+            owner = "wsmajt";
+            repo = "OpenTrackerBar";
+            rev = "f0983f06797e7f826802bfeee9fc46303381f521";
+            hash = "sha256-o9+eXvGQTjK7R4j2cXVuOuohcgNxPgVONW8PF8OBFbA=";
+          };
+        };
+      }
+      // lib.optionalAttrs (config.networking.hostName == "DreamingBlade") {
+        RazerEnergy = {
+          enable = true;
+          src = ../../config/dms-plugins/RazerEnergy;
+        };
+      };
+  };
 
   services.xserver.xkb = {
     layout = "us";

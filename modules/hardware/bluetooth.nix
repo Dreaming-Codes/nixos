@@ -108,6 +108,4 @@ in {
       RestartSec = 5;
     };
   };
-
-  environment.systemPackages = [pkgs.overskride];
 }

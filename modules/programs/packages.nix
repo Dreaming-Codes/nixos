@@ -100,8 +100,6 @@ in {
 
     claude-code
 
-    quickshell
-
     socat
 
     (pantheon.switchboard-with-plugs.override {
@@ -110,7 +108,6 @@ in {
         pantheon.switchboard-plug-network
         pantheon.switchboard-plug-sound
         pantheon.switchboard-plug-printers
-        pantheon.switchboard-plug-bluetooth
       ];
     })
 

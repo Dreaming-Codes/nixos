@@ -51,10 +51,6 @@ in {
           type = "Doc-View";
         }
         {
-          name = "quickshell";
-          type = "LowLatency_RT";
-        }
-        {
           name = "ssh";
           type = "LowLatency_RT";
         }
@@ -108,10 +104,6 @@ in {
         }
         {
           name = "psimon";
-          type = "BG_CPUIO";
-        }
-        {
-          name = "razer-power";
           type = "BG_CPUIO";
         }
         {

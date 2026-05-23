@@ -6,6 +6,7 @@
   ...
 }: let
   ci-keyboard-leds = pkgs.callPackage ../../packages/ci-keyboard-leds {};
+  razer-energy = pkgs.writeShellScriptBin "razer-energy" (builtins.readFile ../../scripts/razer-energy.sh);
   razer-laptop-control =
     inputs.razer-laptop-controller.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs
     (old: {
@@ -45,7 +46,10 @@ in {
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
-  environment.systemPackages = with pkgs; [nrfutil];
+  environment.systemPackages = [
+    pkgs.nrfutil
+    razer-energy
+  ];
   nixpkgs.config.segger-jlink.acceptLicense = true;
 
   home-manager.users.dreamingcodes = {
@@ -70,7 +74,7 @@ in {
     wayland.windowManager.hyprland = {
       settings = {
         bindl = [
-          ",switch:off:Lid Switch, exec, qs-lock"
+          ",switch:off:Lid Switch, exec, dms ipc call lock lock"
         ];
         env = [
           "AQ_DRM_DEVICES,/dev/dri/card0:/dev/dri/card1"
