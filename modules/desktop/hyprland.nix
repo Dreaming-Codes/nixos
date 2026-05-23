@@ -51,7 +51,6 @@
         dankTranslate.enable = true;
         nixMonitor.enable = true;
         nixPackageRunner.enable = true;
-        openTrackerBar.enable = true;
       }
       // lib.optionalAttrs (config.networking.hostName == "DreamingBlade") {
         RazerEnergy = {

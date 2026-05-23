@@ -13,44 +13,9 @@
     exec ${pkgs.bun}/bin/bunx opencode-ai@latest "$@"
   '';
   mimes = import ../lib/mimes.nix;
-  dmsSettingsDefaults = {
-    currentThemeName = "blue";
-    displayNameMode = "system";
-    displayProfileAutoSelect = false;
-    launcherPluginOrder = [
-      "applications"
-      "dankBitwarden"
-      "dankSpotify"
-      "dankTranslate"
-      "nixPackageRunner"
-      "nixMonitor"
-      "openTrackerBar"
-      "RazerEnergy"
-    ];
-    launcherPluginVisibility = {
-      dankBitwarden.allowWithoutTrigger = true;
-      dankSpotify.allowWithoutTrigger = true;
-      dankTranslate.allowWithoutTrigger = true;
-      nixPackageRunner.allowWithoutTrigger = true;
-      nixMonitor.allowWithoutTrigger = true;
-      openTrackerBar.allowWithoutTrigger = true;
-      RazerEnergy.allowWithoutTrigger = true;
-    };
-    matugenTemplateHyprland = true;
-    showClipboard = true;
-    showNotificationButton = true;
-    wallpaperFillMode = "Fill";
-  };
-  dmsSessionDefaults = {
-    launchPrefix = "";
-    perMonitorWallpaper = false;
-    showThirdPartyPlugins = true;
-    wallpaperCyclingEnabled = true;
-    wallpaperCyclingInterval = 600;
-    wallpaperCyclingMode = "interval";
-    wallpaperPath = "/home/dreamingcodes/Pictures/wallpaper/42.jpg";
-    wallpaperTransition = "fade";
-  };
+  dmsSettingsDefaults = builtins.fromJSON (builtins.readFile ../config/dms/defaults/settings.json);
+  dmsSessionDefaults = builtins.fromJSON (builtins.readFile ../config/dms/defaults/session.json);
+  dmsPluginDefaults = builtins.fromJSON (builtins.readFile ../config/dms/defaults/plugin_settings.json);
 in {
   # Set default applications (DreamingCodes specific)
   home.activation.dreamingCodesMimeApps = lib.hm.dag.entryAfter ["writeBoundary"] ''
@@ -123,7 +88,60 @@ in {
     }
 
     merge_defaults "$DMS_CONFIG/settings.json" '${builtins.toJSON dmsSettingsDefaults}'
+    merge_defaults "$DMS_CONFIG/plugin_settings.json" '${builtins.toJSON dmsPluginDefaults}'
     merge_defaults "$DMS_STATE/session.json" '${builtins.toJSON dmsSessionDefaults}'
+  '';
+
+  home.file.".face.icon".source = ../config/hypr/dreamingcodes.jpeg;
+
+  home.activation.dmsProfileImage = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    PROFILE_IMAGE="$HOME/.config/hypr/dreamingcodes.jpeg"
+    if [ -e "$PROFILE_IMAGE" ] && command -v busctl >/dev/null 2>&1; then
+      busctl --system call \
+        org.freedesktop.Accounts \
+        /org/freedesktop/Accounts/User$(id -u) \
+        org.freedesktop.Accounts.User \
+        SetIconFile s "$PROFILE_IMAGE" >/dev/null 2>&1 || true
+    fi
+  '';
+
+  home.activation.hyprlandDmsIncludes = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    HYPR_DIR="$HOME/.config/hypr"
+    HYPR_CONF="$HYPR_DIR/hyprland.conf"
+    DMS_DIR="$HYPR_DIR/dms"
+    mkdir -p "$DMS_DIR"
+    touch \
+      "$DMS_DIR/binds.conf" \
+      "$DMS_DIR/colors.conf" \
+      "$DMS_DIR/cursor.conf" \
+      "$DMS_DIR/layout.conf" \
+      "$DMS_DIR/outputs.conf" \
+      "$DMS_DIR/windowrules.conf"
+
+    if [ -L "$HYPR_CONF" ]; then
+      GENERATED="$(${pkgs.coreutils}/bin/readlink -f "$HYPR_CONF")"
+      TMP="$(${pkgs.coreutils}/bin/mktemp)"
+      ${pkgs.coreutils}/bin/cp "$GENERATED" "$TMP"
+      ${pkgs.coreutils}/bin/mv "$TMP" "$HYPR_CONF"
+      ${pkgs.coreutils}/bin/chmod u+w "$HYPR_CONF"
+    elif [ -e "$HYPR_CONF" ]; then
+      ${pkgs.coreutils}/bin/chmod u+w "$HYPR_CONF"
+    fi
+
+    ensure_source() {
+      line="$1"
+      target="$2"
+      if ! ${pkgs.gnugrep}/bin/grep -Eq "^[[:space:]]*source[[:space:]]*=[[:space:]]*\\./dms/$target[[:space:]]*$" "$HYPR_CONF"; then
+        printf '\n%s\n' "$line" >> "$HYPR_CONF"
+      fi
+    }
+
+    ensure_source "source = ./dms/colors.conf" "colors.conf"
+    ensure_source "source = ./dms/cursor.conf" "cursor.conf"
+    ensure_source "source = ./dms/layout.conf" "layout.conf"
+    ensure_source "source = ./dms/outputs.conf" "outputs.conf"
+    ensure_source "source = ./dms/windowrules.conf" "windowrules.conf"
+    ensure_source "source = ./dms/binds.conf" "binds.conf"
   '';
 
   # Virt-manager dconf settings (qemu:///system access)
@@ -195,15 +213,12 @@ in {
         disable_hyprland_logo = true;
         disable_splash_rendering = true;
       };
-      source = [
-        "./dms/outputs.conf"
-      ];
       bind =
         [
           "$mod, mouse_down, exec, hyprctl -q keyword cursor:zoom_factor $(hyprctl getoption cursor:zoom_factor | awk '/^float.*/ {val = $2 * 1.2; if (val < 1) val=1; print val}')"
           "$mod, mouse_up, exec, hyprctl -q keyword cursor:zoom_factor $(hyprctl getoption cursor:zoom_factor | awk '/^float.*/ {val = $2 * 0.8; if (val < 1) val=1; print val}')"
           "$mod, W, exec, brave-origin-nightly"
-          "$mod, SPACE, exec, wezterm"
+          "$mod, SPACE, exec, rio"
           ", Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m active"
           "SHIFT, Print, exec, ${pkgs.hyprshot}/bin/hyprshot -m region"
           "$mod, Q, killactive"
@@ -291,6 +306,14 @@ in {
             builtins.concatLists (numWorkspaces ++ fWorkspaces ++ altWorkspaces)
         );
     };
+    extraConfig = ''
+      source = ./dms/colors.conf
+      source = ./dms/cursor.conf
+      source = ./dms/layout.conf
+      source = ./dms/outputs.conf
+      source = ./dms/windowrules.conf
+      source = ./dms/binds.conf
+    '';
   };
 
   services.hypridle.enable = true;
