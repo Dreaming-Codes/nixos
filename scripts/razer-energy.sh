@@ -82,6 +82,27 @@ read_mode() {
   printf '%s\n' "$output" | sed -n 's/.*pwr: \([0-9]\+\).*/\1/p' | head -n1
 }
 
+read_state() {
+  local source output pwr cpu gpu pwr_display cpu_display gpu_display
+  source="$(normalize_source "${1:-current}")"
+  output="$("$RAZER_CLI" read power "$source" 2>/dev/null)"
+  pwr="$(printf '%s\n' "$output" | sed -n 's/.*pwr: \([0-9]\+\).*/\1/p' | head -n1)"
+  cpu="$(printf '%s\n' "$output" | sed -n 's/.*cpu: \([0-9]\+\).*/\1/p' | head -n1)"
+  gpu="$(printf '%s\n' "$output" | sed -n 's/.*gpu: \([0-9]\+\).*/\1/p' | head -n1)"
+  pwr_display="$(printf '%s\n' "$output" | sed -n 's/^Current power setting: //p' | head -n1)"
+  cpu_display="$(printf '%s\n' "$output" | sed -n 's/^Current CPU setting: //p' | head -n1)"
+  gpu_display="$(printf '%s\n' "$output" | sed -n 's/^Current GPU setting: //p' | head -n1)"
+
+  [ -n "$pwr" ] || return 1
+  [ -n "$cpu" ] || cpu=null
+  [ -n "$gpu" ] || gpu=null
+  [ -n "$pwr_display" ] || pwr_display="$(mode_display "$pwr")"
+  [ -n "$cpu_display" ] || cpu_display="Unknown"
+  [ -n "$gpu_display" ] || gpu_display="Unknown"
+
+  printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$pwr" "$cpu" "$gpu" "$pwr_display" "$cpu_display" "$gpu_display"
+}
+
 write_mode() {
   local source mode
   source="$(normalize_source "${1:-current}")"
@@ -97,28 +118,36 @@ write_mode() {
 }
 
 json_status() {
-  local source ac_mode bat_mode current_mode
+  local source ac_state bat_state current_state
+  local ac_mode ac_cpu ac_gpu ac_display ac_cpu_display ac_gpu_display
+  local bat_mode bat_cpu bat_gpu bat_display bat_cpu_display bat_gpu_display
+  local current_mode current_cpu current_gpu current_display current_cpu_display current_gpu_display
   source="$(current_source)"
-  ac_mode="$(read_mode ac || true)"
-  bat_mode="$(read_mode bat || true)"
+  ac_state="$(read_state ac || true)"
+  bat_state="$(read_state bat || true)"
 
-  if [ -z "$ac_mode" ] || [ -z "$bat_mode" ]; then
+  if [ -z "$ac_state" ] || [ -z "$bat_state" ]; then
     printf '{"ok":false,"text":"!","alt":"error","error":"failed to read Razer power state"}\n'
     return 1
   fi
 
-  if [ "$source" = "ac" ]; then
-    current_mode="$ac_mode"
-  else
-    current_mode="$bat_mode"
-  fi
+  IFS=$'\t' read -r ac_mode ac_cpu ac_gpu ac_display ac_cpu_display ac_gpu_display <<<"$ac_state"
+  IFS=$'\t' read -r bat_mode bat_cpu bat_gpu bat_display bat_cpu_display bat_gpu_display <<<"$bat_state"
 
-  printf '{"ok":true,"text":"%s","alt":"%s","source":"%s","ac":{"mode":%s,"name":"%s","display":"%s"},"bat":{"mode":%s,"name":"%s","display":"%s"}}\n' \
-    "$(mode_display "$current_mode")" \
+  if [ "$source" = "ac" ]; then
+    current_state="$ac_state"
+  else
+    current_state="$bat_state"
+  fi
+  IFS=$'\t' read -r current_mode current_cpu current_gpu current_display current_cpu_display current_gpu_display <<<"$current_state"
+
+  printf '{"ok":true,"text":"%s","alt":"%s","source":"%s","cpu":%s,"gpu":%s,"cpuDisplay":"%s","gpuDisplay":"%s","ac":{"mode":%s,"cpu":%s,"gpu":%s,"name":"%s","display":"%s","cpuDisplay":"%s","gpuDisplay":"%s"},"bat":{"mode":%s,"cpu":%s,"gpu":%s,"name":"%s","display":"%s","cpuDisplay":"%s","gpuDisplay":"%s"}}\n' \
+    "$current_display" \
     "$(mode_name "$current_mode")" \
     "$source" \
-    "$ac_mode" "$(mode_name "$ac_mode")" "$(mode_display "$ac_mode")" \
-    "$bat_mode" "$(mode_name "$bat_mode")" "$(mode_display "$bat_mode")"
+    "$current_cpu" "$current_gpu" "$current_cpu_display" "$current_gpu_display" \
+    "$ac_mode" "$ac_cpu" "$ac_gpu" "$(mode_name "$ac_mode")" "$ac_display" "$ac_cpu_display" "$ac_gpu_display" \
+    "$bat_mode" "$bat_cpu" "$bat_gpu" "$(mode_name "$bat_mode")" "$bat_display" "$bat_cpu_display" "$bat_gpu_display"
 }
 
 toggle_mode() {

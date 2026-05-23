@@ -15,11 +15,34 @@ PluginComponent {
     property string powerSource: "ac"
     property string acDisplay: "--"
     property string batDisplay: "--"
+    property string cpuDisplay: "--"
+    property string gpuDisplay: "--"
+    property string acCpuDisplay: "--"
+    property string acGpuDisplay: "--"
+    property string batCpuDisplay: "--"
+    property string batGpuDisplay: "--"
+    property int cpuBoost: -1
+    property int gpuBoost: -1
+    property int acCpuBoost: -1
+    property int acGpuBoost: -1
+    property int batCpuBoost: -1
+    property int batGpuBoost: -1
+    property int gpuBoostMax: 2
     property string statusBuffer: ""
     property string actionLabel: ""
     property string errorText: ""
-    property int customCpuBoost: parseInt(pluginData.customCpuBoost ?? 3)
-    property int customGpuBoost: parseInt(pluginData.customGpuBoost ?? 2)
+    property int customCpuBoost: clampBoost(parseInt(pluginData.customCpuBoost ?? 2), 0, 3)
+    property int customGpuBoost: clampBoost(parseInt(pluginData.customGpuBoost ?? 2), 0, gpuBoostMax)
+
+    function clampBoost(value, minValue, maxValue) {
+        if (isNaN(value))
+            return maxValue
+        return Math.max(minValue, Math.min(maxValue, value))
+    }
+
+    function boostOptions(kind) {
+        return kind === "gpu" ? [0, 1, 2] : [0, 1, 2, 3]
+    }
 
     function customArgs() {
         var raw = (pluginData.customPowerArgs || "").trim()
@@ -29,6 +52,7 @@ PluginComponent {
     }
 
     function setCustomBoost(kind, value) {
+        value = clampBoost(value, 0, kind === "gpu" ? gpuBoostMax : 3)
         if (kind === "cpu")
             customCpuBoost = value
         else
@@ -83,6 +107,18 @@ PluginComponent {
                     root.powerSource = data.source || "ac"
                     root.acDisplay = data.ac ? data.ac.display : "--"
                     root.batDisplay = data.bat ? data.bat.display : "--"
+                    root.cpuBoost = data.cpu ?? -1
+                    root.gpuBoost = data.gpu ?? -1
+                    root.cpuDisplay = data.cpuDisplay || "--"
+                    root.gpuDisplay = data.gpuDisplay || "--"
+                    root.acCpuBoost = data.ac ? data.ac.cpu : -1
+                    root.acGpuBoost = data.ac ? data.ac.gpu : -1
+                    root.batCpuBoost = data.bat ? data.bat.cpu : -1
+                    root.batGpuBoost = data.bat ? data.bat.gpu : -1
+                    root.acCpuDisplay = data.ac ? data.ac.cpuDisplay : "--"
+                    root.acGpuDisplay = data.ac ? data.ac.gpuDisplay : "--"
+                    root.batCpuDisplay = data.bat ? data.bat.cpuDisplay : "--"
+                    root.batGpuDisplay = data.bat ? data.bat.gpuDisplay : "--"
                     root.errorText = data.error || ""
                 } catch (e) {
                     root.ok = false
@@ -202,9 +238,25 @@ PluginComponent {
                         }
 
                         StyledText {
-                            text: "AC: " + root.acDisplay + "   Battery: " + root.batDisplay
+                            text: "CPU: " + root.cpuDisplay + " (" + root.cpuBoost + ")   GPU: " + root.gpuDisplay + " (" + root.gpuBoost + ")"
                             color: Theme.surfaceVariantText
                             font.pixelSize: Theme.fontSizeSmall
+                        }
+
+                        StyledText {
+                            width: parent.width
+                            text: "AC: " + root.acDisplay + "  CPU " + root.acCpuDisplay + " (" + root.acCpuBoost + ")  GPU " + root.acGpuDisplay + " (" + root.acGpuBoost + ")"
+                            color: Theme.surfaceVariantText
+                            font.pixelSize: Theme.fontSizeSmall
+                            wrapMode: Text.WordWrap
+                        }
+
+                        StyledText {
+                            width: parent.width
+                            text: "Battery: " + root.batDisplay + "  CPU " + root.batCpuDisplay + " (" + root.batCpuBoost + ")  GPU " + root.batGpuDisplay + " (" + root.batGpuBoost + ")"
+                            color: Theme.surfaceVariantText
+                            font.pixelSize: Theme.fontSizeSmall
+                            wrapMode: Text.WordWrap
                         }
 
                         StyledText {
@@ -310,7 +362,7 @@ PluginComponent {
                                 }
 
                                 Repeater {
-                                    model: [0, 1, 2, 3]
+                                    model: root.boostOptions(boostRow.modelData.kind)
 
                                     StyledRect {
                                         required property int modelData
