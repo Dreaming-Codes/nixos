@@ -1,0 +1,48 @@
+input {
+    keyboard {
+        xkb {
+            layout "us"
+            variant "intl"
+        }
+    }
+
+    touchpad {
+        tap
+        natural-scroll
+        drag false
+    }
+
+    tablet {
+        map-to-output "current"
+    }
+}
+
+prefer-no-csd
+
+screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
+
+window-rule {
+    match app-id=r#"^org\.wezfurlong\.wezterm$"#
+    default-column-width {}
+}
+
+window-rule {
+    match app-id=r#"firefox$"# title="^Picture-in-Picture$"
+    open-floating true
+}
+
+window-rule {
+    match app-id=r#"^xwaylandvideobridge$"#
+    opacity 0.0
+    open-floating true
+    default-column-width { fixed 1; }
+    default-window-height { fixed 1; }
+}
+
+include "dms/colors.kdl"
+include "dms/cursor.kdl"
+include "dms/layout.kdl"
+include "dms/alttab.kdl"
+include "dms/outputs.kdl"
+include "dms/windowrules.kdl"
+include "dms/binds.kdl"

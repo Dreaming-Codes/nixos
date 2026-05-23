@@ -9,6 +9,7 @@
     ../modules/hardware/bluetooth.nix
     ../modules/hardware/graphics.nix
     ../modules/desktop/hyprland.nix
+    ../modules/desktop/niri.nix
     ../modules/desktop/fonts.nix
     ../modules/desktop/xdg.nix
     ../modules/services/docker.nix
