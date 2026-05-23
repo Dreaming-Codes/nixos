@@ -1,0 +1,12 @@
+{
+  "id": "razerEnergy",
+  "name": "Razer Energy",
+  "description": "Razer laptop power mode controls for DankMaterialShell",
+  "version": "1.0.0",
+  "author": "dreamingcodes",
+  "type": "widget",
+  "component": "./RazerEnergyWidget.qml",
+  "settings": "./RazerEnergySettings.qml",
+  "icon": "bolt",
+  "permissions": ["process", "settings_read", "settings_write"]
+}

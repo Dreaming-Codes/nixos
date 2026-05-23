@@ -10,8 +10,6 @@
   toggleMixer = pkgs.writeShellScriptBin "toggleMixer" (builtins.readFile ../scripts/mixer.sh);
   vibeMerge = pkgs.writeShellScriptBin "vibe-merge" (builtins.readFile ../scripts/vibeMerge.sh);
   vibeCommit = pkgs.writeShellScriptBin "vibe-commit" (builtins.readFile ../scripts/vibeCommit.sh);
-  razerPower = pkgs.writeShellScriptBin "razer-power" (builtins.readFile ../scripts/razerpower.sh);
-  qsLock = pkgs.writeShellScriptBin "qs-lock" (builtins.readFile ../scripts/qs-lock.sh);
   opencode = pkgs.writeShellScriptBin "opencode" ''
     exec ${pkgs.bun}/bin/bunx opencode-ai@latest "$@"
   '';
@@ -286,8 +284,8 @@ in {
           "$mod, D, exec, discord"
           "$mod, S, exec, signal-desktop"
           "$mod, O, togglefloating"
-          "$mod, C, exec, vicinae deeplink vicinae://extensions/vicinae/clipboard/history"
-          "$mod, L, exec, qs-lock"
+          "$mod, C, exec, dms ipc call clipboard toggle"
+          "$mod, L, exec, dms ipc call lock lock"
           "$mod, F, fullscreen"
           "$mod, M, exec, toggleMixer"
           "$mod, period, exec, systemctl --user start awww-random-wallpaper.service"
@@ -405,13 +403,11 @@ in {
     Install.WantedBy = ["awww.service"];
   };
 
-  # swaync replaced by quickshell notification server
-
   services.hypridle.enable = true;
   services.hypridle.settings = {
     general = {
-      lock_cmd = "qs-lock";
-      before_sleep_cmd = "qs-lock";
+      lock_cmd = "dms ipc call lock lock";
+      before_sleep_cmd = "dms ipc call lock lock";
       after_sleep_cmd = "hyprctl dispatch dpms on";
     };
 
@@ -423,7 +419,7 @@ in {
       }
       {
         timeout = 300;
-        on-timeout = "qs-lock";
+        on-timeout = "dms ipc call lock lock";
       }
       {
         timeout = 330;
@@ -442,27 +438,6 @@ in {
       After = lib.mkForce ["hyprland-session.target"];
     };
     Install.WantedBy = lib.mkForce ["hyprland-session.target"];
-  };
-
-  systemd.user.services.quickshell = {
-    Unit = {
-      Description = "QuickShell";
-      PartOf = ["hyprland-session.target"];
-      After = ["hyprland-session.target"];
-    };
-    Install = {
-      WantedBy = ["hyprland-session.target"];
-    };
-    Service = {
-      ExecStart = "/run/current-system/sw/bin/quickshell";
-      Environment = "QS_PLATFORM=${
-        if osConfig.networking.hostName == "DreamingBlade"
-        then "blade"
-        else "desk"
-      }";
-      Restart = "on-failure";
-      Type = "simple";
-    };
   };
 
   systemd.user.services.codex-remote-control = {
@@ -531,8 +506,6 @@ in {
     toggleMixer
     vibeMerge
     vibeCommit
-    razerPower
-    qsLock
     opencode
   ];
 
@@ -552,11 +525,6 @@ in {
   };
 
   # DreamingCodes-specific config files
-  home.file."./.config/quickshell" = {
-    source = ../config/quickshell;
-    recursive = true;
-  };
-
   home.file."./.config/hypr" = {
     source = ../config/hypr;
     recursive = true;
