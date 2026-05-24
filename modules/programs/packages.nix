@@ -32,7 +32,10 @@
     buildInputs = [pkgs.openssl];
   };
 in {
-  programs.fish.enable = true;
+  programs.fish = {
+    enable = true;
+    generateCompletions = false;
+  };
 
   programs.appimage = {
     enable = true;
@@ -69,6 +72,9 @@ in {
     any-nix-shell
     inputs.nix-alien.packages.${stdenv.hostPlatform.system}.nix-alien
     rio
+    adw-gtk3
+    kdePackages.qt6ct
+    libsForQt5.qt5ct
     gcc
     openssl
     pkg-config
@@ -259,7 +265,9 @@ in {
     TERMINAL = "rio";
     # Hint Electron apps to use Wayland:
     NIXOS_OZONE_WL = "1";
+    GTK_THEME = "adw-gtk3-dark";
     QT_QPA_PLATFORMTHEME = "kde";
+    QT_QPA_PLATFORMTHEME_QT6 = "kde";
 
     # sops-nix: point to age identity for encrypting/decrypting secrets
     SOPS_AGE_KEY_FILE = "/home/dreamingcodes/.nixos/secrets/identity.age";

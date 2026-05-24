@@ -70,6 +70,10 @@
   in {
     QML2_IMPORT_PATH = qt5CompatQmlPath;
     QML_IMPORT_PATH = qt5CompatQmlPath;
+    QT_QPA_PLATFORMTHEME = "kde";
+    QT_QPA_PLATFORMTHEME_QT6 = "kde";
+    GTK_THEME = "adw-gtk3-dark";
+    DMS_DEFAULT_LAUNCH_PREFIX = "systemd-run --user --scope --collect --same-dir";
   };
 
   environment.systemPackages = with pkgs; [
