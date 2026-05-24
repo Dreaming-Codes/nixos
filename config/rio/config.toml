@@ -5,6 +5,11 @@ confirm-before-quit = false
 [fonts]
 size = 14
 use-drawable-chars = true
+symbol-map = [
+  { start = "2800", end = "28FF", font-family = "DejaVu Sans Mono" },
+  { start = "E000", end = "F8FF", font-family = "Symbols Nerd Font Mono" },
+  { start = "F0000", end = "F2FFF", font-family = "Symbols Nerd Font Mono" },
+]
 
 [fonts.regular]
 family = "FiraCode Nerd Font"
