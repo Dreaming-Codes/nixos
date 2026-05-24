@@ -113,7 +113,10 @@ in {
     recursive = true;
   };
 
-  home.file."./.config/rio/config.toml".source = ../config/rio/config.toml;
+  home.file."./.config/rio/config.toml" = {
+    source = ../config/rio/config.toml;
+    force = true;
+  };
 
   xdg.desktopEntries.rio = {
     name = "Rio";
