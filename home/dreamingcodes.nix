@@ -69,6 +69,7 @@
   dmsPluginDefaults = builtins.fromJSON (builtins.readFile ../config/dms/defaults/plugin_settings.json);
 in {
   xdg.configFile."hypr/hyprland.conf".force = true;
+  xdg.configFile."btop/btop.conf".force = true;
 
   # Set default applications (DreamingCodes specific)
   home.activation.dreamingCodesMimeApps = lib.hm.dag.entryAfter ["writeBoundary"] ''
@@ -726,6 +727,18 @@ in {
     yazi = {
       enable = true;
       enableFishIntegration = true;
+    };
+
+    btop = {
+      enable = true;
+      settings = {
+        graph_symbol = "block";
+        graph_symbol_cpu = "block";
+        graph_symbol_gpu = "block";
+        graph_symbol_mem = "block";
+        graph_symbol_net = "block";
+        graph_symbol_proc = "block";
+      };
     };
 
     git = {
