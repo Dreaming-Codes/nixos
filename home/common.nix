@@ -91,6 +91,12 @@ in {
     Install.WantedBy = ["graphical-session.target"];
   };
 
+  home.activation.rbwSessionTimeout = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    if [ -x ${pkgs.rbw}/bin/rbw ]; then
+      ${pkgs.rbw}/bin/rbw config set lock_timeout 31536000
+    fi
+  '';
+
   # Common session paths
   home.sessionPath = [
     "${config.home.homeDirectory}/.local/bin"

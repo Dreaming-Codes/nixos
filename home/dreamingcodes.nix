@@ -182,6 +182,11 @@ in {
       autoconnect = ["qemu:///system"];
       uris = ["qemu:///system"];
     };
+    "org/gnome/desktop/interface" = {
+      color-scheme = "prefer-dark";
+      gtk-theme = "adw-gtk3-dark";
+      icon-theme = "breeze-dark";
+    };
   };
 
   programs.obs-studio.enable = true;
@@ -412,15 +417,15 @@ in {
     };
   };
 
-  # KWallet daemon for auto-unlock with Hyprland
+  # KWallet daemon for auto-unlock in Wayland sessions
   systemd.user.services.kwallet-pam = {
     Unit = {
       Description = "KWallet PAM Auto-unlock";
-      PartOf = ["hyprland-session.target"];
-      After = ["hyprland-session.target"];
+      PartOf = ["graphical-session.target"];
+      After = ["graphical-session.target"];
     };
     Install = {
-      WantedBy = ["hyprland-session.target"];
+      WantedBy = ["graphical-session.target"];
     };
     Service = {
       ExecStart = "${pkgs.kdePackages.kwallet-pam}/libexec/pam_kwallet_init";
