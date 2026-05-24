@@ -5,7 +5,6 @@
   ...
 }: {
   imports = [
-    ../../modules/desktop/sddm
     ../../modules/users/riccardo.nix
   ];
 
@@ -41,8 +40,6 @@
     capSysAdmin = true;
     openFirewall = true;
   };
-
-  services.displayManager.sddm.wayland.enable = lib.mkForce false;
 
   services.openssh = {
     enable = true;

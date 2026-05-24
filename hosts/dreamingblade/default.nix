@@ -158,8 +158,12 @@ in {
     linux-enable-ir-emitter.enable = true;
   };
   security.pam.howdy.enable = true;
-  security.pam.services.sddm.howdy.enable = false;
   security.pam.services.login.howdy.enable = false;
+  security.pam.services.greetd.howdy.enable = false;
+  security.pam.services.dms-greeter.howdy.enable = false;
+  security.pam.services.dankshell = {};
+  security.pam.services.dankshell.rules.auth.howdy.control = lib.mkForce "sufficient";
+  security.pam.services.dankshell.rules.auth.howdy.order = lib.mkForce 13000;
 
   services.razer-laptop-control = {
     enable = true;

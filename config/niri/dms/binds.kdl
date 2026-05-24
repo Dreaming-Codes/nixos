@@ -3,7 +3,7 @@ binds {
     Mod+Space hotkey-overlay-title="Terminal" { spawn "rio"; }
     Mod+X hotkey-overlay-title="Launcher" { spawn "dms" "ipc" "call" "spotlight" "toggle"; }
     Mod+C hotkey-overlay-title="Clipboard" { spawn "dms" "ipc" "call" "clipboard" "toggle"; }
-    Mod+Alt+L hotkey-overlay-title="Lock" { spawn "dms" "ipc" "call" "lock" "lock"; }
+    Mod+L hotkey-overlay-title="Lock" { spawn "dms" "ipc" "call" "lock" "lock"; }
     Mod+Comma hotkey-overlay-title="Settings" { spawn "dms" "ipc" "call" "settings" "focusOrToggle"; }
     Mod+Slash hotkey-overlay-title="Keybinds" { spawn "dms" "ipc" "call" "keybinds" "toggle" "niri"; }
     Mod+Period hotkey-overlay-title="Next Wallpaper" { spawn "dms" "ipc" "call" "wallpaper" "next"; }
@@ -31,7 +31,6 @@ binds {
     Mod+Up { focus-window-up; }
     Mod+Down { focus-window-down; }
     Mod+H { focus-column-left; }
-    Mod+L { focus-column-right; }
     Mod+K { focus-window-up; }
     Mod+J { focus-window-down; }
 

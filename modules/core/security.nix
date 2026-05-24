@@ -17,7 +17,11 @@
   security.rtkit.enable = true;
   security.sudo-rs.enable = true;
   security.sudo-rs.wheelNeedsPassword = false;
-  security.pam.services.login.enableKwallet = true;
+  security.pam.services.login.kwallet.enable = true;
+  security.pam.services.greetd.kwallet = {
+    enable = true;
+    forceRun = true;
+  };
   # fscrypt for home folder encryption
   security.pam.enableFscrypt = true;
   security.pam.loginLimits = [
