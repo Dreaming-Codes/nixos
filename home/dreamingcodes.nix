@@ -12,6 +12,57 @@
   opencode = pkgs.writeShellScriptBin "opencode" ''
     exec ${pkgs.bun}/bin/bunx opencode-ai@latest "$@"
   '';
+  syncDmsKdeColors = pkgs.writeShellScriptBin "sync-dms-kde-colors" ''
+    set -euo pipefail
+
+    home_dir="''${HOME:-/home/dreamingcodes}"
+    kde_color_scheme="$home_dir/.local/share/color-schemes/DankMatugen.colors"
+    kdeglobals="$home_dir/.config/kdeglobals"
+    qt5_color_scheme="$home_dir/.config/qt5ct/colors/matugen.conf"
+    qt6_color_scheme="$home_dir/.config/qt6ct/colors/matugen.conf"
+
+    [ -f "$kde_color_scheme" ] || exit 0
+    mkdir -p "$(${pkgs.coreutils}/bin/dirname "$kdeglobals")"
+    touch "$kdeglobals"
+
+    for qt_color_scheme in "$qt5_color_scheme" "$qt6_color_scheme"; do
+      if [ -f "$qt_color_scheme" ]; then
+        ${pkgs.gnused}/bin/sed -i -E 's/#([0-9a-fA-F]{6})([,[:space:]]|$)/#ff\1\2/g' "$qt_color_scheme"
+      fi
+    done
+
+    tmp_kdeglobals="$(${pkgs.coreutils}/bin/mktemp)"
+    ${pkgs.gawk}/bin/awk '
+      function synced_group(section) {
+        return section ~ /^(ColorEffects:|Colors:|KDE$|WM$)/
+      }
+      FNR == NR {
+        if ($0 ~ /^\[/) {
+          section = substr($0, 2, length($0) - 2)
+          keep = synced_group(section)
+        }
+        if (keep) {
+          synced = synced $0 "\n"
+        }
+        next
+      }
+      $0 ~ /^\[/ {
+        section = substr($0, 2, length($0) - 2)
+        skip = synced_group(section)
+      }
+      !skip { print }
+      END {
+        printf "%s", synced
+      }
+    ' "$kde_color_scheme" "$kdeglobals" > "$tmp_kdeglobals"
+    ${pkgs.coreutils}/bin/mv "$tmp_kdeglobals" "$kdeglobals"
+
+    ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 --notify --file "$kdeglobals" --group General --key ColorScheme "DankMatugen"
+    ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 --notify --file "$kdeglobals" --group General --key Name "Dank Shell (matugen)"
+    ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 --notify --file "$kdeglobals" --group General --key ColorSchemeHash "$(${pkgs.coreutils}/bin/sha256sum "$kde_color_scheme" | ${pkgs.gawk}/bin/awk '{print $1}')"
+    ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 --file "$kdeglobals" --group KDE --key LookAndFeelPackage --delete
+    PATH="/run/current-system/sw/bin:$PATH" dbus-send --session --type=signal /KGlobalSettings org.kde.KGlobalSettings.notifyChange int32:0 int32:0 >/dev/null 2>&1 || true
+  '';
   mimes = import ../lib/mimes.nix;
   dmsSettingsDefaults = builtins.fromJSON (builtins.readFile ../config/dms/defaults/settings.json);
   dmsSessionDefaults = builtins.fromJSON (builtins.readFile ../config/dms/defaults/session.json);
@@ -92,6 +143,95 @@ in {
     merge_defaults "$DMS_CONFIG/settings.json" '${builtins.toJSON dmsSettingsDefaults}'
     merge_defaults "$DMS_CONFIG/plugin_settings.json" '${builtins.toJSON dmsPluginDefaults}'
     merge_defaults "$DMS_STATE/session.json" '${builtins.toJSON dmsSessionDefaults}'
+  '';
+
+  home.activation.darkGtkNativeTheme = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    set_ini_key() {
+      file="$1"
+      key="$2"
+      value="$3"
+      mkdir -p "$(${pkgs.coreutils}/bin/dirname "$file")"
+      if [ ! -f "$file" ]; then
+        printf '[Settings]\n%s=%s\n' "$key" "$value" > "$file"
+      elif ${pkgs.gnugrep}/bin/grep -q "^$key=" "$file"; then
+        ${pkgs.gnused}/bin/sed -i "s|^$key=.*|$key=$value|" "$file"
+      elif ${pkgs.gnugrep}/bin/grep -q '^\[Settings\]' "$file"; then
+        ${pkgs.gnused}/bin/sed -i "/^\[Settings\]/a $key=$value" "$file"
+      else
+        printf '\n[Settings]\n%s=%s\n' "$key" "$value" >> "$file"
+      fi
+    }
+
+    set_xsettings_key() {
+      file="$1"
+      key="$2"
+      value="$3"
+      mkdir -p "$(${pkgs.coreutils}/bin/dirname "$file")"
+      if [ ! -f "$file" ]; then
+        printf '%s "%s"\n' "$key" "$value" > "$file"
+      elif ${pkgs.gnugrep}/bin/grep -q "^$key " "$file"; then
+        ${pkgs.gnused}/bin/sed -i "s|^$key .*|$key \"$value\"|" "$file"
+      else
+        printf '%s "%s"\n' "$key" "$value" >> "$file"
+      fi
+    }
+
+    remove_ini_key() {
+      file="$1"
+      key="$2"
+      if [ -f "$file" ]; then
+        ${pkgs.gnused}/bin/sed -i "/^$key=/d" "$file"
+      fi
+    }
+
+    set_ini_key "$HOME/.config/gtk-3.0/settings.ini" gtk-theme-name adw-gtk3-dark
+    set_ini_key "$HOME/.config/gtk-3.0/settings.ini" gtk-application-prefer-dark-theme true
+    set_ini_key "$HOME/.config/gtk-4.0/settings.ini" gtk-theme-name adw-gtk3-dark
+    set_ini_key "$HOME/.config/gtk-4.0/settings.ini" gtk-application-prefer-dark-theme true
+    remove_ini_key "$HOME/.config/gtk-3.0/settings.ini" gtk-modules
+    remove_ini_key "$HOME/.config/gtk-4.0/settings.ini" gtk-modules
+
+    if [ -f "$HOME/.gtkrc-2.0" ]; then
+      if ${pkgs.gnugrep}/bin/grep -q '^gtk-theme-name=' "$HOME/.gtkrc-2.0"; then
+        ${pkgs.gnused}/bin/sed -i 's|^gtk-theme-name=.*|gtk-theme-name="adw-gtk3-dark"|' "$HOME/.gtkrc-2.0"
+      else
+        printf 'gtk-theme-name="adw-gtk3-dark"\n' >> "$HOME/.gtkrc-2.0"
+      fi
+    fi
+
+    set_xsettings_key "$HOME/.config/xsettingsd/xsettingsd.conf" Net/ThemeName adw-gtk3-dark
+
+    ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'"
+    ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/gtk-theme "'adw-gtk3-dark'"
+    ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/icon-theme "'breeze-dark'"
+  '';
+
+  home.activation.dmsQtColors = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    set_ini_key() {
+      file="$1"
+      section="$2"
+      key="$3"
+      value="$4"
+      mkdir -p "$(${pkgs.coreutils}/bin/dirname "$file")"
+      if [ ! -f "$file" ]; then
+        printf '[%s]\n%s=%s\n' "$section" "$key" "$value" > "$file"
+      elif ${pkgs.gnugrep}/bin/grep -q "^$key=" "$file"; then
+        ${pkgs.gnused}/bin/sed -i "s|^$key=.*|$key=$value|" "$file"
+      elif ${pkgs.gnugrep}/bin/grep -q "^\[$section\]" "$file"; then
+        ${pkgs.gnused}/bin/sed -i "/^\[$section\]/a $key=$value" "$file"
+      else
+        printf '\n[%s]\n%s=%s\n' "$section" "$key" "$value" >> "$file"
+      fi
+    }
+
+    qt5_color_scheme="$HOME/.config/qt5ct/colors/matugen.conf"
+    qt6_color_scheme="$HOME/.config/qt6ct/colors/matugen.conf"
+    set_ini_key "$HOME/.config/qt5ct/qt5ct.conf" Appearance custom_palette true
+    set_ini_key "$HOME/.config/qt5ct/qt5ct.conf" Appearance color_scheme_path "$qt5_color_scheme"
+    set_ini_key "$HOME/.config/qt6ct/qt6ct.conf" Appearance custom_palette true
+    set_ini_key "$HOME/.config/qt6ct/qt6ct.conf" Appearance color_scheme_path "$qt6_color_scheme"
+
+    ${syncDmsKdeColors}/bin/sync-dms-kde-colors
   '';
 
   home.file.".face.icon".source = ../config/hypr/dreamingcodes.jpeg;
@@ -446,8 +586,35 @@ in {
       WantedBy = ["graphical-session.target"];
     };
     Service = {
-      ExecStart = "${pkgs.kdePackages.kwallet-pam}/libexec/pam_kwallet_init";
+      ExecStart = "-${pkgs.kdePackages.kwallet-pam}/libexec/pam_kwallet_init";
       Type = "oneshot";
+    };
+  };
+
+  systemd.user.services.dms-kde-matugen-colors = {
+    Unit = {
+      Description = "Sync DMS matugen colors into KDE globals";
+      StartLimitIntervalSec = 0;
+    };
+    Service = {
+      Type = "oneshot";
+      ExecStartPre = "${pkgs.coreutils}/bin/sleep 1";
+      ExecStart = "${syncDmsKdeColors}/bin/sync-dms-kde-colors";
+    };
+  };
+
+  systemd.user.paths.dms-kde-matugen-colors = {
+    Unit = {
+      Description = "Watch DMS matugen KDE color scheme";
+    };
+    Path = {
+      PathChanged = "%h/.local/share/color-schemes/DankMatugen.colors";
+      PathModified = "%h/.local/share/color-schemes/DankMatugen.colors";
+      TriggerLimitIntervalSec = 0;
+      Unit = "dms-kde-matugen-colors.service";
+    };
+    Install = {
+      WantedBy = ["default.target"];
     };
   };
 
@@ -475,6 +642,7 @@ in {
     vibeMerge
     vibeCommit
     opencode
+    syncDmsKdeColors
   ];
 
   # Services

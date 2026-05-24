@@ -594,7 +594,7 @@
   "spotlightModalViewMode": "list",
   "spotlightSectionViewModes": {},
   "syncComponentAnimationSpeeds": true,
-  "syncModeWithPortal": true,
+  "syncModeWithPortal": false,
   "systemMonitorColorMode": "primary",
   "systemMonitorCustomColor": {
     "a": 1,

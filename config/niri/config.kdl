@@ -15,6 +15,9 @@ input {
     tablet {
         map-to-output "current"
     }
+
+    focus-follows-mouse
+    warp-mouse-to-focus mode="center-xy"
 }
 
 prefer-no-csd

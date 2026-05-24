@@ -5,28 +5,28 @@ confirm-before-quit = false
 [fonts]
 size = 14
 use-drawable-chars = true
-symbol-map = [
-  { start = "E000", end = "F8FF", font-family = "FiraCode Nerd Font Mono" },
-  { start = "F0000", end = "FFFFD", font-family = "FiraCode Nerd Font Mono" },
-]
 
 [fonts.regular]
-family = "FiraCode Nerd Font Mono"
+family = "FiraCode Nerd Font"
 style = "Regular"
 
 [fonts.bold]
-family = "FiraCode Nerd Font Mono"
+family = "FiraCode Nerd Font"
 style = "Bold"
 
 [fonts.italic]
-family = "FiraCode Nerd Font Mono"
+family = "FiraCode Nerd Font"
 style = "Regular"
 
 [fonts.bold-italic]
-family = "FiraCode Nerd Font Mono"
+family = "FiraCode Nerd Font"
 style = "Bold"
 
+[colors]
+background = "#141218"
+foreground = "#e6e0e9"
+
 [window]
-opacity = 0.75
-opacity-cells = true
-blur = true
+opacity = 1.0
+opacity-cells = false
+blur = false

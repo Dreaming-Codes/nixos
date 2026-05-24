@@ -58,8 +58,7 @@ in {
     ${mimes.bindMimes "org.kde.dolphin.desktop" ["inode/directory"]}
   '';
 
-  # Configure KDE to use Rio as the default terminal
-  # This runs on every activation to ensure the setting is applied
+  # Configure KDE defaults used by KDE apps outside Plasma.
   home.activation.configureKdeTerminal = lib.hm.dag.entryAfter ["writeBoundary"] ''
     /run/current-system/sw/bin/kwriteconfig6 --file kdeglobals --group General --key TerminalApplication "rio"
     /run/current-system/sw/bin/kwriteconfig6 --file kdeglobals --group General --key TerminalService "rio.desktop"
@@ -74,7 +73,24 @@ in {
     OPENCODE_EXPERIMENTAL = "1";
     OPENCODE_EXPERIMENTAL_PLAN_MODE = "1";
     TERMINAL = "rio";
+    GTK_THEME = "adw-gtk3-dark";
+    QT_QPA_PLATFORMTHEME = "kde";
+    QT_QPA_PLATFORMTHEME_QT6 = "kde";
   };
+
+  home.activation.themeSessionEnvironment = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    if [ -n "''${XDG_RUNTIME_DIR:-}" ]; then
+      ${pkgs.systemd}/bin/systemctl --user set-environment \
+        GTK_THEME=adw-gtk3-dark \
+        QT_QPA_PLATFORMTHEME=kde \
+        QT_QPA_PLATFORMTHEME_QT6=kde
+      GTK_THEME=adw-gtk3-dark \
+      QT_QPA_PLATFORMTHEME=kde \
+      QT_QPA_PLATFORMTHEME_QT6=kde \
+        ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd \
+        GTK_THEME QT_QPA_PLATFORMTHEME QT_QPA_PLATFORMTHEME_QT6 >/dev/null 2>&1 || true
+    fi
+  '';
 
   # Auto-unlock rbw on graphical session start (uses pinentry-qt)
   systemd.user.services.rbw-unlock = {
@@ -240,7 +256,9 @@ in {
       settings = {
         aws.symbol = "  ";
         buf.symbol = " ";
-        c.symbol = " ";
+        bun.symbol = " ";
+        c.symbol = " ";
+        cmake.symbol = "△ ";
         cmd_duration = {
           disabled = false;
           format = "took [$duration]($style)";
@@ -248,7 +266,12 @@ in {
         };
         conda.symbol = " ";
         crystal.symbol = " ";
-        dart.symbol = " ";
+        dart.symbol = " ";
+        deno.symbol = " ";
+        dotnet = {
+          format = "via [$symbol($version )($tfm )]($style)";
+          symbol = "󰪮 ";
+        };
         directory = {
           read_only = " 󰌾";
           style = "purple";
@@ -256,15 +279,16 @@ in {
           truncation_length = 0;
           truncation_symbol = "repo: ";
         };
-        docker_context.symbol = " ";
-        elixir.symbol = " ";
+        docker_context.symbol = " ";
+        elixir.symbol = " ";
         elm.symbol = " ";
         fennel.symbol = " ";
         fossil_branch.symbol = " ";
         git_branch.symbol = " ";
-        golang.symbol = " ";
+        gcloud.symbol = " ";
+        golang.symbol = " ";
         guix_shell.symbol = " ";
-        haskell.symbol = " ";
+        haskell.symbol = " ";
         haxe.symbol = " ";
         hg_branch.symbol = " ";
         hostname = {
@@ -274,39 +298,46 @@ in {
           ssh_symbol = " ";
           style = "bold dimmed red";
         };
-        java.symbol = " ";
+        java.symbol = " ";
         julia.symbol = " ";
-        kotlin.symbol = " ";
-        lua.symbol = " ";
+        kotlin.symbol = " ";
+        kubernetes.symbol = "󱃾 ";
+        lua.symbol = " ";
+        maven.symbol = " ";
         memory_usage.symbol = "󰍛 ";
         meson.symbol = "󰔷 ";
         nim.symbol = "󰆥 ";
-        nix_shell.symbol = " ";
-        nodejs.symbol = " ";
+        mojo.symbol = "🔥 ";
+        nix_shell.symbol = " ";
+        nodejs.symbol = " ";
         ocaml.symbol = " ";
         package.symbol = "󰏗 ";
-        perl.symbol = " ";
-        php.symbol = " ";
+        perl.symbol = " ";
+        php.symbol = " ";
         pijul_channel.symbol = " ";
-        python.symbol = " ";
+        python.symbol = " ";
         rlang.symbol = "󰟔 ";
-        ruby.symbol = " ";
-        rust.symbol = " ";
-        scala.symbol = " ";
+        ruby.symbol = " ";
+        rust.symbol = " ";
+        scala.symbol = " ";
         scan_timeout = 10;
         status = {
           disabled = false;
           map_symbol = true;
         };
-        sudo.disabled = false;
-        swift.symbol = " ";
+        sudo = {
+          disabled = false;
+          symbol = " ";
+        };
+        swift.symbol = " ";
+        terraform.symbol = "󱁢 ";
         username = {
           format = " [$user]($style)@";
           show_always = true;
           style_root = "bold red";
           style_user = "bold red";
         };
-        zig.symbol = " ";
+        zig.symbol = " ";
       };
     };
 
