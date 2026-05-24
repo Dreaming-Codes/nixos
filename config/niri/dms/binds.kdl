@@ -18,8 +18,8 @@ binds {
 
     Mod+Q repeat=false { close-window; }
     Mod+O { toggle-window-floating; }
-    Mod+F { fullscreen-window; }
-    Mod+Shift+F { maximize-column; }
+    Mod+F hotkey-overlay-title="Fullscreen Window" { fullscreen-window; }
+    Mod+Shift+F hotkey-overlay-title="Maximize Column" { maximize-column; }
     Mod+Tab repeat=false { toggle-overview; }
     Mod+Shift+Slash { show-hotkey-overlay; }
     Mod+Escape allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
@@ -97,7 +97,7 @@ binds {
     Mod+R { switch-preset-column-width; }
     Mod+Shift+R { switch-preset-window-height; }
     Mod+Ctrl+R { reset-window-height; }
-    Mod+Ctrl+F { expand-column-to-available-width; }
+    Mod+Ctrl+F hotkey-overlay-title="Expand Column to Available Width" { expand-column-to-available-width; }
     Mod+Minus { set-column-width "-10%"; }
     Mod+Equal { set-column-width "+10%"; }
     Mod+Shift+Minus { set-window-height "-10%"; }
