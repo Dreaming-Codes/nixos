@@ -126,6 +126,10 @@
         },
         {
           "enabled": true,
+          "id": "volumeMixer"
+        },
+        {
+          "enabled": true,
           "id": "controlCenterButton"
         },
         {
@@ -486,9 +490,9 @@
   "muxUseCustomCommand": false,
   "networkPreference": "auto",
   "nightModeEnabled": false,
-  "niriLayoutBorderSize": -1,
-  "niriLayoutGapsOverride": -1,
-  "niriLayoutRadiusOverride": -1,
+  "niriLayoutBorderSize": 2,
+  "niriLayoutGapsOverride": 2,
+  "niriLayoutRadiusOverride": 0,
   "niriOutputSettings": {},
   "niriOverviewOverlayEnabled": true,
   "notepadFontFamily": "",
@@ -576,9 +580,9 @@
   "showSeconds": false,
   "showSystemTray": true,
   "showWeather": true,
-  "showWorkspaceApps": false,
+  "showWorkspaceApps": true,
   "showWorkspaceIndex": true,
-  "showWorkspaceName": true,
+  "showWorkspaceName": false,
   "showWorkspacePadding": false,
   "showWorkspaceSwitcher": true,
   "sortAppsAlphabetically": false,
