@@ -32,13 +32,14 @@
         default = [
           "gnome"
           "gtk"
+          "kwallet"
           "kde"
         ];
         "org.freedesktop.impl.portal.Access" = "gtk";
         "org.freedesktop.impl.portal.FileChooser" = "kde";
         "org.freedesktop.impl.portal.Notification" = "gtk";
         "org.freedesktop.impl.portal.OpenURI" = "kde";
-        "org.freedesktop.impl.portal.Secret" = "gnome-keyring";
+        "org.freedesktop.impl.portal.Secret" = "kwallet";
       };
       plasma = {
         default = [
@@ -55,6 +56,7 @@
       xdg-desktop-portal-gnome
       # Add xdg-desktop-portal-gtk for Wayland GTK apps (font issues etc.)
       xdg-desktop-portal-gtk
+      kdePackages.kwallet
       kdePackages.xdg-desktop-portal-kde
     ];
   };
