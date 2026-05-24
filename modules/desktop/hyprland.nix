@@ -8,12 +8,13 @@
 
   services.xserver.enable = true;
 
-  services.displayManager.sddm = {
+  services.displayManager.dms-greeter = {
     enable = true;
-    wayland.enable = true;
+    compositor.name = "niri";
+    configHome = "/home/dreamingcodes";
   };
   # Default session for dreamingcodes (and system-wide fallback)
-  services.displayManager.defaultSession = "hyprland";
+  services.displayManager.defaultSession = "niri";
 
   services.desktopManager.plasma6.enable = true;
   environment.plasma6.excludePackages = with pkgs.kdePackages; [
