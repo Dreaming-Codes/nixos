@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Services.UPower
 import qs.Common
 import qs.Services
 import qs.Widgets
@@ -28,16 +29,46 @@ PluginComponent {
     property int batCpuBoost: -1
     property int batGpuBoost: -1
     property int gpuBoostMax: 2
-    property string statusBuffer: ""
     property string actionLabel: ""
     property string errorText: ""
+    property string statusOutput: ""
     property int customCpuBoost: clampBoost(parseInt(pluginData.customCpuBoost ?? 2), 0, 3)
     property int customGpuBoost: clampBoost(parseInt(pluginData.customGpuBoost ?? 2), 0, gpuBoostMax)
+
+    function batteryTimeText() {
+        if (!BatteryService.batteryAvailable)
+            return "Power profile management available"
+        var time = BatteryService.formatTimeRemaining()
+        if (time !== "")
+            return BatteryService.isCharging ? "Time until full: " + time : "Time remaining: " + time
+        return BatteryService.batteryStatus
+    }
+
+    function powerProfileText() {
+        if (typeof PowerProfiles === "undefined")
+            return "Unknown"
+        return Theme.getPowerProfileLabel(PowerProfiles.profile)
+    }
+
+    function shortPowerProfileText() {
+        var profile = root.powerProfileText()
+        if (profile === "Power Saver")
+            return "Save"
+        if (profile === "Balanced")
+            return "Bal"
+        if (profile === "Performance")
+            return "Perf"
+        return profile.substring(0, 4)
+    }
 
     function clampBoost(value, minValue, maxValue) {
         if (isNaN(value))
             return maxValue
         return Math.max(minValue, Math.min(maxValue, value))
+    }
+
+    function intOrUnknown(value) {
+        return value === null || value === undefined || isNaN(value) ? -1 : value
     }
 
     function boostOptions(kind) {
@@ -49,6 +80,12 @@ PluginComponent {
         if (raw.length > 0)
             return raw.split(/\s+/)
         return ["4", String(customCpuBoost), String(customGpuBoost)]
+    }
+
+    function isActiveProfile(profile) {
+        if (typeof PowerProfiles === "undefined")
+            return false
+        return PowerProfiles.profile === profile
     }
 
     function setCustomBoost(kind, value) {
@@ -63,7 +100,7 @@ PluginComponent {
 
     function refresh() {
         if (!statusProc.running) {
-            statusBuffer = ""
+            statusOutput = ""
             statusProc.running = true
         }
     }
@@ -84,37 +121,46 @@ PluginComponent {
         actionProc.running = true
     }
 
+    function setProfile(profile) {
+        if (typeof PowerProfiles === "undefined") {
+            ToastService.showError("Power", "power-profiles-daemon not available")
+            return
+        }
+        PowerProfiles.profile = profile
+        if (PowerProfiles.profile !== profile)
+            ToastService.showError("Power", "Failed to set power profile")
+    }
+
     Process {
         id: statusProc
         command: ["razer-energy", "json"]
 
         stdout: SplitParser {
-            splitMarker: ""
-            onRead: data => root.statusBuffer += data
+            onRead: line => root.statusOutput = line.trim()
         }
 
         stderr: SplitParser {
-            onRead: line => root.errorText = line
+            onRead: line => root.errorText = line.trim()
         }
 
         onExited: exitCode => {
-            if (exitCode === 0 && root.statusBuffer.length > 0) {
+            if (exitCode === 0 && root.statusOutput.length > 0) {
                 try {
-                    var data = JSON.parse(root.statusBuffer)
+                    var data = JSON.parse(root.statusOutput)
                     root.ok = data.ok === true
                     root.statusText = data.text || "!"
                     root.statusAlt = data.alt || "unknown"
                     root.powerSource = data.source || "ac"
                     root.acDisplay = data.ac ? data.ac.display : "--"
                     root.batDisplay = data.bat ? data.bat.display : "--"
-                    root.cpuBoost = data.cpu ?? -1
-                    root.gpuBoost = data.gpu ?? -1
+                    root.cpuBoost = root.intOrUnknown(data.cpu)
+                    root.gpuBoost = root.intOrUnknown(data.gpu)
                     root.cpuDisplay = data.cpuDisplay || "--"
                     root.gpuDisplay = data.gpuDisplay || "--"
-                    root.acCpuBoost = data.ac ? data.ac.cpu : -1
-                    root.acGpuBoost = data.ac ? data.ac.gpu : -1
-                    root.batCpuBoost = data.bat ? data.bat.cpu : -1
-                    root.batGpuBoost = data.bat ? data.bat.gpu : -1
+                    root.acCpuBoost = data.ac ? root.intOrUnknown(data.ac.cpu) : -1
+                    root.acGpuBoost = data.ac ? root.intOrUnknown(data.ac.gpu) : -1
+                    root.batCpuBoost = data.bat ? root.intOrUnknown(data.bat.cpu) : -1
+                    root.batGpuBoost = data.bat ? root.intOrUnknown(data.bat.gpu) : -1
                     root.acCpuDisplay = data.ac ? data.ac.cpuDisplay : "--"
                     root.acGpuDisplay = data.ac ? data.ac.gpuDisplay : "--"
                     root.batCpuDisplay = data.bat ? data.bat.cpuDisplay : "--"
@@ -124,7 +170,8 @@ PluginComponent {
                     root.ok = false
                     root.statusText = "!"
                     root.statusAlt = "parse-error"
-                    root.errorText = "Failed to parse razer-energy output"
+                    root.errorText = "Failed to parse razer-energy output: " + e
+                    console.warn("RazerEnergy parse error:", e, "output:", root.statusOutput)
                 }
             } else {
                 root.ok = false
@@ -133,7 +180,7 @@ PluginComponent {
                 if (root.errorText === "")
                     root.errorText = "razer-energy exited with code " + exitCode
             }
-            root.statusBuffer = ""
+            root.statusOutput = ""
         }
     }
 
@@ -168,15 +215,31 @@ PluginComponent {
             spacing: Theme.spacingXS
 
             DankIcon {
-                name: root.powerSource === "ac" ? "bolt" : "battery_charging_full"
+                name: Theme.getBatteryIcon(BatteryService.batteryLevel, BatteryService.isCharging, BatteryService.batteryAvailable)
                 color: root.ok ? Theme.primary : Theme.error
                 size: Theme.iconSize - 4
                 anchors.verticalCenter: parent.verticalCenter
             }
 
             StyledText {
-                text: root.statusText
+                text: BatteryService.batteryAvailable ? (BatteryService.batteryLevel + "%") : root.statusText
                 color: root.ok ? Theme.surfaceText : Theme.error
+                font.pixelSize: Theme.fontSizeSmall
+                font.weight: Font.Medium
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
+            StyledText {
+                text: root.powerProfileText()
+                color: root.ok ? Theme.surfaceText : Theme.error
+                font.pixelSize: Theme.fontSizeSmall
+                font.weight: Font.Medium
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
+            StyledText {
+                text: root.statusText
+                color: root.ok ? Theme.primary : Theme.error
                 font.pixelSize: Theme.fontSizeSmall
                 font.weight: Font.Medium
                 anchors.verticalCenter: parent.verticalCenter
@@ -196,8 +259,23 @@ PluginComponent {
             }
 
             StyledText {
-                text: root.statusText.substring(0, 3)
+                text: BatteryService.batteryAvailable ? String(BatteryService.batteryLevel) : root.statusText.substring(0, 3)
                 color: root.ok ? Theme.surfaceText : Theme.error
+                font.pixelSize: Theme.fontSizeSmall
+                font.weight: Font.Medium
+                anchors.horizontalCenter: parent.horizontalCenter
+            }
+
+            StyledText {
+                text: root.shortPowerProfileText()
+                color: root.ok ? Theme.surfaceText : Theme.error
+                font.pixelSize: Theme.fontSizeSmall
+                anchors.horizontalCenter: parent.horizontalCenter
+            }
+
+            StyledText {
+                text: root.statusText.substring(0, 3)
+                color: root.ok ? Theme.primary : Theme.error
                 font.pixelSize: Theme.fontSizeSmall
                 anchors.horizontalCenter: parent.horizontalCenter
             }
@@ -205,18 +283,121 @@ PluginComponent {
     }
 
     popoutWidth: 420
-    popoutHeight: 560
+    popoutHeight: 680
 
     popoutContent: Component {
         PopoutComponent {
             id: popup
             headerText: "Razer Energy"
-            detailsText: root.powerSource === "ac" ? "On AC power" : "On battery"
+            detailsText: BatteryService.batteryAvailable ? (BatteryService.batteryLevel + "% " + BatteryService.batteryStatus) : (root.powerSource === "ac" ? "On AC power" : "On battery")
             showCloseButton: true
 
             Column {
                 width: parent.width
                 spacing: Theme.spacingM
+
+                Column {
+                    width: parent.width
+                    spacing: Theme.spacingS
+
+                    Row {
+                        width: parent.width
+                        spacing: Theme.spacingS
+                        visible: BatteryService.batteryAvailable
+
+                        StyledRect {
+                            width: (parent.width - Theme.spacingS) / 2
+                            height: 64
+                            radius: Theme.cornerRadius
+                            color: Theme.surfaceContainerHigh
+
+                            Column {
+                                anchors.centerIn: parent
+                                spacing: Theme.spacingXS
+
+                                StyledText {
+                                    text: "Health"
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    color: Theme.primary
+                                    font.weight: Font.Medium
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                }
+
+                                StyledText {
+                                    text: BatteryService.batteryHealth
+                                    font.pixelSize: Theme.fontSizeLarge
+                                    color: BatteryService.batteryHealth !== "N/A" && parseInt(BatteryService.batteryHealth) < 80 ? Theme.error : Theme.surfaceText
+                                    font.weight: Font.Bold
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                }
+                            }
+                        }
+
+                        StyledRect {
+                            width: (parent.width - Theme.spacingS) / 2
+                            height: 64
+                            radius: Theme.cornerRadius
+                            color: Theme.surfaceContainerHigh
+
+                            Column {
+                                anchors.centerIn: parent
+                                spacing: Theme.spacingXS
+
+                                StyledText {
+                                    text: "Capacity"
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    color: Theme.primary
+                                    font.weight: Font.Medium
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                }
+
+                                StyledText {
+                                    text: BatteryService.batteryCapacity > 0 ? BatteryService.batteryCapacity.toFixed(1) + " Wh" : "Unknown"
+                                    font.pixelSize: Theme.fontSizeLarge
+                                    color: Theme.surfaceText
+                                    font.weight: Font.Bold
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                }
+                            }
+                        }
+                    }
+
+                    StyledText {
+                        width: parent.width
+                        visible: BatteryService.batteryAvailable
+                        text: root.batteryTimeText()
+                        color: Theme.surfaceVariantText
+                        font.pixelSize: Theme.fontSizeSmall
+                    }
+
+                    Item {
+                        width: parent.width
+                        height: profileButtonGroup.height * profileButtonGroup.scale
+
+                        DankButtonGroup {
+                            id: profileButtonGroup
+
+                            property var profileModel: (typeof PowerProfiles !== "undefined") ? [PowerProfile.PowerSaver, PowerProfile.Balanced].concat(PowerProfiles.hasPerformanceProfile ? [PowerProfile.Performance] : []) : [PowerProfile.PowerSaver, PowerProfile.Balanced, PowerProfile.Performance]
+                            property int currentProfileIndex: {
+                                if (typeof PowerProfiles === "undefined")
+                                    return 1
+                                return profileModel.findIndex(profile => root.isActiveProfile(profile))
+                            }
+
+                            scale: Math.min(1, parent.width / implicitWidth)
+                            transformOrigin: Item.Center
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            model: profileModel.map(profile => Theme.getPowerProfileLabel(profile))
+                            currentIndex: currentProfileIndex
+                            selectionMode: "single"
+                            onSelectionChanged: (index, selected) => {
+                                if (!selected)
+                                    return
+                                root.setProfile(profileModel[index])
+                            }
+                        }
+                    }
+                }
 
                 StyledRect {
                     width: parent.width
@@ -235,6 +416,12 @@ PluginComponent {
                             color: root.ok ? Theme.surfaceText : Theme.error
                             font.pixelSize: Theme.fontSizeLarge
                             font.weight: Font.Bold
+                        }
+
+                        StyledText {
+                            text: "Power profile: " + root.powerProfileText()
+                            color: Theme.surfaceVariantText
+                            font.pixelSize: Theme.fontSizeSmall
                         }
 
                         StyledText {
