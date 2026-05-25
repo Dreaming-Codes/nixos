@@ -117,7 +117,7 @@
           "id": "razerEnergy"
         },
         {
-          "enabled": true,
+          "enabled": false,
           "id": "battery"
         },
         {
@@ -560,7 +560,7 @@
   "screenPreferences": {},
   "scrollTitleEnabled": true,
   "selectedGpuIndex": 0,
-  "showBattery": true,
+  "showBattery": false,
   "showCapsLockIndicator": true,
   "showClipboard": true,
   "showClock": true,
