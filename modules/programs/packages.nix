@@ -241,7 +241,6 @@ in {
     nodejs
     bintools
     rustup
-    sccache
     kdePackages.kleopatra
     gnupg
     pinentry-qt
