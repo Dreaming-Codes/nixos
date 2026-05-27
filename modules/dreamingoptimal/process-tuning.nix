@@ -51,6 +51,18 @@ in {
           type = "Doc-View";
         }
         {
+          name = "dms";
+          type = "LowLatency_RT";
+        }
+        {
+          name = "quickshell";
+          type = "LowLatency_RT";
+        }
+        {
+          name = "qs";
+          type = "LowLatency_RT";
+        }
+        {
           name = "ssh";
           type = "LowLatency_RT";
         }
