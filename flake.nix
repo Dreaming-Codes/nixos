@@ -8,7 +8,6 @@
   nixConfig = {
     substituters = [
       "https://install.determinate.systems?priority=20"
-      "https://cache.garnix.io?priority=30"
       "https://cache.nixos.org?priority=40"
       "https://nix-community.cachix.org?priority=41"
       "https://attic.xuyh0120.win/lantian?priority=42"
@@ -18,7 +17,6 @@
     extra-trusted-public-keys = [
       "cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM="
       "lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc="
-      "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       "numtide.cachix.org-1:2ps1kLBUWjxIneOy1Ik6cQjb41X0iXVXeHigGmycPPE="
       "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M="
