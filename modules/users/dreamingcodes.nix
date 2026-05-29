@@ -19,6 +19,7 @@
     "dialout"
     "flatpak"
     "nix"
+    "ydotool"
   ];
 
   # Admin-only groups (sudo + libvirt system access)
