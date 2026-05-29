@@ -19,11 +19,11 @@
     "cachyos-kernel": {
       "flake": false,
       "locked": {
-        "lastModified": 1779553635,
-        "narHash": "sha256-ar7KGDmSmGQlKWH4aHC61K+VFxu1wxA/HcgIBDxHwOQ=",
+        "lastModified": 1779959490,
+        "narHash": "sha256-FS/SbuYuRt5biCp1ja0Se12V2q3Y3p+O+rAdFQvuJT4=",
         "owner": "CachyOS",
         "repo": "linux-cachyos",
-        "rev": "f2c7d18505bc35a89a8d5fcab25671168684e7dd",
+        "rev": "1d38a1c83db0cddff4963516eb3f6838981cb6ae",
         "type": "github"
       },
       "original": {
@@ -35,11 +35,11 @@
     "cachyos-kernel-patches": {
       "flake": false,
       "locked": {
-        "lastModified": 1779618819,
-        "narHash": "sha256-/cGZZCyJZS1QATHi+/2Q32NkjrYN2N2PpgFP8Ak4FJc=",
+        "lastModified": 1779996637,
+        "narHash": "sha256-DcA59mHfCUfbr7EtH9YJUb3t62TcyXwC/I0QMyUs1bo=",
         "owner": "CachyOS",
         "repo": "kernel-patches",
-        "rev": "668b466fb461409329425b50c4a9d8d2c022a739",
+        "rev": "b87558b7c865628c48c1d6ff5c827b9df40e9281",
         "type": "github"
       },
       "original": {
@@ -56,11 +56,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1779773203,
-        "narHash": "sha256-QicCGr+V2BqpCAUwWwzE0adoZK8VyoqrgYRjFmrh5BQ=",
+        "lastModified": 1780079870,
+        "narHash": "sha256-+uKPoeTUOsJvJWF1i846lgUAfNFgBpvqAy1KZAka6/k=",
         "owner": "ilysenko",
         "repo": "codex-desktop-linux",
-        "rev": "7c41fc9f8f2352df0893fd98104d3680ee01342f",
+        "rev": "252711118ce15363579663a3d5c47c2dc71e70d3",
         "type": "github"
       },
       "original": {
@@ -133,11 +133,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1779768260,
-        "narHash": "sha256-srmDHBCLwP8EIvxeDDV11c5+DYImXIYMxRwlwnU2tZg=",
+        "lastModified": 1780070880,
+        "narHash": "sha256-OTxK1H6eeMaggoMm0oLSsx70vpCIQnj+T5fttVmw65U=",
         "owner": "AvengeMedia",
         "repo": "dms-plugin-registry",
-        "rev": "31bef1b82668835ead466a8884068101da4d142f",
+        "rev": "f71182b27e091927209075dbb812e0b7b09b8451",
         "type": "github"
       },
       "original": {
@@ -340,11 +340,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1779726696,
-        "narHash": "sha256-/p37CB5n6Wpw250b0Lq0CYwNq2D8uGKzDoBulyLcQqA=",
+        "lastModified": 1779969295,
+        "narHash": "sha256-HwIJ3tOcwSMiV75L7KqJXciXR9UfT+d7rwOZMX7cTnA=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "1a95e2efb477959b70b4a14c51035975c0481df6",
+        "rev": "61e2c9659324181e0f0ed911958c536333b1d4f6",
         "type": "github"
       },
       "original": {
@@ -403,11 +403,11 @@
         "nixpkgs": "nixpkgs_5"
       },
       "locked": {
-        "lastModified": 1779648267,
-        "narHash": "sha256-nAZ40ZbLLjTPNZwaxpq5p+VsKLY3pW3uogBQVjtP7yU=",
+        "lastModified": 1779998180,
+        "narHash": "sha256-FyRyX3/NGuGhmChC9CD8BFwL8vEilm8pFS4Kv54cPO0=",
         "owner": "xddxdd",
         "repo": "nix-cachyos-kernel",
-        "rev": "bba6e2370bc269b59c0ae42c6d295ca71e770b2f",
+        "rev": "caa7f446d7b4ccf461616b9adedf384cca84afaa",
         "type": "github"
       },
       "original": {
@@ -597,11 +597,11 @@
     },
     "nixpkgs_5": {
       "locked": {
-        "lastModified": 1779630130,
-        "narHash": "sha256-RWn/gMXEy+p6yL5lKh51Z/w6RHC+5Px18Tarkuva99Y=",
+        "lastModified": 1779955849,
+        "narHash": "sha256-31mhzm2HpzRr/rupWAFfWBmt9SUjzwr5+giv5Nmb/rA=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "68ac0b94b449482d8a90f3e3791d61a8ee186f07",
+        "rev": "a2c6938835fca96e4a10c8561d461efd2f91d04f",
         "type": "github"
       },
       "original": {
@@ -635,11 +635,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1779785452,
-        "narHash": "sha256-vQIy+mJejR9E5MRVNkTGXoRGbRCO74UH/ikfjjGkfsE=",
+        "lastModified": 1780079811,
+        "narHash": "sha256-U9A86nyCH6xQMmjKj4fnaEE25P6qY29T+qSAT0k4CPs=",
         "owner": "nix-community",
         "repo": "NUR",
-        "rev": "08425bf67d4a8f802e105a9269ced406be85d165",
+        "rev": "e30f612c76b3542bfefb8b66815775d542fa9c34",
         "type": "github"
       },
       "original": {
