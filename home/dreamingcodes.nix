@@ -680,6 +680,7 @@ in {
     vibeMerge
     vibeCommit
     opencode
+    codexStandalone
     syncDmsKdeColors
   ];
 
