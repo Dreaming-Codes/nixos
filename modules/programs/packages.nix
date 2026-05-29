@@ -54,6 +54,8 @@ in {
 
   programs.virt-manager.enable = true;
 
+  programs.ydotool.enable = true;
+
   services = {
     usbmuxd = {
       enable = true;
