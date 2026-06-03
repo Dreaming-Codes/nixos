@@ -150,22 +150,6 @@ in {
     CODEX_UPDATE_MANAGER_PATH = "${pkgs.coreutils}/bin/false";
   };
 
-  xdg.desktopEntries.codex-desktop = {
-    name = "Codex Desktop";
-    comment = "Run Codex Desktop on Linux";
-    exec = "${codexDesktopPackage}/bin/codex-desktop %u";
-    icon = "codex-desktop";
-    terminal = false;
-    type = "Application";
-    categories = ["Development"];
-    mimeType = ["x-scheme-handler/codex" "x-scheme-handler/codex-browser-sidebar"];
-    startupNotify = true;
-    settings = {
-      StartupWMClass = "codex-desktop";
-      X-GNOME-WMClass = "codex-desktop";
-    };
-  };
-
   home.activation.dmsDefaults = lib.hm.dag.entryAfter ["writeBoundary"] ''
     DMS_CONFIG="$HOME/.config/DankMaterialShell"
     DMS_STATE="$HOME/.local/state/DankMaterialShell"
