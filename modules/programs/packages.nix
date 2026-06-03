@@ -14,6 +14,20 @@
     '';
   };
 
+  bitwardenDesktop = (pkgs.bitwarden-desktop.override {
+    electron_39 = pkgs.electron_40;
+  }).overrideAttrs (old: {
+    preBuild = lib.replaceStrings [
+      ''
+        if [[ $(jq --raw-output '.devDependencies.electron' < package.json | grep -E --only-matching '^[0-9]+') != 40 ]]; then
+          echo 'ERROR: electron version mismatch'
+          exit 1
+        fi
+
+      ''
+    ] [""] old.preBuild;
+  });
+
   rsworktree = pkgs.rustPlatform.buildRustPackage rec {
     pname = "rsworktree";
     version = "0.7.1";
@@ -236,7 +250,7 @@ in {
 
     # Packages moved from home-manager (shared by all users)
     telegram-desktop
-    bitwarden-desktop
+    bitwardenDesktop
     rbw
     btop
     bun
