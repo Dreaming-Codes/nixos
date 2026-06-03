@@ -2,11 +2,11 @@
   "nodes": {
     "brave-origin": {
       "locked": {
-        "lastModified": 1780504256,
-        "narHash": "sha256-t8RvzITsZN1VlUyZu5mQS0VQfWvcRpvtdjXwFm1K/PQ=",
+        "lastModified": 1780508615,
+        "narHash": "sha256-nXZMmy/k5R5ttWhslaRIjSpfP3egoZtIgO4Pd8P/Wng=",
         "owner": "Dreaming-Codes",
         "repo": "nixpkgs",
-        "rev": "3cd0bf0304e279f6b2e735c9c9ef25d5a2e2b881",
+        "rev": "1bc3cf1e2cfdd867e15965aa63d783b095ef23e4",
         "type": "github"
       },
       "original": {
@@ -635,11 +635,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1780502632,
-        "narHash": "sha256-H2Ge97xrbXClxEKAsFxEpksKWoybn+6uZ3ewg9PVmjs=",
+        "lastModified": 1780506299,
+        "narHash": "sha256-/dlCGF/cQ4m1wJ1XRWGuxHDYorlm8WXtMvbtfEbecnY=",
         "owner": "nix-community",
         "repo": "NUR",
-        "rev": "cb69e32e6e1f5f338c26de41b413751505d990b0",
+        "rev": "5c7deb2771092814d6dae694d59f0dd1223ae7f3",
         "type": "github"
       },
       "original": {
