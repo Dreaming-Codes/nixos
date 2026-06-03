@@ -16,22 +16,6 @@
   codexStandalone = pkgs.writeShellScriptBin "codex" ''
     exec /home/dreamingcodes/.codex/packages/standalone/current/bin/codex "$@"
   '';
-  codexDesktopPackage =
-    inputs.codex-desktop-linux.packages.${pkgs.stdenv.hostPlatform.system}.codex-desktop-computer-use-ui-remote-mobile-control;
-  codexDesktopWithCli = pkgs.runCommand "${codexDesktopPackage.name}-with-cli" {
-    nativeBuildInputs = [pkgs.makeWrapper];
-  } ''
-    cp -a ${codexDesktopPackage} "$out"
-    chmod -R u+w "$out"
-    mkdir -p "$out/opt/codex-desktop/resources/bin"
-    ln -s ${codexStandalone}/bin/codex "$out/opt/codex-desktop/resources/bin/codex"
-    substituteInPlace "$out/opt/codex-desktop/.codex-linux/cold-start.d/remote-mobile-control" \
-      --replace-fail '    cleanup_remote_mobile_control_interactive_symlink "$codex_home"' \
-                     '    # Keep the user-managed standalone codex symlink on PATH.'
-    wrapProgram "$out/bin/codex-desktop" \
-      --set CODEX_CLI_PATH "$out/opt/codex-desktop/resources/bin/codex" \
-      --set CODEX_UPDATE_MANAGER_PATH "${pkgs.coreutils}/bin/false"
-  '';
   syncDmsKdeColors = pkgs.writeShellScriptBin "sync-dms-kde-colors" ''
     set -euo pipefail
 
@@ -133,7 +117,6 @@ in {
 
   programs.codexDesktopLinux = {
     enable = true;
-    package = codexDesktopWithCli;
     computerUseUi.enable = true;
     remoteMobileControl.enable = true;
     remoteControl = {
@@ -160,19 +143,17 @@ in {
   ];
 
   home.sessionVariables = {
-    CODEX_CLI_PATH = "${codexDesktopWithCli}/opt/codex-desktop/resources/bin/codex";
     CODEX_UPDATE_MANAGER_PATH = "${pkgs.coreutils}/bin/false";
   };
 
   systemd.user.sessionVariables = {
-    CODEX_CLI_PATH = "${codexDesktopWithCli}/opt/codex-desktop/resources/bin/codex";
     CODEX_UPDATE_MANAGER_PATH = "${pkgs.coreutils}/bin/false";
   };
 
   xdg.desktopEntries.codex-desktop = {
     name = "Codex Desktop";
     comment = "Run Codex Desktop on Linux";
-    exec = "${codexDesktopWithCli}/bin/codex-desktop %u";
+    exec = "${codexDesktopPackage}/bin/codex-desktop %u";
     icon = "codex-desktop";
     terminal = false;
     type = "Application";
