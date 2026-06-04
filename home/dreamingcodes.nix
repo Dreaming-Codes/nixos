@@ -16,6 +16,16 @@
   codexStandalone = pkgs.writeShellScriptBin "codex" ''
     exec /home/dreamingcodes/.codex/packages/standalone/current/bin/codex "$@"
   '';
+  codexRemoteControlPath = lib.makeSearchPath "bin" [
+    config.home.profileDirectory
+    pkgs.bash
+    pkgs.coreutils
+    pkgs.findutils
+    pkgs.git
+    pkgs.gnugrep
+    pkgs.gnused
+    pkgs.openssh
+  ];
   syncDmsKdeColors = pkgs.writeShellScriptBin "sync-dms-kde-colors" ''
     set -euo pipefail
 
@@ -72,10 +82,6 @@
   dmsSessionDefaults = builtins.fromJSON (builtins.readFile ../config/dms/defaults/session.json);
   dmsPluginDefaults = builtins.fromJSON (builtins.readFile ../config/dms/defaults/plugin_settings.json);
 in {
-  imports = [
-    inputs.codex-desktop-linux.homeManagerModules.default
-  ];
-
   xdg.configFile."hypr/hyprland.conf".force = true;
   xdg.configFile."btop/btop.conf".force = true;
 
@@ -115,16 +121,6 @@ in {
     ln -sfn /home/dreamingcodes/.codex/packages/standalone/current/bin/codex /home/dreamingcodes/.local/bin/codex
   '';
 
-  programs.codexDesktopLinux = {
-    enable = true;
-    computerUseUi.enable = true;
-    remoteMobileControl.enable = true;
-    remoteControl = {
-      enable = true;
-      package = codexStandalone;
-    };
-  };
-
   programs.fish = {
     completions = {
       vibe-merge = ''
@@ -142,12 +138,33 @@ in {
     "/home/dreamingcodes/.bun/bin"
   ];
 
-  home.sessionVariables = {
-    CODEX_UPDATE_MANAGER_PATH = "${pkgs.coreutils}/bin/false";
-  };
-
-  systemd.user.sessionVariables = {
-    CODEX_UPDATE_MANAGER_PATH = "${pkgs.coreutils}/bin/false";
+  systemd.user.services.codex-remote-control = {
+    Unit = {
+      Description = "Codex remote-control app-server";
+      Documentation = "file:%h/.codex/packages/standalone/current/codex";
+      After = ["network-online.target"];
+      Wants = ["network-online.target"];
+      StartLimitIntervalSec = 300;
+      StartLimitBurst = 5;
+    };
+    Service = {
+      Type = "simple";
+      Environment = [
+        "CODEX_HOME=/home/dreamingcodes/.codex"
+        "PATH=${codexRemoteControlPath}"
+        "LOG_FORMAT=json"
+        "RUST_LOG=info,codex_app_server_transport::transport::remote_control=debug"
+      ];
+      ExecStartPre = "-${pkgs.coreutils}/bin/rm -f %h/.codex/app-server-control/app-server-control.sock";
+      ExecStart = "${codexStandalone}/bin/codex app-server --remote-control --listen unix://";
+      KillMode = "control-group";
+      Restart = "always";
+      RestartSec = 10;
+      TimeoutStopSec = 10;
+    };
+    Install = {
+      WantedBy = ["default.target"];
+    };
   };
 
   home.activation.dmsDefaults = lib.hm.dag.entryAfter ["writeBoundary"] ''

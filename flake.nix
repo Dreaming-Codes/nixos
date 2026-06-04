@@ -56,10 +56,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     brave-origin.url = "github:Dreaming-Codes/nixpkgs/brave-channels";
-    codex-desktop-linux = {
-      url = "github:ilysenko/codex-desktop-linux";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs = inputs @ {
