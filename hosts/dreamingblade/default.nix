@@ -20,6 +20,7 @@
 in {
   imports = [
     ../../modules/core/campus-switch.nix
+    ../../modules/programs/virtualization/waydroid.nix
   ];
 
   boot.initrd.availableKernelModules = [
