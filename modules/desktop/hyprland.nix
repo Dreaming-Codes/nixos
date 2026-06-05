@@ -83,7 +83,6 @@
     qt6.qt5compat
     rbw
     translate-shell
-    wl-clipboard
   ];
 
   services.xserver.xkb = {
