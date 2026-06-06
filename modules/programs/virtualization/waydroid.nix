@@ -1,8 +1,20 @@
 {
   pkgs,
   ...
-}: {
-  virtualisation.waydroid.enable = true;
+}: let
+  waydroid = pkgs.waydroid.overrideAttrs (old: {
+    postInstall =
+      (old.postInstall or "")
+      + ''
+        substituteInPlace $out/lib/waydroid/tools/services/clipboard_manager.py \
+          --replace-fail 'return pyclip.paste()' 'return pyclip.paste(text=True)'
+      '';
+  });
+in {
+  virtualisation.waydroid = {
+    enable = true;
+    package = waydroid;
+  };
 
   systemd.services.waydroid-container = {
     path = [pkgs.lxc];
