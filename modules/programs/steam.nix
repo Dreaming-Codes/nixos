@@ -3,29 +3,33 @@
     exec ${pkgs.steam}/bin/steam -shutdown "$@"
   '';
 in {
-  programs.steam = {
-    enable = true;
-    remotePlay.openFirewall = true;
-    dedicatedServer.openFirewall = true;
-    localNetworkGameTransfers.openFirewall = true;
-    gamescopeSession = {
+  programs = {
+    gamescope = {
       enable = true;
-      steamArgs = [
-        "-steamdeck"
-      ];
-      args = [
-        "--mangoapp"
+      capSysNice = true;
+      enableWsi = true;
+    };
+    steam = {
+      enable = true;
+      remotePlay.openFirewall = true;
+      dedicatedServer.openFirewall = true;
+      localNetworkGameTransfers.openFirewall = true;
+      gamescopeSession = {
+        enable = true;
+        args = [
+          "--mangoapp"
+        ];
+      };
+      extest.enable = true;
+      extraCompatPackages = with pkgs; [
+        proton-ge-bin
       ];
     };
-    extraPackages = with pkgs; [
-      mangohud
-      steamos-session-select
-    ];
-    extest.enable = true;
-    extraCompatPackages = with pkgs; [
-      proton-ge-bin
-    ];
   };
 
-  environment.systemPackages = with pkgs; [steam-run];
+  environment.systemPackages = with pkgs; [
+    steam-run
+    mangohud
+    steamos-session-select
+  ];
 }
