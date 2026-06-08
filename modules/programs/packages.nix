@@ -14,23 +14,6 @@
     '';
   };
 
-  bitwardenDesktop =
-    (pkgs.bitwarden-desktop.override {
-      electron_39 = pkgs.electron_40;
-    }).overrideAttrs (old: {
-      preBuild =
-        lib.replaceStrings [
-          ''
-            if [[ $(jq --raw-output '.devDependencies.electron' < package.json | grep -E --only-matching '^[0-9]+') != 40 ]]; then
-              echo 'ERROR: electron version mismatch'
-              exit 1
-            fi
-
-          ''
-        ] [""]
-        old.preBuild;
-    });
-
   rsworktree = pkgs.rustPlatform.buildRustPackage rec {
     pname = "rsworktree";
     version = "0.7.1";
@@ -253,7 +236,7 @@ in {
 
     # Packages moved from home-manager (shared by all users)
     telegram-desktop
-    bitwardenDesktop
+    bitwarden-desktop
     rbw
     btop
     bun
@@ -271,6 +254,11 @@ in {
     sops
 
     saleae-logic-2
+  ];
+
+  nixpkgs.config.permittedInsecurePackages = [
+    # bitwarden still uses this
+    "electron-39.8.10"
   ];
 
   environment.variables = {
