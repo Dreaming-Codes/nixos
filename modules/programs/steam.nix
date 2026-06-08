@@ -1,8 +1,4 @@
-{pkgs, ...}: let
-  steamos-session-select = pkgs.writeShellScriptBin "steamos-session-select" ''
-    exec ${pkgs.steam}/bin/steam -shutdown "$@"
-  '';
-in {
+{pkgs, ...}: {
   programs = {
     steam = {
       enable = true;
@@ -22,6 +18,5 @@ in {
   environment.systemPackages = with pkgs; [
     steam-run
     mangohud
-    steamos-session-select
   ];
 }
