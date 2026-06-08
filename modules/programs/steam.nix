@@ -27,6 +27,10 @@ in {
     };
   };
 
+  environment.variables = {
+    PROTON_ENABLE_WAYLAND = "1";
+  };
+
   environment.systemPackages = with pkgs; [
     steam-run
     mangohud
