@@ -1,4 +1,8 @@
-{pkgs, ...}: {
+{pkgs, ...}: let
+  steamos-session-select = pkgs.writeShellScriptBin "steamos-session-select" ''
+    exec ${pkgs.steam}/bin/steam -shutdown "$@"
+  '';
+in {
   programs.steam = {
     enable = true;
     remotePlay.openFirewall = true;
@@ -14,7 +18,8 @@
       ];
     };
     extraPackages = with pkgs; [
-      gamescope
+      mangohud
+      steamos-session-select
     ];
     extest.enable = true;
     extraCompatPackages = with pkgs; [
