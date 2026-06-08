@@ -155,7 +155,10 @@ in {
 
   # howdy (IR scanner)
   services = {
-    howdy.enable = true;
+    howdy = {
+      enable = true;
+      settings.video.dark_threshold = 90;
+    };
     linux-enable-ir-emitter.enable = true;
   };
   security.pam.howdy.enable = true;
