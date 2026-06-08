@@ -2,6 +2,10 @@
   programs = {
     steam = {
       enable = true;
+      package = pkgs.steam.override {
+        # steamos3 fixes dualshock support while using proton wayland mode
+        extraArgs = "-steamos3";
+      };
       remotePlay.openFirewall = true;
       dedicatedServer.openFirewall = true;
       localNetworkGameTransfers.openFirewall = true;
