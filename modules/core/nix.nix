@@ -8,6 +8,24 @@
   # Single source of truth: flake.nix's nixConfig. We import the flake file
   # directly (not via the flake machinery) to read its literal attrs.
   flakeNixConfig = (import ../../flake.nix).nixConfig;
+  determinateNixPackages = inputs.determinate.inputs.nix.packages.${pkgs.stdenv.hostPlatform.system};
+  emptySentryNative = pkgs.runCommand "empty-sentry-native" {} ''
+    mkdir -p $out/bin $out/lib/debug
+  '';
+  determinateNixNoSentry = determinateNixPackages.nix.override {
+    sentry-native = emptySentryNative;
+    nix-cli = determinateNixPackages.nix-cli.overrideAttrs (old: {
+      buildInputs =
+        lib.filter
+        (pkg: (pkg.pname or pkg.name or "") != "sentry-native")
+        (old.buildInputs or []);
+      mesonFlags =
+        lib.filter
+        (flag: !(lib.hasPrefix "-Dcrashpad-handler=" flag) && flag != "-Dsentry=enabled")
+        (old.mesonFlags or [])
+        ++ ["-Dsentry=disabled"];
+    });
+  };
 in {
   nix = rec {
     # Channels are dead, long live flakes
@@ -71,7 +89,7 @@ in {
     # Make legacy nix commands consistent as well
     nixPath = lib.mapAttrsToList (key: value: "${key}=${value.to.path}") config.nix.registry;
 
-    # Package is set by determinate.nixosModules.default
+    package = lib.mkForce determinateNixNoSentry;
 
     # Automtaically pin registries based on inputs
     registry = lib.mapAttrs (_: v: {flake = v;}) inputs;
@@ -84,6 +102,7 @@ in {
   environment.variables = {
     SSL_CERT_FILE = "/etc/ssl/certs/ca-certificates.crt";
     NIX_SSL_CERT_FILE = "/etc/ssl/certs/ca-certificates.crt";
+    NIX_SENTRY_ENDPOINT = "";
   };
 
   # Print a diff when running system updates
