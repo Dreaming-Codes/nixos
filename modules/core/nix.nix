@@ -103,6 +103,7 @@ in {
     SSL_CERT_FILE = "/etc/ssl/certs/ca-certificates.crt";
     NIX_SSL_CERT_FILE = "/etc/ssl/certs/ca-certificates.crt";
     NIX_SENTRY_ENDPOINT = "";
+    DETSYS_IDS_TELEMETRY = "disabled";
   };
 
   # Print a diff when running system updates
