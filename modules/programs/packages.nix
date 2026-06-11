@@ -32,6 +32,23 @@
     buildInputs = [pkgs.openssl];
   };
 in {
+  nixpkgs.overlays = [
+    (final: prev: let
+      discordPkgs = import inputs.nixpkgs-discord-vk {
+        inherit (prev) system;
+        config = prev.config;
+      };
+    in {
+      inherit
+        (discordPkgs)
+        discord
+        discord-canary
+        discord-development
+        discord-ptb
+        ;
+    })
+  ];
+
   programs.fish = {
     enable = true;
     generateCompletions = false;
