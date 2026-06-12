@@ -743,8 +743,6 @@ in {
       };
     };
 
-    pay-respects.enable = true;
-
     zellij = {
       enable = true;
       enableFishIntegration = true;
