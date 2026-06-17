@@ -1,4 +1,16 @@
-{lib, ...}: {
+{
+  inputs,
+  lib,
+  ...
+}: let
+  asahiPkgs = import inputs.apple-silicon.inputs.nixpkgs {
+    localSystem.system = "aarch64-linux";
+    crossSystem.system = "aarch64-linux";
+    overlays = [
+      inputs.apple-silicon.overlays.default
+    ];
+  };
+in {
   # Apple Silicon work laptop running Asahi Linux (aarch64).
   # Installed via the upstream nixos-apple-silicon installer ISO; see
   # docs/asahi-x86-emulation.md for x86-only apps deferred to FEX/muvm.
@@ -17,9 +29,17 @@
   # ./firmware, reference it purely; otherwise fall back to extracting it from
   # the EFI partition (works for non-flake / installer-time builds).
   hardware.asahi =
-    if builtins.pathExists ./firmware
-    then {peripheralFirmwareDirectory = ./firmware;}
-    else {extractPeripheralFirmware = true;};
+    {
+      # Use nixos-apple-silicon's own pinned nixpkgs for the major Asahi
+      # packages. Its Cachix is built for that input set; using the host
+      # nixpkgs here causes cache misses and kernel builds during install.
+      pkgs = lib.mkForce asahiPkgs;
+    }
+    // (
+      if builtins.pathExists ./firmware
+      then {peripheralFirmwareDirectory = ./firmware;}
+      else {extractPeripheralFirmware = true;}
+    );
 
   # Asahi/U-Boot UEFI boot: systemd-boot, and never touch EFI variables.
   boot.loader.systemd-boot.enable = true;
