@@ -240,7 +240,6 @@ in {
 
     # Packages moved from home-manager (shared by all users)
     telegram-desktop
-    bitwarden-desktop
     rbw
     btop
     bun
@@ -260,6 +259,7 @@ in {
   # for the FEX/muvm plan to run these on Asahi.
   ++ lib.optionals isX86 [
     onlyoffice-desktopeditors
+    bitwarden-desktop
     zoom-us
     slack
     (discord.override {
@@ -271,7 +271,7 @@ in {
     saleae-logic-2
   ];
 
-  nixpkgs.config.permittedInsecurePackages = [
+  nixpkgs.config.permittedInsecurePackages = lib.optionals isX86 [
     # bitwarden still uses this
     "electron-39.8.10"
   ];
