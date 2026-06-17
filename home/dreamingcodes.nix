@@ -368,11 +368,12 @@ in {
     seed_file "$DMS_DIR/binds.kdl" "${../config/niri/dms/binds.kdl}"
     seed_file "$DMS_DIR/colors.kdl" "${../config/niri/dms/colors.kdl}"
     seed_file "$DMS_DIR/cursor.kdl" "${../config/niri/dms/cursor.kdl}"
+    seed_file "$DMS_DIR/host-local.kdl" "${../config/niri/dms/host-local.kdl}"
     seed_file "$DMS_DIR/layout.kdl" "${../config/niri/dms/layout.kdl}"
     seed_file "$DMS_DIR/outputs.kdl" "${../config/niri/dms/outputs.kdl}"
     seed_file "$DMS_DIR/windowrules.kdl" "${../config/niri/dms/windowrules.kdl}"
 
-    for target in alttab.kdl binds.kdl colors.kdl cursor.kdl layout.kdl outputs.kdl windowrules.kdl; do
+    for target in alttab.kdl binds.kdl colors.kdl cursor.kdl host-local.kdl layout.kdl outputs.kdl windowrules.kdl; do
       make_writable_file "$DMS_DIR/$target"
       if ! ${pkgs.gnugrep}/bin/grep -Eq "^[[:space:]]*include[[:space:]]+\"dms/$target\"[[:space:]]*$" "$NIRI_CONF"; then
         printf '\ninclude "dms/%s"\n' "$target" >> "$NIRI_CONF"
@@ -686,7 +687,7 @@ in {
     recursive = true;
   };
 
-  home.file."./.config/niri/config.kdl" = {
+  home.file.".config/niri/config.kdl" = {
     source = ../config/niri/config.kdl;
     force = true;
   };
