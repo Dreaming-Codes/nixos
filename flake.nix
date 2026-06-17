@@ -58,7 +58,6 @@
     nixos-facter-modules.url = "github:nix-community/nixos-facter-modules";
     apple-silicon = {
       url = "github:nix-community/nixos-apple-silicon";
-      inputs.nixpkgs.follows = "nixpkgs";
     };
     sops-nix = {
       url = "github:Mic92/sops-nix";
