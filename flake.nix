@@ -47,6 +47,10 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nix-darwin = {
+      url = "github:nix-darwin/nix-darwin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     razer-laptop-controller = {
       url = "github:JosuGZ/razer-laptop-control-no-dkms";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -65,9 +69,8 @@
     razer-laptop-controller,
     ...
   }: let
-    system = "x86_64-linux";
-    pkgs = import nixpkgs {inherit system;};
-    lib = import ./lib/mkHost.nix {inherit inputs;};
+    mkHost = (import ./lib/mkHost.nix {inherit inputs;}).mkHost;
+    mkDarwin = (import ./lib/mkDarwin.nix {inherit inputs;}).mkDarwin;
   in {
     nixosModules = {
       nix-file-overlay = ./modules/nix-file-overlay;
@@ -87,7 +90,7 @@
     };
 
     nixosConfigurations = {
-      DreamingDesk = lib.mkHost {
+      DreamingDesk = mkHost {
         hostname = "DreamingDesk";
         hostPath = "dreamingdesk";
         extraModules = [
@@ -95,7 +98,7 @@
         ];
       };
 
-      DreamingBlade = lib.mkHost {
+      DreamingBlade = mkHost {
         hostname = "DreamingBlade";
         hostPath = "dreamingblade";
         extraModules = [
@@ -107,6 +110,13 @@
             };
           }
         ];
+      };
+    };
+
+    darwinConfigurations = {
+      DreamingNeuraBook = mkDarwin {
+        hostname = "DreamingNeuraBook";
+        hostPath = "dreamingneurabook";
       };
     };
   };
