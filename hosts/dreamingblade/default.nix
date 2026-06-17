@@ -149,7 +149,7 @@ in {
           "XDG_RUNTIME_DIR"
         ];
         # Load GitHub token from sops secret
-        EnvironmentFile = "/run/secrets/github_token_env";
+        EnvironmentFile = "-/run/secrets/github_token_env";
       };
     };
   };

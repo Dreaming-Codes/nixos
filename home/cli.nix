@@ -9,6 +9,17 @@
   home.shell.enableShellIntegration = true;
   programs.home-manager.enable = true;
 
+  home.activation.gitSigningIfAvailable = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    signing_config="${config.xdg.configHome}/git/signing-if-available"
+    mkdir -p "$(dirname "$signing_config")"
+
+    if ${pkgs.gnupg}/bin/gpg --batch --list-secret-keys 1FE3A3F18110DDDD >/dev/null 2>&1; then
+      printf '[commit]\n\tgpgSign = true\n' > "$signing_config"
+    else
+      printf '[commit]\n\tgpgSign = false\n' > "$signing_config"
+    fi
+  '';
+
   # Comma integration with nix-index (cross-platform)
   programs.nix-index-database.comma.enable = true;
 
@@ -61,9 +72,11 @@
       lfs.enable = true;
       signing = {
         key = "1FE3A3F18110DDDD";
-        signByDefault = true;
       };
       settings = {
+        include = {
+          path = "${config.xdg.configHome}/git/signing-if-available";
+        };
         user = {
           name = "DreamingCodes";
           email = "me@dreaming.codes";
