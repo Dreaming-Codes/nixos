@@ -1,132 +1,119 @@
 #!/usr/bin/env bash
-# DreamingWork — Asahi/aarch64 NixOS install helper.
+# DreamingWork — Asahi/aarch64 NixOS ONE-SHOT install.
 #
-# Run this INSIDE the booted nixos-apple-silicon installer (as root), NOT on macOS.
-# It is interactive and STOPS for confirmation before anything destructive.
+# Run INSIDE the booted nixos-apple-silicon installer (as root), NOT on macOS.
+# Assumes a WIRED/already-online connection. Stops only ONCE, to confirm the
+# partition to format. After that it runs end-to-end through nixos-install.
 #
 # Usage on the target:
 #   sudo su
-#   nix-shell -p git   # if git isn't already present
+#   nix-shell -p git
 #   git clone -b asahi-wip https://github.com/Dreaming-Codes/nixos /tmp/nixos
 #   bash /tmp/nixos/scripts/asahi-install.sh
 #
-# What it does, in order:
-#   1. Shows the current partition table and waits for you to confirm.
-#   2. Creates a root partition filling the free space (sgdisk -n 0:0 -s).
-#   3. Formats it ext4 (label: nixos)  [asks first].
-#   4. Mounts root at /mnt and the Asahi EFI partition at /mnt/boot.
-#   5. Connects WiFi via iwd (optional; skip if wired).
-#   6. Runs nixos-generate-config to produce hardware-configuration.nix.
-#   7. Copies that hardware-configuration.nix into the flake's host dir.
-#   8. Prints the exact nixos-install command to run (does NOT auto-run it,
-#      because the firmware/flake decisions are made together with a human).
+# Steps: show table -> create root part -> [confirm] -> mkfs -> mount ->
+#        generate hw config -> copy Asahi firmware -> local git commit so the
+#        flake sees new files -> nixos-install --flake .#DreamingWork
 
 set -euo pipefail
 
 DISK="/dev/nvme0n1"
-FLAKE_SRC="$(cd "$(dirname "$0")/.." && pwd)"   # repo root (…/nixos)
+REPO="$(cd "$(dirname "$0")/.." && pwd)"   # repo root (…/nixos)
 HOST="DreamingWork"
-HOST_DIR="$FLAKE_SRC/hosts/dreamingwork"
+HOST_DIR="$REPO/hosts/dreamingwork"
 
 red()   { printf '\033[31m%s\033[0m\n' "$*"; }
 green() { printf '\033[32m%s\033[0m\n' "$*"; }
 bold()  { printf '\033[1m%s\033[0m\n' "$*"; }
 
-confirm() {
-  # $1 = prompt. Returns 0 on yes.
-  local ans
-  read -r -p "$1 [type YES to proceed]: " ans
-  [ "$ans" = "YES" ]
-}
+confirm() { local a; read -r -p "$1 [type YES to proceed]: " a; [ "$a" = "YES" ]; }
 
-if [ "$(id -u)" -ne 0 ]; then
-  red "Must run as root. Run 'sudo su' first."
-  exit 1
-fi
+[ "$(id -u)" -eq 0 ] || { red "Run as root (sudo su)."; exit 1; }
+[ -b "$DISK" ] || { red "$DISK not found — run inside the Linux installer, not macOS."; lsblk || true; exit 1; }
 
-if [ ! -b "$DISK" ]; then
-  red "$DISK not found. This script must run inside the Linux installer, not macOS."
-  red "Available block devices:"
-  lsblk 2>/dev/null || true
-  exit 1
-fi
-
-bold "=== Step 1/8: current partition table on $DISK ==="
+# ---------------------------------------------------------------------------
+bold "=== Step 1/9: current partition table on $DISK ==="
 sgdisk "$DISK" -p || true
 echo
-red "DANGER: do NOT touch partition 1 (iBootSystemContainer) or the last"
-red "(RecoveryOSContainer). We only ADD a root partition in the free space."
-echo
-if ! confirm "Create a new root partition filling free space on $DISK?"; then
-  red "Aborted before any changes were made."
-  exit 1
-fi
+red "We only ADD a root partition in the free space. Partition 1"
+red "(iBootSystemContainer) and the last (RecoveryOSContainer) are left alone."
 
-bold "=== Step 2/8: creating root partition (sgdisk -n 0:0 -s) ==="
+# ---------------------------------------------------------------------------
+bold "=== Step 2/9: create root partition (sgdisk -n 0:0 -s) ==="
 sgdisk "$DISK" -n 0:0 -s
+partprobe "$DISK" 2>/dev/null || true
+sleep 1
 sgdisk "$DISK" -p
-echo
 
-# Find the new ext4-target partition: type 8300, highest-numbered such.
-# We detect it as the partition we just created (largest 8300 / Linux filesystem).
-ROOT_PART="$(
-  lsblk -rno NAME,PARTTYPENAME "$DISK" 2>/dev/null \
-    | awk '/[Ll]inux/ {print "/dev/"$1}' \
-    | tail -n1
-)"
-# Fallback: guess by appending the highest partition number.
+# Detect the new Linux partition: highest-numbered "Linux filesystem"/8300.
+ROOT_PART="$(lsblk -rno NAME,PARTTYPENAME "$DISK" 2>/dev/null | awk '/[Ll]inux/ {print "/dev/"$1}' | tail -n1)"
 if [ -z "${ROOT_PART:-}" ] || [ ! -b "$ROOT_PART" ]; then
   LASTNUM="$(sgdisk "$DISK" -p | awk '/^[[:space:]]*[0-9]+/{n=$1} END{print n}')"
   ROOT_PART="${DISK}p${LASTNUM}"
 fi
 
+echo
 bold "Detected new root partition: $ROOT_PART"
-red "VERIFY this is the partition you just created (type 8300, second-to-last)."
-if ! confirm "Format $ROOT_PART as ext4 (label nixos)? THIS ERASES IT."; then
-  red "Aborted before formatting. Inspect with: sgdisk $DISK -p"
-  exit 1
-fi
+red "VERIFY above: it should be the large (~491GB) type-8300 partition you just created."
+confirm "Format $ROOT_PART as ext4 (label nixos)? THIS ERASES IT." || { red "Aborted, no changes since partition create."; exit 1; }
 
-bold "=== Step 3/8: formatting $ROOT_PART ext4 ==="
-mkfs.ext4 -L nixos "$ROOT_PART"
+# ---------------------------------------------------------------------------
+bold "=== Step 3/9: format $ROOT_PART ext4 ==="
+mkfs.ext4 -F -L nixos "$ROOT_PART"
 
-bold "=== Step 4/8: mounting root + Asahi EFI partition ==="
+# ---------------------------------------------------------------------------
+bold "=== Step 4/9: mount root + Asahi EFI partition ==="
 mount /dev/disk/by-label/nixos /mnt
 mkdir -p /mnt/boot
 EFI_PARTUUID="$(cat /proc/device-tree/chosen/asahi,efi-system-partition)"
 mount "/dev/disk/by-partuuid/${EFI_PARTUUID}" /mnt/boot
-green "Mounted:"
-findmnt /mnt; findmnt /mnt/boot
+green "Mounted:"; findmnt /mnt; findmnt /mnt/boot
 
-bold "=== Step 5/8: WiFi (iwd) ==="
-if confirm "Connect WiFi now via iwctl? (say NO if using ethernet)"; then
-  read -r -p "SSID: " SSID
-  iwctl station wlan0 scan || true
-  sleep 2
-  iwctl station wlan0 connect "$SSID"
-  sleep 2
-  iwctl station wlan0 show || true
+# ---------------------------------------------------------------------------
+bold "=== Step 5/9: time sync (wired network assumed) ==="
+systemctl restart systemd-timesyncd 2>/dev/null || true
+if ! ping -c1 -W3 cache.nixos.org >/dev/null 2>&1; then
+  red "WARNING: no network reachable. nixos-install will fail without internet."
+  red "Connect ethernet (or run 'iwctl station wlan0 connect SSID') then re-run."
 fi
-green "Syncing time…"
-systemctl restart systemd-timesyncd || true
 
-bold "=== Step 6/8: nixos-generate-config ==="
+# ---------------------------------------------------------------------------
+bold "=== Step 6/9: nixos-generate-config ==="
 nixos-generate-config --root /mnt
-green "Generated /mnt/etc/nixos/hardware-configuration.nix:"
-cat /mnt/etc/nixos/hardware-configuration.nix
-
-bold "=== Step 7/8: copy hardware-configuration.nix into the flake ==="
 cp /mnt/etc/nixos/hardware-configuration.nix "$HOST_DIR/hardware-configuration.nix"
-green "Copied to $HOST_DIR/hardware-configuration.nix"
-echo
-red "NOTE: also save the Asahi peripheral firmware so the flake build is pure:"
-echo "  mkdir -p $HOST_DIR/firmware"
-echo "  cp /mnt/boot/asahi/{all_firmware.tar.gz,kernelcache*} $HOST_DIR/firmware/ 2>/dev/null || true"
-echo "Then set in hosts/dreamingwork/default.nix:"
-echo "    hardware.asahi.peripheralFirmwareDirectory = ./firmware;"
-echo "(We'll do this edit together — do not run nixos-install until it's handled.)"
+green "hardware-configuration.nix copied into the flake:"
+cat "$HOST_DIR/hardware-configuration.nix"
 
-bold "=== Step 8/8: install command (run manually after firmware is handled) ==="
-green "nixos-install --flake \"$FLAKE_SRC#$HOST\""
+# ---------------------------------------------------------------------------
+bold "=== Step 7/9: copy Asahi peripheral firmware into the flake (pure build) ==="
+mkdir -p "$HOST_DIR/firmware"
+if cp /mnt/boot/asahi/all_firmware.tar.gz "$HOST_DIR/firmware/" 2>/dev/null; then
+  cp /mnt/boot/asahi/kernelcache* "$HOST_DIR/firmware/" 2>/dev/null || true
+  green "Firmware copied from /mnt/boot/asahi/:"
+  ls -la "$HOST_DIR/firmware/"
+else
+  red "Could not find /mnt/boot/asahi/all_firmware.tar.gz."
+  red "Listing /mnt/boot/asahi for inspection:"; ls -la /mnt/boot/asahi 2>/dev/null || true
+  red "Removing empty firmware dir so the config falls back to EFI extraction."
+  rmdir "$HOST_DIR/firmware" 2>/dev/null || true
+fi
+
+# ---------------------------------------------------------------------------
+bold "=== Step 8/9: local commit so the flake sees hw config + firmware ==="
+# Flakes only see git-tracked files. Make a throwaway local commit in /tmp/nixos.
+cd "$REPO"
+git config user.email "install@local" 2>/dev/null || true
+git config user.name  "asahi-install" 2>/dev/null || true
+git add -A
+git commit -m "install-time: hardware-configuration.nix + Asahi firmware for $HOST" || true
+
+# ---------------------------------------------------------------------------
+bold "=== Step 9/9: nixos-install --flake .#$HOST ==="
+green "Using the Asahi binary cache; you'll be asked to set the root password at the end."
+nixos-install --flake "$REPO#$HOST"
+
 echo
-bold "STOP HERE. Report back so we wire the firmware path + commit the hardware config."
+green "==================================================================="
+green " Install finished. Reboot with: reboot"
+green " First boot: log in as root, create/set your user password."
+green "==================================================================="

@@ -5,10 +5,21 @@
   #
   # NOTE: hardware-configuration.nix is generated on the target with
   # `nixos-generate-config` after partitioning, then committed here.
+  # The ./firmware dir (Asahi peripheral firmware copied off the EFI system
+  # partition) is also produced at install time by scripts/asahi-install.sh.
   imports =
     lib.optional (builtins.pathExists ./hardware-configuration.nix) ./hardware-configuration.nix;
 
   nixpkgs.hostPlatform = "aarch64-linux";
+
+  # Flakes forbid the default impure reference to the firmware on the EFI
+  # system partition. If scripts/asahi-install.sh has copied the firmware into
+  # ./firmware, reference it purely; otherwise fall back to extracting it from
+  # the EFI partition (works for non-flake / installer-time builds).
+  hardware.asahi =
+    if builtins.pathExists ./firmware
+    then {peripheralFirmwareDirectory = ./firmware;}
+    else {extractPeripheralFirmware = true;};
 
   # Asahi/U-Boot UEFI boot: systemd-boot, and never touch EFI variables.
   boot.loader.systemd-boot.enable = true;
