@@ -83,7 +83,6 @@
   dmsPluginDefaults = builtins.fromJSON (builtins.readFile ../config/dms/defaults/plugin_settings.json);
 in {
   xdg.configFile."hypr/hyprland.conf".force = true;
-  xdg.configFile."btop/btop.conf".force = true;
 
   # Set default applications (DreamingCodes specific)
   home.activation.dreamingCodesMimeApps = lib.hm.dag.entryAfter ["writeBoundary"] ''
@@ -743,66 +742,13 @@ in {
       };
     };
 
-    zellij = {
-      enable = true;
-      enableFishIntegration = true;
-      exitShellOnExit = true;
-    };
-
-    lazygit.enable = true;
-    gitui.enable = true;
-
-    yazi = {
-      enable = true;
-      enableFishIntegration = true;
-    };
-
-    btop = {
-      enable = true;
-      settings = {
-        graph_symbol = "block";
-        graph_symbol_cpu = "block";
-        graph_symbol_gpu = "block";
-        graph_symbol_mem = "block";
-        graph_symbol_net = "block";
-        graph_symbol_proc = "block";
-      };
-    };
-
-    git = {
-      enable = true;
-      package = pkgs.gitFull;
-      signing = {
-        key = "1FE3A3F18110DDDD";
-        signByDefault = true;
-      };
-      settings = {
-        user = {
-          name = "DreamingCodes";
-          email = "me@dreaming.codes";
-        };
-        core = {
-          editor = "hx";
-        };
-        init = {
-          defaultBranch = "master";
-        };
-        pull = {
-          rebase = true;
-        };
-        push = {
-          autoSetupRemote = true;
-        };
-        diff = {
-          external = "difft";
-        };
-        credential = {
-          helper = [
-            "libsecret"
-            "${pkgs.git-credential-oauth}/bin/git-credential-oauth"
-          ];
-        };
-      };
+    # Base git config is shared in home/cli.nix; this adds the Linux-only
+    # libsecret credential helper.
+    git.settings.credential = {
+      helper = [
+        "libsecret"
+        "${pkgs.git-credential-oauth}/bin/git-credential-oauth"
+      ];
     };
   };
 }

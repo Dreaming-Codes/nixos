@@ -27,6 +27,5 @@
       nix-index-database.homeModules.nix-index
       ../../home/common.nix
     ];
-    home.stateVersion = "26.05";
   };
 }
