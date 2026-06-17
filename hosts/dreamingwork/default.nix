@@ -69,6 +69,7 @@ in {
       tap-to-click = true;
       tap_button_map = "lrm";
       clickfinger_behavior = false;
+      natural_scroll = true;
     };
   };
 
