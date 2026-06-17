@@ -458,7 +458,7 @@ in {
         [
           "$mod, mouse_down, exec, hyprctl -q keyword cursor:zoom_factor $(hyprctl getoption cursor:zoom_factor | awk '/^float.*/ {val = $2 * 1.2; if (val < 1) val=1; print val}')"
           "$mod, mouse_up, exec, hyprctl -q keyword cursor:zoom_factor $(hyprctl getoption cursor:zoom_factor | awk '/^float.*/ {val = $2 * 0.8; if (val < 1) val=1; print val}')"
-          "$mod, W, exec, brave-origin-nightly"
+          "$mod, W, exec, brave"
           "$mod, SPACE, exec, rio"
           ", Print, exec, dms screenshot full"
           "SHIFT, Print, exec, dms screenshot"
@@ -708,8 +708,9 @@ in {
 
   programs = {
     mangohud = {
-      enable = true;
-      enableSessionWide = true;
+      # MangoHud is a gaming FPS overlay; only meaningful on the x86 desktop/laptop.
+      enable = pkgs.stdenv.hostPlatform.isx86_64;
+      enableSessionWide = pkgs.stdenv.hostPlatform.isx86_64;
       settings = {
         full = true;
         no_display = true;

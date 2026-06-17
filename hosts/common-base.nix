@@ -1,22 +1,24 @@
-{pkgs, ...}: {
+{
+  pkgs,
+  config,
+  lib,
+  ...
+}: {
   imports = [
-    ../modules/core/boot.nix
     ../modules/core/networking.nix
     ../modules/core/nix.nix
     ../modules/core/security.nix
     ../modules/core/sops.nix
     ../modules/hardware/audio.nix
     ../modules/hardware/bluetooth.nix
-    ../modules/hardware/graphics.nix
-    ../modules/desktop/hyprland.nix
-    ../modules/desktop/niri.nix
     ../modules/desktop/fonts.nix
     ../modules/desktop/xdg.nix
+    ../modules/desktop/hyprland.nix
+    ../modules/desktop/niri.nix
     ../modules/services/docker.nix
     ../modules/services/printing.nix
     ../modules/services/samba.nix
     ../modules/services/flatpak.nix
-    ../modules/programs/steam.nix
     ../modules/programs/development.nix
     ../modules/programs/packages.nix
     ../modules/users/dreamingcodes.nix
@@ -45,9 +47,13 @@
     users = ["dreamingcodes"];
   };
 
-  # Ensure geoclue starts after wpa_supplicant to reduce WiFi scan race condition
-  systemd.services.geoclue.after = ["wpa_supplicant.service"];
-  systemd.services.geoclue.wants = ["wpa_supplicant.service"];
+  # Ensure geoclue starts after wpa_supplicant to reduce WiFi scan race condition.
+  # Only applies when wpa_supplicant is the NetworkManager backend (iwd-based hosts
+  # like the Asahi work laptop have no such unit).
+  systemd.services.geoclue = lib.mkIf (config.networking.networkmanager.wifi.backend != "iwd") {
+    after = ["wpa_supplicant.service"];
+    wants = ["wpa_supplicant.service"];
+  };
 
   # State version
   system.stateVersion = "26.05";

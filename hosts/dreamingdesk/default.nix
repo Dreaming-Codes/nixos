@@ -5,6 +5,7 @@
   ...
 }: {
   imports = [
+    ../common-x86.nix
     ../../modules/users/riccardo.nix
   ];
 
