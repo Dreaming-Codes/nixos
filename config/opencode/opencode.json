@@ -5,15 +5,14 @@
     "external_directory": "allow"
   },
   "plugin": [
-    "@ex-machina/opencode-anthropic-auth@latest",
     "@mohak34/opencode-notifier@latest"
   ],
   "agent": {
     "build": {
-      "model": "anthropic/claude-opus-4-7"
+      "model": "amazon-bedrock/anthropic.claude-opus-4-8"
     },
     "explore": {
-      "model": "anthropic/claude-sonnet-4-6"
+      "model": "amazon-bedrock/anthropic.claude-opus-4-8"
     }
   },
   "lsp": {
