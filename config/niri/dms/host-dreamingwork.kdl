@@ -1,0 +1,6 @@
+input {
+    touchpad {
+        tap-button-map "left-right-middle"
+        click-method "button-areas"
+    }
+}

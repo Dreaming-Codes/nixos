@@ -59,6 +59,19 @@ in {
     enable = true;
   };
 
+  home-manager.users.dreamingcodes = {
+    home.file.".config/niri/dms/host-local.kdl" = {
+      source = ../../config/niri/dms/host-dreamingwork.kdl;
+      force = true;
+    };
+
+    wayland.windowManager.hyprland.settings.input.touchpad = {
+      tap-to-click = true;
+      tap_button_map = "lrm";
+      clickfinger_behavior = false;
+    };
+  };
+
   # Asahi binary cache (host-local; avoids building the kernel locally).
   nix.settings = {
     extra-substituters = [
