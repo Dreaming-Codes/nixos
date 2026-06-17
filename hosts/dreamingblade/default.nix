@@ -19,6 +19,7 @@
     });
 in {
   imports = [
+    ../common-x86.nix
     ../../modules/core/campus-switch.nix
     ../../modules/programs/virtualization/waydroid.nix
   ];

@@ -1,5 +1,5 @@
 binds {
-    Mod+W hotkey-overlay-title="Browser" { spawn "brave-origin-nightly"; }
+    Mod+W hotkey-overlay-title="Browser" { spawn "brave"; }
     Mod+Space hotkey-overlay-title="Terminal" { spawn "rio"; }
     Mod+X hotkey-overlay-title="Launcher" { spawn "dms" "ipc" "call" "spotlight" "toggle"; }
     Mod+C hotkey-overlay-title="Clipboard" { spawn "dms" "ipc" "call" "clipboard" "toggle"; }

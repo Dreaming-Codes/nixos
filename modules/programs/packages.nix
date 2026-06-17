@@ -2,8 +2,12 @@
   pkgs,
   inputs,
   lib,
+  config,
   ...
 }: let
+  # Use config.nixpkgs.hostPlatform (not pkgs.stdenv) to gate overlays, otherwise
+  # referencing pkgs while defining nixpkgs.overlays causes infinite recursion.
+  isX86 = config.nixpkgs.hostPlatform.isx86_64;
   signalDesktop = pkgs.symlinkJoin {
     name = "signal-desktop";
     paths = [pkgs.signal-desktop];
@@ -32,7 +36,7 @@
     buildInputs = [pkgs.openssl];
   };
 in {
-  nixpkgs.overlays = [
+  nixpkgs.overlays = lib.optionals isX86 [
     (final: prev: let
       discordPkgs = import inputs.nixpkgs-discord-vk {
         inherit (prev) system;
@@ -109,11 +113,7 @@ in {
 
     hplipWithPlugin
 
-    onlyoffice-desktopeditors
-
     uv
-
-    zoom-us
 
     zed-editor
     clang
@@ -147,8 +147,7 @@ in {
     rustscan
 
     nur.repos.forkprince.helium-nightly
-    inputs.brave-origin.legacyPackages.${pkgs.system}.brave-origin-nightly
-    inputs.brave-origin.legacyPackages.${pkgs.system}.brave
+    inputs.brave-origin.legacyPackages.${pkgs.stdenv.hostPlatform.system}.brave
 
     playerctl
     brightnessctl
@@ -156,12 +155,6 @@ in {
     libnotify
     mixxc
     termscp
-
-    slack
-
-    (discord.override {
-      withOpenASAR = true;
-    })
 
     lldb
     # required to build a lot of rust crates
@@ -183,12 +176,10 @@ in {
     (spotify-player.override {
       withAudioBackend = "pulseaudio";
     })
-    spotify
     mission-center
 
     xwayland-satellite
 
-    mullvad-browser
     mullvad-vpn
     frida-tools
 
@@ -201,10 +192,6 @@ in {
         ]
     ))
     node-gyp
-
-    prismlauncher
-
-    # zed-editor
 
     ripgrep
     ripgrep-all
@@ -263,13 +250,24 @@ in {
     kdePackages.kleopatra
     gnupg
     pinentry-qt
-    tor-browser
     jetbrains-toolbox
     just
 
     # Secrets management
     sops
-
+  ]
+  # x86_64-only apps with no native aarch64 build. See docs/asahi-x86-emulation.md
+  # for the FEX/muvm plan to run these on Asahi.
+  ++ lib.optionals isX86 [
+    onlyoffice-desktopeditors
+    zoom-us
+    slack
+    (discord.override {
+      withOpenASAR = true;
+    })
+    spotify
+    mullvad-browser
+    tor-browser
     saleae-logic-2
   ];
 

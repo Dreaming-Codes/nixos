@@ -7,10 +7,10 @@
   xdg.mime = {
     enable = true;
     defaultApplications = {
-      "application/pdf" = "brave-origin-nightly.desktop";
-      "x-scheme-handler/http" = "brave-origin-nightly.desktop";
-      "x-scheme-handler/https" = "brave-origin-nightly.desktop";
-      "text/html" = "brave-origin-nightly.desktop";
+      "application/pdf" = "brave-browser.desktop";
+      "x-scheme-handler/http" = "brave-browser.desktop";
+      "x-scheme-handler/https" = "brave-browser.desktop";
+      "text/html" = "brave-browser.desktop";
     };
   };
 
