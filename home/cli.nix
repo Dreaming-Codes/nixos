@@ -9,6 +9,10 @@
   home.shell.enableShellIntegration = true;
   programs.home-manager.enable = true;
 
+  home.packages = [
+    pkgs.git-spice
+  ];
+
   # Comma integration with nix-index (cross-platform)
   programs.nix-index-database.comma.enable = true;
 
