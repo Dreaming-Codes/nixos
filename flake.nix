@@ -61,6 +61,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     brave-origin.url = "github:Dreaming-Codes/nixpkgs/brave-channels";
+    paneru = {
+      url = "github:karinushka/paneru";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs @ {
