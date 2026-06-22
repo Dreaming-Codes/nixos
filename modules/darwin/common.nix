@@ -15,6 +15,10 @@ let
   localNixSettings = if hasLocalNixSettings then import localNixSettingsPath else { };
 in
 {
+  imports = [
+    ./paneru.nix
+  ];
+
   nixpkgs.hostPlatform = "aarch64-darwin";
   nixpkgs.config.allowUnfree = true;
 
