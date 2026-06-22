@@ -17,6 +17,7 @@ in
 {
   imports = [
     ./paneru.nix
+    ./skhd.nix
   ];
 
   nixpkgs.hostPlatform = "aarch64-darwin";
