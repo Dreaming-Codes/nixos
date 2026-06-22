@@ -2,7 +2,20 @@
   "$schema": "https://opencode.ai/config.json",
   "permission": {
     "*": "allow",
-    "external_directory": "allow"
+    "external_directory": "allow",
+    "bash": {
+      "*": "allow",
+      "git push *": "ask",
+      "git push": "ask",
+      "gh pr create *": "ask",
+      "gh pr edit *": "ask",
+      "gh pr merge *": "ask",
+      "gh pr close *": "ask",
+      "glab mr create *": "ask",
+      "glab mr update *": "ask",
+      "glab mr merge *": "ask",
+      "glab mr close *": "ask"
+    }
   },
   "plugin": [
     "@mohak34/opencode-notifier@latest"
