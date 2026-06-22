@@ -3,7 +3,8 @@
   lib,
   config,
   ...
-}: {
+}:
+{
   home.stateVersion = "26.05";
 
   home.shell.enableShellIntegration = true;
@@ -65,7 +66,7 @@
       lfs.enable = true;
       signing = {
         key = "1FE3A3F18110DDDD";
-        signByDefault = true;
+        signByDefault = false;
       };
       settings = {
         user = {
@@ -132,14 +133,13 @@
         end
         abbr -a dockertui oxker
       '';
-      shellAliases =
-        {
-          htop = "btop";
-        }
-        # `shutdown` via systemctl is Linux-only.
-        // lib.optionalAttrs pkgs.stdenv.isLinux {
-          shutdown = "systemctl poweroff";
-        };
+      shellAliases = {
+        htop = "btop";
+      }
+      # `shutdown` via systemctl is Linux-only.
+      // lib.optionalAttrs pkgs.stdenv.isLinux {
+        shutdown = "systemctl poweroff";
+      };
       functions = {
         binds = ''
           echo "╔═══════════════════════════════════════════════════════════════╗"
@@ -321,7 +321,7 @@
     zoxide = {
       enable = true;
       enableFishIntegration = true;
-      options = ["--cmd cd"];
+      options = [ "--cmd cd" ];
     };
   };
 }

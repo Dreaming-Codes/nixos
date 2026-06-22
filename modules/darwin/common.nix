@@ -114,13 +114,10 @@ in
       extraEnv.HOMEBREW_NO_REQUIRE_TAP_TRUST = "1";
     };
     taps = [
-      "BarutSRB/tap"
       "supercmdlabs/supercmd"
     ];
     casks = [
       "bitwarden"
-      # SuperCmd (repo: SuperCmdLabs/SuperCmd) open-source macOS launcher.
-      "supercmd"
     ];
   };
 
