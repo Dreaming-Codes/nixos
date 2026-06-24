@@ -55,6 +55,8 @@ in {
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = false;
 
+  services.tailscale.enable = true;
+
   # Broadcom WiFi on Apple hardware needs iwd (WPA3 unsupported by wpa_supplicant
   # on these chips). This implicitly enables iwd and disables wpa_supplicant.
   networking.networkmanager.wifi.backend = "iwd";
