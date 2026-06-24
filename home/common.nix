@@ -255,6 +255,7 @@ in {
 
   home.packages = [
     rbwPinentryKwallet
+    pkgs.git-spice
   ];
 
   xdg.desktopEntries.rio = {
