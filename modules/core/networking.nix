@@ -29,6 +29,8 @@ in {
       settings = {
         Resolve = {
           DNSOverTLS = "opportunistic";
+          # Resolve single-label names (e.g. `go/`) via upstream DNS
+          ResolveUnicastSingleLabel = "yes";
           FallbackDNS = [
             "1.1.1.1#cloudflare-dns.com"
             "1.0.0.1#cloudflare-dns.com"
