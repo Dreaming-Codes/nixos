@@ -1,6 +1,5 @@
 {inputs, ...}: let
   commonModules = [
-    inputs.nixos-facter-modules.nixosModules.facter
     inputs.nur.modules.nixos.default
     inputs.home-manager.nixosModules.home-manager
     inputs.dms-plugin-registry.nixosModules.default
@@ -14,6 +13,7 @@ in {
     hostname,
     hostPath,
     system ? "x86_64-linux",
+    useFacter ? true,
     extraModules ? [],
   }:
     inputs.nixpkgs.lib.nixosSystem {
@@ -29,11 +29,14 @@ in {
       };
       modules =
         commonModules
+        ++ inputs.nixpkgs.lib.optionals useFacter [
+          inputs.nixos-facter-modules.nixosModules.facter
+          {facter.reportPath = ../hosts/${hostPath}/facter.json;}
+        ]
         ++ [
-          ../hosts/common.nix
+          ../hosts/common-base.nix
           ../hosts/${hostPath}
           {
-            facter.reportPath = ../hosts/${hostPath}/facter.json;
             networking.hostName = hostname;
           }
         ]

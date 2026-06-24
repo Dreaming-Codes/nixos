@@ -1,0 +1,7 @@
+input {
+    touchpad {
+        natural-scroll
+        tap-button-map "left-right-middle"
+        click-method "button-areas"
+    }
+}
