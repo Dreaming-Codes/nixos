@@ -86,7 +86,9 @@ in {
         ];
         dns = "systemd-resolved";
         connectionConfig = {
-          # Allow DHCP DNS as fallback, 1.1.1.1 remains primary via networking.nameservers
+          # Keep DHCP/internal DNS on plain DNS; global resolved DNS still uses DoT.
+          "connection.dns-over-tls" = "no";
+          # Allow DHCP DNS as fallback, 1.1.1.1 remains primary via networking.nameservers.
           "ipv4.ignore-auto-dns" = false;
           "ipv6.ignore-auto-dns" = false;
         };
