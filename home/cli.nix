@@ -39,6 +39,9 @@
     force = true;
   };
 
+  # Ensure the SSH ControlPath socket directory exists for connection multiplexing.
+  home.file.".ssh/sockets/.keep".text = "";
+
   home.file.".config/opencode/opencode.json".source = ../config/opencode/opencode.json;
   home.file.".config/opencode/opencode-notifier.json".source =
     ../config/opencode/opencode-notifier.json;
@@ -131,6 +134,9 @@
       generateCompletions = false;
       interactiveShellInit = ''
         set fish_greeting # Disable greeting
+
+        # Dimmer direnv output
+        set -gx DIRENV_LOG_FORMAT (printf '\033[22m\033[2mdirenv: %%s\033[0m\033[22m')
 
         # Remap fzf keybindings to avoid zellij conflicts
         bind --erase \ct  # Remove Ctrl+T
@@ -325,6 +331,20 @@
     direnv = {
       enable = true;
       nix-direnv.enable = true;
+      # Silence the "taking too long" warning when flakes re-evaluate.
+      config.global.warn_timeout = "0";
+    };
+
+    # Reuse a single SSH connection within a short window so rapid successive
+    # git operations skip repeated TCP/TLS/auth handshakes
+    ssh = {
+      enable = true;
+      enableDefaultConfig = false;
+      matchBlocks."*" = {
+        controlMaster = "auto";
+        controlPath = "~/.ssh/sockets/%r@%h-%p";
+        controlPersist = "15s";
+      };
     };
 
     zoxide = {
