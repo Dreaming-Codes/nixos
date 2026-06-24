@@ -340,6 +340,10 @@
     ssh = {
       enable = true;
       enableDefaultConfig = false;
+      # Marker the sw repo's nix develop shellHook greps for to decide whether
+      # to nag about running nlk_sw_setup.sh. The useful bits are already
+      # replicated declaratively, so this comment alone silences the banner.
+      extraConfig = "# nlk_speed_up_git";
       matchBlocks."*" = {
         controlMaster = "auto";
         controlPath = "~/.ssh/sockets/%r@%h-%p";
