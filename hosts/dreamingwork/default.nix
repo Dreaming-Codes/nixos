@@ -93,7 +93,7 @@ in {
   # apple-silicon-support module. Keep the rest of the optimization profile.
   dreamingoptimal.optimization.cachykernel.enable = lib.mkForce false;
 
-  programs.asahi-x86.enable = false;
+  programs.asahi-x86.enable = true;
 
   # Slack and Discord can't run under FEX and ship no aarch64 build
   programs.pwaApps = {
