@@ -14,6 +14,17 @@
     pkgs.git-spice
   ];
 
+  home.activation.gitSigningIfAvailable = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    signing_config="${config.xdg.configHome}/git/signing-if-available"
+    mkdir -p "$(dirname "$signing_config")"
+
+    if ${pkgs.gnupg}/bin/gpg --batch --list-secret-keys 1FE3A3F18110DDDD >/dev/null 2>&1; then
+      printf '[commit]\n\tgpgSign = true\n' > "$signing_config"
+    else
+      printf '[commit]\n\tgpgSign = false\n' > "$signing_config"
+    fi
+  '';
+
   # Comma integration with nix-index (cross-platform)
   programs.nix-index-database.comma.enable = true;
 
@@ -32,6 +43,9 @@
     source = ../config/rio/config.toml;
     force = true;
   };
+
+  # Ensure the SSH ControlPath socket directory exists for connection multiplexing.
+  home.file.".ssh/sockets/.keep".text = "";
 
   home.file.".config/opencode/opencode.json".source = ../config/opencode/opencode.json;
   home.file.".config/opencode/opencode-notifier.json".source =
@@ -66,9 +80,11 @@
       lfs.enable = true;
       signing = {
         key = "1FE3A3F18110DDDD";
-        signByDefault = false;
       };
       settings = {
+        include = {
+          path = "${config.xdg.configHome}/git/signing-if-available";
+        };
         user = {
           name = "DreamingCodes";
           email = "me@dreaming.codes";
@@ -123,6 +139,9 @@
       generateCompletions = false;
       interactiveShellInit = ''
         set fish_greeting # Disable greeting
+
+        # Dimmer direnv output
+        set -gx DIRENV_LOG_FORMAT (printf '\033[22m\033[2mdirenv: %%s\033[0m\033[22m')
 
         # Remap fzf keybindings to avoid zellij conflicts
         bind --erase \ct  # Remove Ctrl+T
@@ -316,6 +335,24 @@
     direnv = {
       enable = true;
       nix-direnv.enable = true;
+      # Silence the "taking too long" warning when flakes re-evaluate.
+      config.global.warn_timeout = "0";
+    };
+
+    # Reuse a single SSH connection within a short window so rapid successive
+    # git operations skip repeated TCP/TLS/auth handshakes
+    ssh = {
+      enable = true;
+      enableDefaultConfig = false;
+      # Marker the sw repo's nix develop shellHook greps for to decide whether
+      # to nag about running nlk_sw_setup.sh. The useful bits are already
+      # replicated declaratively, so this comment alone silences the banner.
+      extraConfig = "# nlk_speed_up_git";
+      matchBlocks."*" = {
+        controlMaster = "auto";
+        controlPath = "~/.ssh/sockets/%r@%h-%p";
+        controlPersist = "15s";
+      };
     };
 
     zoxide = {

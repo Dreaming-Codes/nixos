@@ -56,6 +56,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixos-facter-modules.url = "github:nix-community/nixos-facter-modules";
+    apple-silicon = {
+      url = "github:nix-community/nixos-apple-silicon";
+    };
     sops-nix = {
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -113,6 +116,16 @@
               powertop.enable = true;
             };
           }
+        ];
+      };
+
+      DreamingWork = mkHost {
+        hostname = "DreamingWork";
+        hostPath = "dreamingwork";
+        system = "aarch64-linux";
+        useFacter = false;
+        extraModules = [
+          inputs.apple-silicon.nixosModules.apple-silicon-support
         ];
       };
     };

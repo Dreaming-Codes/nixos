@@ -7,12 +7,13 @@
   # Get GCC include paths for clangd
   gcc = pkgs.gcc;
   gccVersion = gcc.cc.version;
+  hostTriple = pkgs.stdenv.hostPlatform.config;
   gccPath = "${gcc.cc}/include/c++/${gccVersion}";
-  gccTargetPath = "${gcc.cc}/include/c++/${gccVersion}/x86_64-unknown-linux-gnu";
+  gccTargetPath = "${gcc.cc}/include/c++/${gccVersion}/${hostTriple}";
   gccBackwardPath = "${gcc.cc}/include/c++/${gccVersion}/backward";
-  gccLibPath = "${gcc.cc}/lib/gcc/x86_64-unknown-linux-gnu/${gccVersion}/include";
+  gccLibPath = "${gcc.cc}/lib/gcc/${hostTriple}/${gccVersion}/include";
   gccIncludePath = "${gcc.cc}/include";
-  gccLibFixedPath = "${gcc.cc}/lib/gcc/x86_64-unknown-linux-gnu/${gccVersion}/include-fixed";
+  gccLibFixedPath = "${gcc.cc}/lib/gcc/${hostTriple}/${gccVersion}/include-fixed";
   glibcIncludePath = "${pkgs.glibc.dev}/include";
 
   clangdConfig = pkgs.writeText "clangd-config.yaml" ''
@@ -175,7 +176,7 @@ in {
   };
 
   home.activation.mimeApps = lib.hm.dag.entryAfter ["writeBoundary"] ''
-    ${mimes.bindMimes "brave-origin-nightly.desktop" [
+    ${mimes.bindMimes "brave-browser.desktop" [
       "application/pdf"
       "x-scheme-handler/http"
       "x-scheme-handler/https"
@@ -254,6 +255,7 @@ in {
 
   home.packages = [
     rbwPinentryKwallet
+    pkgs.git-spice
   ];
 
   xdg.desktopEntries.rio = {

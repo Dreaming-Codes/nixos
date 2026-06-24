@@ -19,6 +19,7 @@
     });
 in {
   imports = [
+    ../common-x86.nix
     ../../modules/core/campus-switch.nix
     ../../modules/programs/virtualization/waydroid.nix
   ];
@@ -148,7 +149,7 @@ in {
           "XDG_RUNTIME_DIR"
         ];
         # Load GitHub token from sops secret
-        EnvironmentFile = "/run/secrets/github_token_env";
+        EnvironmentFile = "-/run/secrets/github_token_env";
       };
     };
   };
