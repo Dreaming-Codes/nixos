@@ -250,6 +250,7 @@ in {
     gnupg
     pinentry-qt
     jetbrains-toolbox
+    bitwarden-desktop
     just
 
     # Secrets management
@@ -259,7 +260,6 @@ in {
   # for the FEX/muvm plan to run these on Asahi.
   ++ lib.optionals isX86 [
     onlyoffice-desktopeditors
-    bitwarden-desktop
     zoom-us
     slack
     (discord.override {
@@ -271,7 +271,7 @@ in {
     saleae-logic-2
   ];
 
-  nixpkgs.config.permittedInsecurePackages = lib.optionals isX86 [
+  nixpkgs.config.permittedInsecurePackages = [
     # bitwarden still uses this
     "electron-39.8.10"
   ];

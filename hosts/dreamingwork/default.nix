@@ -10,6 +10,12 @@
       inputs.apple-silicon.overlays.default
     ];
   };
+  # x86_64 package set, only used to borrow app icons for the PWA launchers
+  # (Slack/Discord ship no aarch64 build); their binaries are never executed.
+  pkgsX86 = import inputs.nixpkgs {
+    system = "x86_64-linux";
+    config.allowUnfree = true;
+  };
 in {
   # Apple Silicon work laptop running Asahi Linux (aarch64).
   # Installed via the upstream nixos-apple-silicon installer ISO; see
@@ -20,7 +26,11 @@ in {
   # The ./firmware dir (Asahi peripheral firmware copied off the EFI system
   # partition) is also produced at install time by scripts/asahi-install.sh.
   imports =
-    lib.optional (builtins.pathExists ./hardware-configuration.nix) ./hardware-configuration.nix;
+    [
+      ../../modules/programs/asahi-x86.nix
+      ../../modules/programs/pwa-apps.nix
+    ]
+    ++ lib.optional (builtins.pathExists ./hardware-configuration.nix) ./hardware-configuration.nix;
 
   nixpkgs.hostPlatform = "aarch64-linux";
 
@@ -49,14 +59,34 @@ in {
   # on these chips). This implicitly enables iwd and disables wpa_supplicant.
   networking.networkmanager.wifi.backend = "iwd";
 
+  # iwd's EAP-TLS needs the kernel PKCS#8
+  boot.kernelModules = ["pkcs8_key_parser"];
+
   # The CachyOS kernel is x86-only; Asahi ships its own kernel via the
   # apple-silicon-support module. Keep the rest of the optimization profile.
   dreamingoptimal.optimization.cachykernel.enable = lib.mkForce false;
 
-  # Some MacBooks render graphical sessions on the touchbar without this.
-  # Safe to leave enabled on models without a touchbar.
-  hardware.apple.touchBar = {
+  programs.asahi-x86.enable = false;
+
+  # Slack and Discord can't run under FEX and ship no aarch64 build
+  programs.pwaApps = {
     enable = true;
+    apps = [
+      {
+        name = "slack";
+        url = "https://app.slack.com/client";
+        desktopName = "Slack";
+        iconSource = pkgsX86.slack;
+        categories = ["Network" "InstantMessaging"];
+      }
+      {
+        name = "discord";
+        url = "https://discord.com/app";
+        desktopName = "Discord";
+        iconSource = pkgsX86.discord;
+        categories = ["Network" "InstantMessaging"];
+      }
+    ];
   };
 
   home-manager.users.dreamingcodes = {
