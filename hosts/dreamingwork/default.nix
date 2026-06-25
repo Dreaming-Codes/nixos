@@ -86,6 +86,8 @@ in {
   # on these chips). This implicitly enables iwd and disables wpa_supplicant.
   networking.networkmanager.wifi.backend = "iwd";
 
+  networking.networkmanager.settings.main.iwd-config-path = "/var/lib/iwd";
+
   # iwd's EAP-TLS needs the kernel PKCS#8
   boot.kernelModules = ["pkcs8_key_parser"];
 
