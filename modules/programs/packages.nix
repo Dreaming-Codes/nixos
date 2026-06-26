@@ -92,6 +92,7 @@ in {
     wl-clipboard-rs
     wl-clip-persist
     wget
+    awscli2
     any-nix-shell
     inputs.nix-alien.packages.${stdenv.hostPlatform.system}.nix-alien
     rio
