@@ -4,6 +4,11 @@
   config,
   ...
 }:
+let
+  opencode = pkgs.writeShellScriptBin "opencode" ''
+    exec ${pkgs.bun}/bin/bunx opencode-ai@latest "$@"
+  '';
+in
 {
   home.stateVersion = "26.05";
 
@@ -47,12 +52,46 @@
   # Ensure the SSH ControlPath socket directory exists for connection multiplexing.
   home.file.".ssh/sockets/.keep".text = "";
 
-  home.file.".config/opencode/opencode.json".source = ../config/opencode/opencode.json;
   home.file.".config/opencode/opencode-notifier.json".source =
     ../config/opencode/opencode-notifier.json;
-  home.file.".config/opencode/AGENTS.md".source = ../config/opencode/AGENTS.md;
-  home.file.".config/opencode/agent/git-detective.md".source =
-    ../config/opencode/agent/git-detective.md;
+
+  programs.opencode = {
+    enable = true;
+    package = opencode;
+    context = ../config/opencode/AGENTS.md;
+    agents.git-detective = ../config/opencode/agent/git-detective.md;
+    settings = {
+      permission = {
+        "*" = "allow";
+        external_directory = "allow";
+        bash = {
+          "*" = "allow";
+          "git push *" = "ask";
+          "git push" = "ask";
+          "gh pr create *" = "ask";
+          "gh pr edit *" = "ask";
+          "gh pr merge *" = "ask";
+          "gh pr close *" = "ask";
+          "glab mr create *" = "ask";
+          "glab mr update *" = "ask";
+          "glab mr merge *" = "ask";
+          "glab mr close *" = "ask";
+          "terraform apply*" = "ask";
+          "terraform destroy*" = "ask";
+          "terraform import*" = "ask";
+        };
+      };
+      plugin = [ "@mohak34/opencode-notifier@latest" ];
+      agent = {
+        build.model = "amazon-bedrock/anthropic.claude-opus-4-8";
+        explore.model = "amazon-bedrock/anthropic.claude-opus-4-8";
+      };
+      lsp.rust = {
+        command = [ "rust-analyzer" ];
+        initialization.rust-analyzer.check.command = "clippy";
+      };
+    };
+  };
 
   # btop writes its own config from the settings below; force overwrite any
   # pre-existing on-disk config so the declarative settings win.
@@ -227,7 +266,7 @@
     starship = {
       enable = true;
       settings = {
-        aws.symbol = "  ";
+        aws.disabled = true;
         buf.symbol = " ";
         bun.symbol = " ";
         c.symbol = " ";

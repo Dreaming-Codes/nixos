@@ -10,9 +10,6 @@
   toggleMixer = pkgs.writeShellScriptBin "toggleMixer" (builtins.readFile ../scripts/mixer.sh);
   vibeMerge = pkgs.writeShellScriptBin "vibe-merge" (builtins.readFile ../scripts/vibeMerge.sh);
   vibeCommit = pkgs.writeShellScriptBin "vibe-commit" (builtins.readFile ../scripts/vibeCommit.sh);
-  opencode = pkgs.writeShellScriptBin "opencode" ''
-    exec ${pkgs.bun}/bin/bunx opencode-ai@latest "$@"
-  '';
   codexStandalone = pkgs.writeShellScriptBin "codex" ''
     exec /home/dreamingcodes/.codex/packages/standalone/current/bin/codex "$@"
   '';
@@ -661,7 +658,6 @@ in {
     toggleMixer
     vibeMerge
     vibeCommit
-    opencode
     codexStandalone
     syncDmsKdeColors
   ];
