@@ -3,13 +3,11 @@
   lib,
   config,
   ...
-}:
-let
+}: let
   opencode = pkgs.writeShellScriptBin "opencode" ''
     exec ${pkgs.bun}/bin/bunx opencode-ai@latest "$@"
   '';
-in
-{
+in {
   home.stateVersion = "26.05";
 
   home.shell.enableShellIntegration = true;
@@ -81,13 +79,18 @@ in
           "terraform import*" = "ask";
         };
       };
-      plugin = [ "@mohak34/opencode-notifier@latest" ];
+      provider.amazon-bedrock.options = {
+        region = "us-west-2";
+        profile = "BedrockAccess";
+        timeout = 600000;
+      };
+      plugin = ["@mohak34/opencode-notifier@latest"];
       agent = {
         build.model = "amazon-bedrock/anthropic.claude-opus-4-8";
         explore.model = "amazon-bedrock/anthropic.claude-opus-4-8";
       };
       lsp.rust = {
-        command = [ "rust-analyzer" ];
+        command = ["rust-analyzer"];
         initialization.rust-analyzer.check.command = "clippy";
       };
     };
@@ -191,13 +194,14 @@ in
         end
         abbr -a dockertui oxker
       '';
-      shellAliases = {
-        htop = "btop";
-      }
-      # `shutdown` via systemctl is Linux-only.
-      // lib.optionalAttrs pkgs.stdenv.isLinux {
-        shutdown = "systemctl poweroff";
-      };
+      shellAliases =
+        {
+          htop = "btop";
+        }
+        # `shutdown` via systemctl is Linux-only.
+        // lib.optionalAttrs pkgs.stdenv.isLinux {
+          shutdown = "systemctl poweroff";
+        };
       functions = {
         binds = ''
           echo "╔═══════════════════════════════════════════════════════════════╗"
@@ -397,7 +401,7 @@ in
     zoxide = {
       enable = true;
       enableFishIntegration = true;
-      options = [ "--cmd cd" ];
+      options = ["--cmd cd"];
     };
   };
 }
