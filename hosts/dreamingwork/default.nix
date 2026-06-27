@@ -26,7 +26,6 @@ in {
   # partition) is also produced at install time by scripts/asahi-install.sh.
   imports =
     [
-      ../../modules/programs/asahi-x86.nix
       ../../modules/programs/pwa-apps.nix
     ]
     ++ lib.optional (builtins.pathExists ./hardware-configuration.nix) ./hardware-configuration.nix
@@ -88,8 +87,6 @@ in {
   # The CachyOS kernel is x86-only; Asahi ships its own kernel via the
   # apple-silicon-support module. Keep the rest of the optimization profile.
   dreamingoptimal.optimization.cachykernel.enable = lib.mkForce false;
-
-  programs.asahi-x86.enable = true;
 
   # Slack and Discord can't run under FEX and ship no aarch64 build
   programs.pwaApps = {
