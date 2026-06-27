@@ -84,6 +84,9 @@ in {
 
       # Relax sandbox to allow DMI access for QEMU spoofing
       sandbox = "relaxed";
+
+      connect-timeout = 3;
+      fallback = true;
     };
 
     # Make legacy nix commands consistent as well
