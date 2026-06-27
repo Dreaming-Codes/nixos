@@ -4,7 +4,7 @@ confirm-before-quit = false
 
 [fonts]
 size = 14
-use-drawable-chars = true
+use-drawable-chars = false
 
 [fonts.regular]
 family = "IoskeleyMono Nerd Font"
