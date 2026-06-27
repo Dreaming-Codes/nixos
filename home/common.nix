@@ -262,8 +262,18 @@ in {
     genericName = "Terminal";
     exec = "rio";
     terminal = false;
-    categories = ["System" "TerminalEmulator"];
+    categories = [
+      "System"
+      "TerminalEmulator"
+    ];
   };
 
   home.file.".config/clangd/config.yaml".source = clangdConfig;
+
+  # Allow unfree for ad-hoc `nix-shell -p` / `nix-env`. The flake's
+  # `nixpkgs.config.allowUnfree` only covers system builds; these CLI tools read
+  # ~/.config/nixpkgs/config.nix instead.
+  home.file.".config/nixpkgs/config.nix".text = ''
+    { allowUnfree = true; }
+  '';
 }
