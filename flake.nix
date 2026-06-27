@@ -121,6 +121,14 @@
         ];
       };
 
+      DreamingWorkDell = mkHost {
+        hostname = "DreamingWorkDell";
+        hostPath = "dreamingworkdell";
+        # No facter.json yet — generate on the real Dell and switch this to true
+        # (plus drop the line below) once hosts/dreamingworkdell/facter.json exists.
+        useFacter = false;
+      };
+
       DreamingWork = mkHost {
         hostname = "DreamingWork";
         hostPath = "dreamingwork";
