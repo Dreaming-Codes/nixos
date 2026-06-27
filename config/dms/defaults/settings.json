@@ -483,7 +483,7 @@
   "modalAnimationSpeed": 1,
   "modalCustomAnimationDuration": 150,
   "modalDarkenBackground": true,
-  "monoFontFamily": "Fira Code",
+  "monoFontFamily": "IoskeleyMono Nerd Font",
   "muxCustomCommand": "",
   "muxSessionFilter": "",
   "muxType": "zellij",
