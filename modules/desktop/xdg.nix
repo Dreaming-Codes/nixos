@@ -19,15 +19,6 @@
     enable = true;
 
     config = {
-      hyprland = {
-        default = [
-          "hyprland"
-          "gtk"
-          "kde"
-        ];
-        "org.freedesktop.impl.portal.FileChooser" = "kde";
-        "org.freedesktop.impl.portal.OpenURI" = "kde";
-      };
       niri = lib.mkForce {
         default = [
           "gnome"
@@ -52,7 +43,6 @@
     };
 
     extraPortals = with pkgs; [
-      xdg-desktop-portal-hyprland
       xdg-desktop-portal-gnome
       # Add xdg-desktop-portal-gtk for Wayland GTK apps (font issues etc.)
       xdg-desktop-portal-gtk

@@ -5,8 +5,9 @@
   config,
   ...
 }: let
-  ci-keyboard-leds = pkgs.callPackage ../../packages/ci-keyboard-leds {};
-  razer-energy = pkgs.writeShellScriptBin "razer-energy" (builtins.readFile ../../scripts/razer-energy.sh);
+  razer-energy = pkgs.writeShellScriptBin "razer-energy" (
+    builtins.readFile ../../scripts/razer-energy.sh
+  );
   razer-laptop-control =
     inputs.razer-laptop-controller.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs
     (old: {
@@ -53,106 +54,6 @@ in {
     razer-energy
   ];
   nixpkgs.config.segger-jlink.acceptLicense = true;
-
-  home-manager.users.dreamingcodes = {
-    # Fish function to notify ci-keyboard-leds daemon of CWD changes
-    programs.fish.functions.__notify_ci_leds = {
-      onVariable = "PWD";
-      body = ''
-        # Send CWD to ci-keyboard-leds daemon via Unix socket
-        set -l socket "$XDG_RUNTIME_DIR/ci-keyboard-leds.sock"
-        if test -S "$socket"
-          echo $PWD | ${pkgs.netcat}/bin/nc -U -N "$socket" 2>/dev/null &
-          disown
-        end
-      '';
-    };
-
-    # Register the PWD event handler on shell startup
-    programs.fish.interactiveShellInit = ''
-      __notify_ci_leds
-    '';
-
-    wayland.windowManager.hyprland = {
-      settings = {
-        bindl = [
-          ",switch:off:Lid Switch, exec, dms ipc call lock lock"
-        ];
-        env = [
-          "AQ_DRM_DEVICES,/dev/dri/card0:/dev/dri/card1"
-        ];
-        monitor = [
-          "eDP-1, 1920x1080@60, 0x0, 1"
-          "DP-2, 2560x1440@179.84, 1920x0, 1"
-          ", preferred, auto, 1"
-        ];
-        workspace = [
-          # Workspace names only - monitor bindings handled by dynamic-workspaces.sh
-          "11, defaultName:F1"
-          "12, defaultName:F2"
-          "13, defaultName:F3"
-          "14, defaultName:F4"
-          "15, defaultName:F5"
-          "16, defaultName:F6"
-          "17, defaultName:F7"
-          "18, defaultName:F8"
-          "19, defaultName:F9"
-          "20, defaultName:F10"
-          "21, defaultName:F11"
-          "22, defaultName:F12"
-        ];
-      };
-    };
-
-    # Dynamic workspace configuration daemon - listens to Hyprland IPC for monitor events
-    systemd.user.services.dynamic-workspaces = {
-      Unit = {
-        Description = "Dynamic workspace configuration for Hyprland";
-        PartOf = ["hyprland-session.target"];
-        After = ["hyprland-session.target"];
-      };
-      Service = {
-        Type = "simple";
-        ExecStart = "${pkgs.writeShellScript "dynamic-workspaces" ''
-          export PATH="${pkgs.socat}/bin:${pkgs.jq}/bin:${pkgs.hyprland}/bin:$PATH"
-          ${builtins.readFile ../../scripts/dynamic-workspaces.sh}
-        ''}";
-        Restart = "on-failure";
-        RestartSec = 5;
-      };
-      Install = {
-        WantedBy = ["hyprland-session.target"];
-      };
-    };
-
-    # CI status keyboard LED monitor (Razer laptop keyboard)
-    # TODO: Add Keychron Q6 Pro support when custom QMK firmware is ready
-    systemd.user.services.ci-keyboard-leds = {
-      Unit = {
-        Description = "Monitor CI status and update keyboard LEDs";
-        PartOf = ["hyprland-session.target"];
-        After = [
-          "hyprland-session.target"
-          "razerdaemon.service"
-        ];
-      };
-      Install = {
-        WantedBy = ["hyprland-session.target"];
-      };
-      Service = {
-        ExecStart = "${ci-keyboard-leds}/bin/ci-keyboard-leds";
-        Restart = "always";
-        RestartSec = 5;
-        # Import Hyprland env vars for IPC socket connection
-        PassEnvironment = [
-          "HYPRLAND_INSTANCE_SIGNATURE"
-          "XDG_RUNTIME_DIR"
-        ];
-        # Load GitHub token from sops secret
-        EnvironmentFile = "-/run/secrets/github_token_env";
-      };
-    };
-  };
 
   # howdy (IR scanner)
   services = {
