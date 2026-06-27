@@ -10,12 +10,6 @@
       inputs.apple-silicon.overlays.default
     ];
   };
-  # x86_64 package set, only used to borrow app icons for the PWA launchers
-  # (Slack/Discord ship no aarch64 build); their binaries are never executed.
-  pkgsX86 = import inputs.nixpkgs {
-    system = "x86_64-linux";
-    config.allowUnfree = true;
-  };
   # Machine-local private NixOS settings (internal binary cache + CA trust)
   # live OUTSIDE this public repo so their URLs/keys/certs are never committed.
   # Reading this absolute path requires building with `--impure`.
@@ -105,7 +99,10 @@ in {
         name = "slack";
         url = "https://app.slack.com/client";
         desktopName = "Slack";
-        iconSource = pkgsX86.slack;
+        iconFile = builtins.fetchurl {
+          url = "https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg";
+          sha256 = "sha256-FxYEd6R1FmrQVW4AKOOwvQY01wwC57kgwEpEKeoYSrM=";
+        };
         categories = [
           "Network"
           "InstantMessaging"
@@ -115,7 +112,10 @@ in {
         name = "discord";
         url = "https://discord.com/app";
         desktopName = "Discord";
-        iconSource = pkgsX86.discord;
+        iconFile = builtins.fetchurl {
+          url = "https://upload.wikimedia.org/wikipedia/fr/4/4f/Discord_Logo_sans_texte.svg";
+          sha256 = "sha256-fyh2K4xqb/xx1G9CocFagRLLtSu/x7jze5wITjEiTvk=";
+        };
         categories = [
           "Network"
           "InstantMessaging"
