@@ -73,6 +73,8 @@ in {
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = false;
 
+  boot.kernelParams = ["appledrm.show_notch=1"];
+
   services.tailscale.enable = true;
 
   # Broadcom WiFi on Apple hardware needs iwd (WPA3 unsupported by wpa_supplicant
