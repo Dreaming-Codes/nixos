@@ -106,14 +106,20 @@ in {
         url = "https://app.slack.com/client";
         desktopName = "Slack";
         iconSource = pkgsX86.slack;
-        categories = ["Network" "InstantMessaging"];
+        categories = [
+          "Network"
+          "InstantMessaging"
+        ];
       }
       {
         name = "discord";
         url = "https://discord.com/app";
         desktopName = "Discord";
         iconSource = pkgsX86.discord;
-        categories = ["Network" "InstantMessaging"];
+        categories = [
+          "Network"
+          "InstantMessaging"
+        ];
       }
     ];
   };
@@ -122,13 +128,6 @@ in {
     home.file.".config/niri/dms/host-local.kdl" = {
       source = ../../config/niri/dms/host-dreamingwork.kdl;
       force = true;
-    };
-
-    wayland.windowManager.hyprland.settings.input.touchpad = {
-      tap-to-click = true;
-      tap_button_map = "lrm";
-      clickfinger_behavior = false;
-      natural_scroll = true;
     };
   };
 

@@ -7,7 +7,6 @@
   ...
 }: let
   toggleMic = pkgs.writeShellScriptBin "toggleMic" (builtins.readFile ../scripts/mictoggle.sh);
-  toggleMixer = pkgs.writeShellScriptBin "toggleMixer" (builtins.readFile ../scripts/mixer.sh);
   vibeMerge = pkgs.writeShellScriptBin "vibe-merge" (builtins.readFile ../scripts/vibeMerge.sh);
   vibeCommit = pkgs.writeShellScriptBin "vibe-commit" (builtins.readFile ../scripts/vibeCommit.sh);
   codexStandalone = pkgs.writeShellScriptBin "codex" ''
@@ -77,10 +76,10 @@
   mimes = import ../lib/mimes.nix;
   dmsSettingsDefaults = builtins.fromJSON (builtins.readFile ../config/dms/defaults/settings.json);
   dmsSessionDefaults = builtins.fromJSON (builtins.readFile ../config/dms/defaults/session.json);
-  dmsPluginDefaults = builtins.fromJSON (builtins.readFile ../config/dms/defaults/plugin_settings.json);
+  dmsPluginDefaults = builtins.fromJSON (
+    builtins.readFile ../config/dms/defaults/plugin_settings.json
+  );
 in {
-  xdg.configFile."hypr/hyprland.conf".force = true;
-
   # Set default applications (DreamingCodes specific)
   home.activation.dreamingCodesMimeApps = lib.hm.dag.entryAfter ["writeBoundary"] ''
     ${mimes.bindMimes "Helix.desktop" mimes.textMimes}
@@ -277,10 +276,10 @@ in {
     ${syncDmsKdeColors}/bin/sync-dms-kde-colors
   '';
 
-  home.file.".face.icon".source = ../config/hypr/dreamingcodes.jpeg;
+  home.file.".face.icon".source = ../config/dreamingcodes.jpeg;
 
   home.activation.dmsProfileImage = lib.hm.dag.entryAfter ["writeBoundary"] ''
-    PROFILE_IMAGE="$HOME/.config/hypr/dreamingcodes.jpeg"
+    PROFILE_IMAGE="$HOME/.face.icon"
     if [ -e "$PROFILE_IMAGE" ] && command -v busctl >/dev/null 2>&1; then
       busctl --system call \
         org.freedesktop.Accounts \
@@ -288,45 +287,6 @@ in {
         org.freedesktop.Accounts.User \
         SetIconFile s "$PROFILE_IMAGE" >/dev/null 2>&1 || true
     fi
-  '';
-
-  home.activation.hyprlandDmsIncludes = lib.hm.dag.entryAfter ["writeBoundary"] ''
-    HYPR_DIR="$HOME/.config/hypr"
-    HYPR_CONF="$HYPR_DIR/hyprland.conf"
-    DMS_DIR="$HYPR_DIR/dms"
-    mkdir -p "$DMS_DIR"
-    touch \
-      "$DMS_DIR/binds.conf" \
-      "$DMS_DIR/colors.conf" \
-      "$DMS_DIR/cursor.conf" \
-      "$DMS_DIR/layout.conf" \
-      "$DMS_DIR/outputs.conf" \
-      "$DMS_DIR/windowrules.conf"
-
-    if [ -L "$HYPR_CONF" ]; then
-      GENERATED="$(${pkgs.coreutils}/bin/readlink -f "$HYPR_CONF")"
-      TMP="$(${pkgs.coreutils}/bin/mktemp)"
-      ${pkgs.coreutils}/bin/cp "$GENERATED" "$TMP"
-      ${pkgs.coreutils}/bin/mv "$TMP" "$HYPR_CONF"
-      ${pkgs.coreutils}/bin/chmod u+w "$HYPR_CONF"
-    elif [ -e "$HYPR_CONF" ]; then
-      ${pkgs.coreutils}/bin/chmod u+w "$HYPR_CONF"
-    fi
-
-    ensure_source() {
-      line="$1"
-      target="$2"
-      if ! ${pkgs.gnugrep}/bin/grep -Eq "^[[:space:]]*source[[:space:]]*=[[:space:]]*\\./dms/$target[[:space:]]*$" "$HYPR_CONF"; then
-        printf '\n%s\n' "$line" >> "$HYPR_CONF"
-      fi
-    }
-
-    ensure_source "source = ./dms/colors.conf" "colors.conf"
-    ensure_source "source = ./dms/cursor.conf" "cursor.conf"
-    ensure_source "source = ./dms/layout.conf" "layout.conf"
-    ensure_source "source = ./dms/outputs.conf" "outputs.conf"
-    ensure_source "source = ./dms/windowrules.conf" "windowrules.conf"
-    ensure_source "source = ./dms/binds.conf" "binds.conf"
   '';
 
   home.activation.niriDmsIncludes = lib.hm.dag.entryAfter ["writeBoundary"] ''
@@ -393,205 +353,6 @@ in {
 
   programs.obs-studio.enable = true;
 
-  # Hyprland window manager configuration
-  wayland.windowManager.hyprland = {
-    enable = true;
-    # Home-manager flipped the default from "hyprlang" (writes hyprland.conf)
-    # to "lua" (writes hyprland.lua) for stateVersion >= 26.05. Hyprland still
-    # reads hyprland.conf by default, so keep the hyprlang format until we
-    # explicitly migrate to the lua config.
-    configType = "hyprlang";
-    systemd = {
-      enable = true;
-      variables = ["--all"];
-      enableXdgAutostart = true;
-    };
-    # Those are both null since it's installed by the nixos module
-    package = null;
-    portalPackage = null;
-    settings = {
-      "$mod" = "SUPER";
-      device = [
-        {
-          name = "cda3-touchpad";
-          sensitivity = 0.25;
-        }
-      ];
-      input = {
-        kb_layout = "us";
-        kb_variant = "intl";
-        touchpad = {
-          tap-and-drag = false;
-        };
-        tablet = {
-          output = "current";
-        };
-      };
-      general = {
-        gaps_out = 0;
-        gaps_in = 0;
-      };
-      gestures = {
-        workspace_swipe_forever = true;
-      };
-      gesture = [
-        "3, horizontal, workspace"
-      ];
-      windowrule = [
-        "opacity 0.0 override, no_anim on, no_initial_focus on, max_size 1 1, no_blur on, no_focus on, match:class ^(xwaylandvideobridge)$"
-        "stay_focused on, match:class expo-orbit"
-      ];
-      binds = {
-        scroll_event_delay = 0;
-      };
-      bindm = [
-        "$mod, mouse:272, movewindow"
-        "$mod, mouse:273, resizewindow"
-      ];
-      misc = {
-        disable_hyprland_logo = true;
-        disable_splash_rendering = true;
-      };
-      bind =
-        [
-          "$mod, mouse_down, exec, hyprctl -q keyword cursor:zoom_factor $(hyprctl getoption cursor:zoom_factor | awk '/^float.*/ {val = $2 * 1.2; if (val < 1) val=1; print val}')"
-          "$mod, mouse_up, exec, hyprctl -q keyword cursor:zoom_factor $(hyprctl getoption cursor:zoom_factor | awk '/^float.*/ {val = $2 * 0.8; if (val < 1) val=1; print val}')"
-          "$mod, W, exec, brave"
-          "$mod, SPACE, exec, rio"
-          ", Print, exec, dms screenshot full"
-          "SHIFT, Print, exec, dms screenshot"
-          "$mod, Q, killactive"
-          "$mod, T, exec, Telegram"
-          "$mod, D, exec, discord"
-          "$mod, S, exec, signal-desktop"
-          "$mod, O, togglefloating"
-          "$mod, C, exec, dms ipc call clipboard toggle"
-          "$mod, L, exec, dms ipc call lock lock"
-          "$mod, F, fullscreen"
-          "$mod, M, exec, toggleMixer"
-          "$mod, X, exec, dms ipc call spotlight toggle"
-          "$mod, period, exec, dms ipc call wallpaper next"
-
-          ", code:121, exec, toggleMic"
-          # Move focus with arrow keys or hjkl
-          "$mod, left, movefocus, l"
-          "$mod, right, movefocus, r"
-          "$mod, up, movefocus, u"
-          "$mod, down, movefocus, d"
-          "$mod SHIFT, left, movewindow, l"
-          "$mod SHIFT, right, movewindow, r"
-          "$mod SHIFT, up, movewindow, u"
-          "$mod SHIFT, down, movewindow, d"
-          # Audio keys
-          ", XF86AudioMicMute, exec, toggleMic"
-          ", XF86AudioPlay, exec, playerctl play-pause"
-          ", XF86AudioPrev, exec, playerctl previous"
-          ", XF86AudioNext, exec,playerctl next"
-        ]
-        ++ (
-          # workspaces
-          let
-            # Generate 1–9 and 0 (mapped to 10)
-            numWorkspaces =
-              builtins.genList (
-                i: let
-                  ws =
-                    if i == 9
-                    then 10
-                    else i + 1;
-                  key =
-                    if i == 9
-                    then "0"
-                    else toString (i + 1);
-                in [
-                  "$mod, ${key}, workspace, ${toString ws}"
-                  "$mod SHIFT, ${key}, movetoworkspace, ${toString ws}"
-                ]
-              )
-              10;
-
-            # Generate F1–F12
-            fWorkspaces =
-              builtins.genList (
-                i: let
-                  ws = "F${toString (i + 1)}";
-                  key = "F${toString (i + 1)}";
-                in [
-                  "$mod, ${key}, workspace, name:${ws}"
-                  "$mod SHIFT, ${key}, movetoworkspace, name:${ws}"
-                ]
-              )
-              12;
-
-            # Generate ALT1–ALT10 (with ALT0 = ALT10)
-            altWorkspaces =
-              builtins.genList (
-                i: let
-                  ws =
-                    if i == 9
-                    then "ALT10"
-                    else "ALT${toString (i + 1)}";
-                  key =
-                    if i == 9
-                    then "0"
-                    else toString (i + 1);
-                in [
-                  "$mod ALT, ${key}, workspace, name:${ws}"
-                  "$mod SHIFT ALT, ${key}, movetoworkspace, name:${ws}"
-                ]
-              )
-              10;
-          in
-            builtins.concatLists (numWorkspaces ++ fWorkspaces ++ altWorkspaces)
-        );
-    };
-    extraConfig = ''
-      source = ./dms/colors.conf
-      source = ./dms/cursor.conf
-      source = ./dms/layout.conf
-      source = ./dms/outputs.conf
-      source = ./dms/windowrules.conf
-      source = ./dms/binds.conf
-    '';
-  };
-
-  services.hypridle.enable = true;
-  services.hypridle.settings = {
-    general = {
-      lock_cmd = "dms ipc call lock lock";
-      before_sleep_cmd = "dms ipc call lock lock";
-      after_sleep_cmd = "hyprctl dispatch dpms on";
-    };
-
-    listener = [
-      {
-        timeout = 150;
-        on-timeout = "brightnessctl -s set 10";
-        on-resume = "brightnessctl -r";
-      }
-      {
-        timeout = 300;
-        on-timeout = "dms ipc call lock lock";
-      }
-      {
-        timeout = 330;
-        on-timeout = "hyprctl dispatch dpms off";
-        on-resume = "hyprctl dispatch dpms on && brightnessctl -r";
-      }
-      {
-        timeout = 480;
-        on-timeout = "systemctl suspend";
-      }
-    ];
-  };
-  systemd.user.services.hypridle = {
-    Unit = {
-      PartOf = lib.mkForce ["hyprland-session.target"];
-      After = lib.mkForce ["hyprland-session.target"];
-    };
-    Install.WantedBy = lib.mkForce ["hyprland-session.target"];
-  };
-
   # KWallet daemon for auto-unlock in Wayland sessions
   systemd.user.services.kwallet-pam = {
     Unit = {
@@ -639,11 +400,11 @@ in {
   systemd.user.services.wl-clip-persist = {
     Unit = {
       Description = "Persistent clipboard for Wayland";
-      PartOf = ["hyprland-session.target"];
-      After = ["hyprland-session.target"];
+      PartOf = ["graphical-session.target"];
+      After = ["graphical-session.target"];
     };
     Install = {
-      WantedBy = ["hyprland-session.target"];
+      WantedBy = ["graphical-session.target"];
     };
     Service = {
       ExecStart = "${pkgs.wl-clip-persist}/bin/wl-clip-persist --clipboard regular";
@@ -652,10 +413,9 @@ in {
     };
   };
 
-  # DreamingCodes-only packages (toggleMic/toggleMixer scripts)
+  # DreamingCodes-only packages (toggleMic script)
   home.packages = [
     toggleMic
-    toggleMixer
     vibeMerge
     vibeCommit
     codexStandalone
@@ -678,11 +438,6 @@ in {
   };
 
   # DreamingCodes-specific config files
-  home.file."./.config/hypr" = {
-    source = ../config/hypr;
-    recursive = true;
-  };
-
   home.file.".config/niri/config.kdl" = {
     source = ../config/niri/config.kdl;
     force = true;

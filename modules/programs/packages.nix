@@ -37,20 +37,22 @@
   };
 in {
   nixpkgs.overlays = lib.optionals isX86 [
-    (final: prev: let
-      discordPkgs = import inputs.nixpkgs-discord-vk {
-        inherit (prev) system;
-        config = prev.config;
-      };
-    in {
-      inherit
-        (discordPkgs)
-        discord
-        discord-canary
-        discord-development
-        discord-ptb
-        ;
-    })
+    (
+      final: prev: let
+        discordPkgs = import inputs.nixpkgs-discord-vk {
+          inherit (prev) system;
+          config = prev.config;
+        };
+      in {
+        inherit
+          (discordPkgs)
+          discord
+          discord-canary
+          discord-development
+          discord-ptb
+          ;
+      }
+    )
   ];
 
   programs.fish = {
@@ -88,189 +90,189 @@ in {
     fwupd.enable = true;
   };
 
-  environment.systemPackages = with pkgs; [
-    wl-clipboard-rs
-    wl-clip-persist
-    wget
-    awscli2
-    any-nix-shell
-    inputs.nix-alien.packages.${stdenv.hostPlatform.system}.nix-alien
-    rio
-    adw-gtk3
-    kdePackages.qt6ct
-    libsForQt5.qt5ct
-    gcc
-    openssl
-    pkg-config
-    powertop
-    kdePackages.kdialog
-    unzip
-    # Ark dep
-    unrar
-    # bottles
-    libcamera
+  environment.systemPackages = with pkgs;
+    [
+      wl-clipboard-rs
+      wl-clip-persist
+      wget
+      awscli2
+      any-nix-shell
+      inputs.nix-alien.packages.${stdenv.hostPlatform.system}.nix-alien
+      rio
+      adw-gtk3
+      kdePackages.qt6ct
+      libsForQt5.qt5ct
+      gcc
+      openssl
+      pkg-config
+      powertop
+      kdePackages.kdialog
+      unzip
+      # Ark dep
+      unrar
+      # bottles
+      libcamera
 
-    android-tools
+      android-tools
 
-    hplipWithPlugin
+      hplipWithPlugin
 
-    uv
+      uv
 
-    zed-editor
-    clang
-    clang-tools
+      zed-editor
+      clang
+      clang-tools
 
-    signalDesktop
+      signalDesktop
 
-    libimobiledevice
-    ifuse
+      libimobiledevice
+      ifuse
 
-    claude-code
+      claude-code
 
-    socat
+      socat
 
-    (pantheon.switchboard-with-plugs.override {
-      useDefaultPlugs = false;
-      plugs = [
-        pantheon.switchboard-plug-network
-        pantheon.switchboard-plug-sound
-        pantheon.switchboard-plug-printers
-      ];
-    })
+      (pantheon.switchboard-with-plugs.override {
+        useDefaultPlugs = false;
+        plugs = [
+          pantheon.switchboard-plug-network
+          pantheon.switchboard-plug-sound
+          pantheon.switchboard-plug-printers
+        ];
+      })
 
-    gimp3-with-plugins
+      gimp3-with-plugins
 
-    fvm
+      fvm
 
-    lurk
-    cartero
+      lurk
+      cartero
 
-    rustscan
+      rustscan
 
-    nur.repos.forkprince.helium-nightly
-    inputs.brave-origin.legacyPackages.${pkgs.stdenv.hostPlatform.system}.brave
+      nur.repos.forkprince.helium-nightly
+      inputs.brave-origin.legacyPackages.${pkgs.stdenv.hostPlatform.system}.brave
 
-    playerctl
-    brightnessctl
-    alsa-utils
-    libnotify
-    mixxc
-    termscp
+      playerctl
+      brightnessctl
+      alsa-utils
+      libnotify
+      termscp
 
-    lldb
-    # required to build a lot of rust crates
-    protobuf
+      lldb
+      # required to build a lot of rust crates
+      protobuf
 
-    # Jupyter Notebook with Rust kernel
-    jupyter
-    evcxr
+      # Jupyter Notebook with Rust kernel
+      jupyter
+      evcxr
 
-    # Git worktree manager from crates.io
-    rsworktree
-    cargo-edit
-    gh
+      # Git worktree manager from crates.io
+      rsworktree
+      cargo-edit
+      gh
 
-    # Not sure what caused this but now this is needed to make bash work
-    bashInteractive
+      # Not sure what caused this but now this is needed to make bash work
+      bashInteractive
 
-    psst
-    (spotify-player.override {
-      withAudioBackend = "pulseaudio";
-    })
-    mission-center
+      psst
+      (spotify-player.override {
+        withAudioBackend = "pulseaudio";
+      })
+      mission-center
 
-    xwayland-satellite
+      xwayland-satellite
 
-    mullvad-vpn
-    frida-tools
+      mullvad-vpn
+      frida-tools
 
-    zig
-    (python311.withPackages (
-      ps:
-        with ps; [
-          pyserial
-          psutil
-        ]
-    ))
-    node-gyp
+      zig
+      (python311.withPackages (
+        ps:
+          with ps; [
+            pyserial
+            psutil
+          ]
+      ))
+      node-gyp
 
-    ripgrep
-    ripgrep-all
-    jq
+      ripgrep
+      ripgrep-all
+      jq
 
-    nps
+      nps
 
-    distrobox
-    boxbuddy
+      distrobox
+      boxbuddy
 
-    typescript-language-server
-    jdt-language-server
+      typescript-language-server
+      jdt-language-server
 
-    pwvucontrol
-    crosspipe
+      pwvucontrol
+      crosspipe
 
-    scrcpy
+      scrcpy
 
-    # kdl formatter
-    kdlfmt
-    # Nix LSP
-    nil
-    # Nix fmt
-    alejandra
+      # kdl formatter
+      kdlfmt
+      # Nix LSP
+      nil
+      # Nix fmt
+      alejandra
 
-    ffmpeg
-    mpv
+      ffmpeg
+      mpv
 
-    # better diffs
-    difftastic
+      # better diffs
+      difftastic
 
-    # From https://gitlab.com/garuda-linux/garuda-nix-subsystem/-/blob/main/internal/modules/dr460nized/apps.nix?ref_type=heads
-    ffmpegthumbnailer
-    kdePackages.kdegraphics-thumbnailers
-    kdePackages.kimageformats
-    kdePackages.kio-admin
-    libinput-gestures
-    resvg
-    sshfs
-    xdg-desktop-portal
+      # From https://gitlab.com/garuda-linux/garuda-nix-subsystem/-/blob/main/internal/modules/dr460nized/apps.nix?ref_type=heads
+      ffmpegthumbnailer
+      kdePackages.kdegraphics-thumbnailers
+      kdePackages.kimageformats
+      kdePackages.kio-admin
+      libinput-gestures
+      resvg
+      sshfs
+      xdg-desktop-portal
 
-    uutils-coreutils-noprefix
+      uutils-coreutils-noprefix
 
-    # certs for node and other binaries
-    cacert
+      # certs for node and other binaries
+      cacert
 
-    # Packages moved from home-manager (shared by all users)
-    telegram-desktop
-    rbw
-    btop
-    bun
-    nodejs
-    bintools
-    rustup
-    kdePackages.kleopatra
-    gnupg
-    pinentry-qt
-    jetbrains-toolbox
-    bitwarden-desktop
-    just
+      # Packages moved from home-manager (shared by all users)
+      telegram-desktop
+      rbw
+      btop
+      bun
+      nodejs
+      bintools
+      rustup
+      kdePackages.kleopatra
+      gnupg
+      pinentry-qt
+      jetbrains-toolbox
+      bitwarden-desktop
+      just
 
-    # Secrets management
-    sops
-  ]
-  # x86_64-only apps with no native aarch64 build. See docs/asahi-x86-emulation.md
-  # for the FEX/muvm plan to run these on Asahi.
-  ++ lib.optionals isX86 [
-    onlyoffice-desktopeditors
-    zoom-us
-    slack
-    (discord.override {
-      withOpenASAR = true;
-    })
-    spotify
-    mullvad-browser
-    tor-browser
-    saleae-logic-2
-  ];
+      # Secrets management
+      sops
+    ]
+    # x86_64-only apps with no native aarch64 build. See docs/asahi-x86-emulation.md
+    # for the FEX/muvm plan to run these on Asahi.
+    ++ lib.optionals isX86 [
+      onlyoffice-desktopeditors
+      zoom-us
+      slack
+      (discord.override {
+        withOpenASAR = true;
+      })
+      spotify
+      mullvad-browser
+      tor-browser
+      saleae-logic-2
+    ];
 
   nixpkgs.config.permittedInsecurePackages = [
     # bitwarden still uses this

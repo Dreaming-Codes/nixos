@@ -50,35 +50,6 @@
 
   services.xserver.videoDrivers = ["modesetting"];
 
-  home-manager.users.dreamingcodes = {
-    wayland.windowManager.hyprland = {
-      settings = {
-        bindl = [
-          ",switch:off:Lid Switch, exec, dms ipc call lock lock"
-        ];
-        # TODO: Adjust to the Dell's panel and any external monitors.
-        monitor = [
-          "eDP-1, preferred, 0x0, 1"
-          ", preferred, auto, 1"
-        ];
-        workspace = [
-          "11, defaultName:F1"
-          "12, defaultName:F2"
-          "13, defaultName:F3"
-          "14, defaultName:F4"
-          "15, defaultName:F5"
-          "16, defaultName:F6"
-          "17, defaultName:F7"
-          "18, defaultName:F8"
-          "19, defaultName:F9"
-          "20, defaultName:F10"
-          "21, defaultName:F11"
-          "22, defaultName:F12"
-        ];
-      };
-    };
-  };
-
   # howdy (IR scanner) — face unlock
   services = {
     howdy = {
