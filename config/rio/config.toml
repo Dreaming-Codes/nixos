@@ -5,27 +5,22 @@ confirm-before-quit = false
 [fonts]
 size = 14
 use-drawable-chars = true
-symbol-map = [
-  { start = "2800", end = "28FF", font-family = "DejaVu Sans Mono" },
-  { start = "E000", end = "F8FF", font-family = "Symbols Nerd Font Mono" },
-  { start = "F0000", end = "F2FFF", font-family = "Symbols Nerd Font Mono" },
-]
 
 [fonts.regular]
-family = "FiraCode Nerd Font"
+family = "IoskeleyMono Nerd Font"
 style = "Regular"
 
 [fonts.bold]
-family = "FiraCode Nerd Font"
+family = "IoskeleyMono Nerd Font"
 style = "Bold"
 
 [fonts.italic]
-family = "FiraCode Nerd Font"
-style = "Regular"
+family = "IoskeleyMono Nerd Font"
+style = "Italic"
 
 [fonts.bold-italic]
-family = "FiraCode Nerd Font"
-style = "Bold"
+family = "IoskeleyMono Nerd Font"
+style = "Bold Italic"
 
 [colors]
 background = "#141218"
