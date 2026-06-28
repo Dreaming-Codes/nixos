@@ -4,10 +4,10 @@
   config,
   ...
 }: {
+  imports = [./disk-config.nix];
+
   # TODO: Generate the real hardware report on the Dell and place it here:
-  #   sudo nixos-facter -o hosts/dreamingworkdell/facter.json
-  # Until then the values below are placeholders and MUST be corrected
-  # before deploying to real hardware.
+  #   sudo nixos-facter -o hosts/x86_64-nixos/DreamingWorkDell/facter.json
   boot.initrd.availableKernelModules = [
     "nvme"
     "xhci_pci"
@@ -16,22 +16,6 @@
     "usbhid"
     "sd_mod"
   ];
-
-  # TODO: Replace placeholder UUIDs with the real ones from the Dell:
-  #   lsblk -f   (or)   blkid
-  fileSystems."/" = {
-    device = "/dev/disk/by-uuid/00000000-0000-0000-0000-000000000000";
-    fsType = "ext4";
-  };
-
-  fileSystems."/boot" = {
-    device = "/dev/disk/by-uuid/0000-0000";
-    fsType = "vfat";
-    options = [
-      "fmask=0022"
-      "dmask=0022"
-    ];
-  };
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;

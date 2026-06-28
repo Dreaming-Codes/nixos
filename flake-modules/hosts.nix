@@ -94,6 +94,10 @@ in {
         inputs.apple-silicon.nixosModules.apple-silicon-support
         {dreaming.programs.pwaApps.enable = true;}
       ];
+
+      DreamingWorkDell.modules = [
+        inputs.disko.nixosModules.disko
+      ];
     };
   };
 }
