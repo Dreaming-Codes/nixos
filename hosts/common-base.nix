@@ -4,25 +4,9 @@
   lib,
   ...
 }: {
-  imports = [
-    ../modules/core/networking.nix
-    ../modules/core/nix.nix
-    ../modules/core/security.nix
-    ../modules/core/sops.nix
-    ../modules/hardware/audio.nix
-    ../modules/hardware/bluetooth.nix
-    ../modules/desktop/fonts.nix
-    ../modules/desktop/xdg.nix
-    ../modules/desktop/hyprland.nix
-    ../modules/desktop/niri.nix
-    ../modules/services/docker.nix
-    ../modules/services/printing.nix
-    ../modules/services/samba.nix
-    ../modules/services/flatpak.nix
-    ../modules/programs/development.nix
-    ../modules/programs/packages.nix
-    ../modules/users/dreamingcodes.nix
-  ];
+  # All feature modules are imported for every nixos host via easy-hosts
+  # (flake-modules/hosts.nix, perClass "nixos"). This file only selects features
+  # via dreaming.* toggles and sets the few unconditional shared settings.
 
   # Timezone and locale (common to all hosts)
   services.automatic-timezoned.enable = true;
@@ -39,9 +23,9 @@
     package = pkgs.espanso-wayland;
   };
 
-  dreamingoptimal.optimization.enable = true;
+  dreaming.optimization.enable = true;
 
-  nix-file-overlay = {
+  dreaming.nixFileOverlay = {
     enable = true;
     systemRepoPath = "/home/dreamingcodes/.nixos";
     users = ["dreamingcodes"];

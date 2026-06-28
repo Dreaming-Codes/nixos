@@ -5,16 +5,17 @@
   inputs,
   nix-index-database,
   ...
-}:
-let
+}: let
   # Machine-local private Nix settings (e.g. an internal binary cache) live
   # OUTSIDE this public repo so their URLs/keys are never committed. The build
   # must be run with `--impure` for this absolute path to be read.
   localNixSettingsPath = "/Users/dreamingcodes/.config/nixos-local/local-nix-settings.nix";
   hasLocalNixSettings = builtins.pathExists localNixSettingsPath;
-  localNixSettings = if hasLocalNixSettings then import localNixSettingsPath else { };
-in
-{
+  localNixSettings =
+    if hasLocalNixSettings
+    then import localNixSettingsPath
+    else {};
+in {
   imports = [
     ./paneru.nix
     ./skhd.nix
@@ -31,19 +32,20 @@ in
   # nix-darwin must NOT manage nix itself, otherwise it fights Determinate.
   nix.enable = false;
 
-  determinateNix.customSettings = {
-    # Generic substituter resilience / performance tuning (not sensitive).
-    fallback = true;
-    narinfo-cache-meta-ttl = 86400;
-    narinfo-cache-negative-ttl = 900;
-    connect-timeout = 3;
-    download-attempts = 5;
-    download-buffer-size = 524288000;
-    auto-optimise-store = true;
-    min-free = 1073741824;
-  }
-  # Machine-local private settings, loaded from outside the repo.
-  // localNixSettings;
+  determinateNix.customSettings =
+    {
+      # Generic substituter resilience / performance tuning (not sensitive).
+      fallback = true;
+      narinfo-cache-meta-ttl = 86400;
+      narinfo-cache-negative-ttl = 900;
+      connect-timeout = 3;
+      download-attempts = 5;
+      download-buffer-size = 524288000;
+      auto-optimise-store = true;
+      min-free = 1073741824;
+    }
+    # Machine-local private settings, loaded from outside the repo.
+    // localNixSettings;
 
   # Require the machine-local settings on this machine. If the file is missing,
   # fail loudly rather than silently building without it.
@@ -69,7 +71,7 @@ in
   environment.variables.NH_FLAKE = "/Users/dreamingcodes/.nixos";
 
   programs.fish.enable = true;
-  environment.shells = [ pkgs.fish ];
+  environment.shells = [pkgs.fish];
 
   security.pam.services.sudo_local.touchIdAuth = true;
 
@@ -83,7 +85,7 @@ in
   #     account is uid 501, so the delete path is structurally skipped anyway.
   # uid/gid must match the existing macOS account (501 / staff=20) or nix-darwin
   # skips it with an "unexpected uid" warning.
-  users.knownUsers = [ "dreamingcodes" ];
+  users.knownUsers = ["dreamingcodes"];
   users.users.dreamingcodes = {
     uid = 501;
     gid = 20;
@@ -129,7 +131,7 @@ in
   # Home-Manager wiring (mirrors modules/users/dreamingcodes.nix)
   home-manager.useGlobalPkgs = true;
   home-manager.useUserPackages = true;
-  home-manager.extraSpecialArgs = { inherit inputs; };
+  home-manager.extraSpecialArgs = {inherit inputs;};
   home-manager.backupFileExtension = "hm-backup";
 
   home-manager.users.dreamingcodes = {

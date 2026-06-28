@@ -5,7 +5,7 @@
   options,
   ...
 }: let
-  cfg = config.nix-file-overlay;
+  cfg = config.dreaming.nixFileOverlay;
   pkg = pkgs.callPackage ../../packages/nix-file-overlay {};
 
   selfPrefix = toString ../..;
@@ -75,7 +75,7 @@
 
   mkHmMappingJson = user: pkgs.writeText "hm-mapping-${user}.json" (builtins.toJSON (mkHmMapping user));
 in {
-  options.nix-file-overlay = {
+  options.dreaming.nixFileOverlay = {
     enable = lib.mkEnableOption "nix-file-overlay system service for temporary file overrides";
 
     systemRepoPath = lib.mkOption {

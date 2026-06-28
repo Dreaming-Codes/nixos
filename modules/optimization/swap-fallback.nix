@@ -3,7 +3,7 @@
   lib,
   ...
 }: let
-  cfg = config.dreamingoptimal.optimization.swapFallback;
+  cfg = config.dreaming.optimization.swapFallback;
 in {
   config = lib.mkIf cfg.enable {
     swapDevices = [

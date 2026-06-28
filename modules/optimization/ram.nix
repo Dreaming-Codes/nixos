@@ -3,7 +3,7 @@
   lib,
   ...
 }: let
-  cfg = config.dreamingoptimal.optimization.ram;
+  cfg = config.dreaming.optimization.ram;
 in {
   config = lib.mkIf cfg.enable {
     zramSwap = {

@@ -50,6 +50,11 @@ in {
 
   nixpkgs.hostPlatform = "aarch64-linux";
 
+  # Asahi manages its own boot loader and graphics stack (below / via the
+  # apple-silicon module), so the generic x86-oriented feature modules are off.
+  dreaming.core.boot.enable = false;
+  dreaming.hardware.graphics.enable = false;
+
   # Flakes forbid the default impure reference to the firmware on the EFI
   # system partition. If scripts/asahi-install.sh has copied the firmware into
   # ./firmware, reference it purely; otherwise fall back to extracting it from
@@ -89,10 +94,10 @@ in {
 
   # The CachyOS kernel is x86-only; Asahi ships its own kernel via the
   # apple-silicon-support module. Keep the rest of the optimization profile.
-  dreamingoptimal.optimization.cachykernel.enable = lib.mkForce false;
+  dreaming.optimization.cachykernel.enable = lib.mkForce false;
 
   # Slack and Discord can't run under FEX and ship no aarch64 build
-  programs.pwaApps = {
+  dreaming.programs.pwaApps = {
     enable = true;
     apps = [
       {

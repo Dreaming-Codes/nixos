@@ -2,8 +2,7 @@
   pkgs,
   config,
   ...
-}:
-{
+}: {
   imports = [
     ./cli.nix
   ];
@@ -28,10 +27,8 @@
 
   # The docker CLI discovers subcommands as plugins in ~/.docker/cli-plugins,
   # so `docker compose` / `docker buildx` resolve to the nix-provided binaries.
-  home.file.".docker/cli-plugins/docker-compose".source =
-    "${pkgs.docker-compose}/libexec/docker/cli-plugins/docker-compose";
-  home.file.".docker/cli-plugins/docker-buildx".source =
-    "${pkgs.docker-buildx}/libexec/docker/cli-plugins/docker-buildx";
+  home.file.".docker/cli-plugins/docker-compose".source = "${pkgs.docker-compose}/libexec/docker/cli-plugins/docker-compose";
+  home.file.".docker/cli-plugins/docker-buildx".source = "${pkgs.docker-buildx}/libexec/docker/cli-plugins/docker-buildx";
 
   # Auto-start Colima on login. `colima start` is idempotent (it no-ops if the
   # VM is already running), and it shells out to lima/ssh/etc., so the agent runs
