@@ -1,10 +1,4 @@
-{
-  pkgs,
-  lib,
-  ...
-}: let
-  ee-bluez-autoswitch = pkgs.callPackage ../../pkgs/ee-bluez-autoswitch {};
-in {
+{...}: {
   hardware.bluetooth = {
     enable = true;
     disabledPlugins = ["sap"];
@@ -51,14 +45,6 @@ in {
         "hsp_hs"
       ];
     };
-    # Disable the upstream autoswitch script. It cannot traverse EasyEffects'
-    # virtual filter chain, so it incorrectly reverts the bluez card to A2DP
-    # while we are actually recording through EE.
-    # See: https://github.com/wwmm/easyeffects/issues/4878
-    # Our ee-bluez-autoswitch user service handles the EE case explicitly.
-    "wireplumber.settings" = {
-      "bluetooth.autoswitch-to-headset-profile" = false;
-    };
   };
 
   services.pipewire.wireplumber.extraConfig."52-bluez-suspend" = {
@@ -91,21 +77,5 @@ in {
         };
       }
     ];
-  };
-
-  # User systemd service running the EasyEffects bluez autoswitch watcher.
-  # Started after wireplumber and runs as the user.
-  systemd.user.services.ee-bluez-autoswitch = {
-    description = "EasyEffects Bluetooth profile autoswitch workaround";
-    after = [
-      "wireplumber.service"
-      "pipewire.service"
-    ];
-    wantedBy = ["default.target"];
-    serviceConfig = {
-      ExecStart = lib.getExe ee-bluez-autoswitch;
-      Restart = "on-failure";
-      RestartSec = 5;
-    };
   };
 }
