@@ -5,6 +5,9 @@
 }: {
   imports = [
     ./cli.nix
+    # The NeuraBook is a work Mac, so the work config is always on here. The
+    # Linux work hosts get the same home/work.nix via the `dreaming.work` toggle.
+    ./work.nix
   ];
 
   home.username = "dreamingcodes";

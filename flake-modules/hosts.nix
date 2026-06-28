@@ -93,10 +93,15 @@ in {
       DreamingWork.modules = [
         inputs.apple-silicon.nixosModules.apple-silicon-support
         {dreaming.programs.pwaApps.enable = true;}
+        {dreaming.work.enable = true;}
       ];
 
+      # The Dell is provisioned fresh via disko (declarative disk layout in its
+      # disk-config.nix). The other hosts were installed manually and keep their
+      # by-uuid fileSystems.
       DreamingWorkDell.modules = [
         inputs.disko.nixosModules.disko
+        {dreaming.work.enable = true;}
       ];
     };
   };

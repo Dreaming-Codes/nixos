@@ -7,6 +7,17 @@
 }: let
   cfg = config.dreaming.core.nix;
   flakeNixConfig = (import ../../flake.nix).nixConfig;
+
+  isWork = config.dreaming.work.enable or false;
+  isN7k = s: lib.hasInfix "n7k" s;
+  workSubstituters =
+    if isWork
+    then flakeNixConfig.substituters
+    else builtins.filter (s: !isN7k s) flakeNixConfig.substituters;
+  workTrustedKeys =
+    if isWork
+    then flakeNixConfig.extra-trusted-public-keys
+    else builtins.filter (k: !isN7k k) flakeNixConfig.extra-trusted-public-keys;
   determinateNixPackages = inputs.determinate.inputs.nix.packages.${pkgs.stdenv.hostPlatform.system};
   emptySentryNative = pkgs.runCommand "empty-sentry-native" {} ''
     mkdir -p $out/bin $out/lib/debug
@@ -58,15 +69,16 @@ in {
         builders-use-substitutes = true;
 
         # Binary caches (system-level, no per-invocation prompt needed).
-        # Source of truth: flake.nix nixConfig (re-used here).
-        substituters = flakeNixConfig.substituters;
+        # Source of truth: flake.nix nixConfig (re-used here). The n7k internal
+        # caches are included only on work hosts (dreaming.work.enable).
+        substituters = workSubstituters;
         # trusted-public-keys replaces (does not extend), so we must include the
         # default nixos cache key alongside the flake's extra-trusted-public-keys.
         trusted-public-keys =
           [
             "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
           ]
-          ++ flakeNixConfig.extra-trusted-public-keys;
+          ++ workTrustedKeys;
 
         # We are using flakes, so enable the experimental features
         experimental-features = [
