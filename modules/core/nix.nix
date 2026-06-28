@@ -5,9 +5,7 @@
   inputs,
   ...
 }: let
-  # Single source of truth: ../../nixConfig.nix (also used by flake.nix's
-  # nixConfig and flake-modules/devshell.nix).
-  flakeNixConfig = import ../../nixConfig.nix;
+  flakeNixConfig = (import ../../flake.nix).nixConfig;
   determinateNixPackages = inputs.determinate.inputs.nix.packages.${pkgs.stdenv.hostPlatform.system};
   emptySentryNative = pkgs.runCommand "empty-sentry-native" {} ''
     mkdir -p $out/bin $out/lib/debug
