@@ -58,19 +58,19 @@
       bindings = {
         # ── Column / window focus ────────────────────────────────
         # niri: Mod+H/Left focus-column-left, Mod+L/Right focus-column-right
-        window_focus_west = [ "alt - h" "alt - leftarrow" ];
-        window_focus_east = [ "alt - l" "alt - rightarrow" ];
+        window_focus_west = ["alt - h" "alt - leftarrow"];
+        window_focus_east = ["alt - l" "alt - rightarrow"];
         # niri: Mod+K/Up focus-window-up, Mod+J/Down focus-window-down
-        window_focus_north = [ "alt - k" "alt - uparrow" ];
-        window_focus_south = [ "alt - j" "alt - downarrow" ];
+        window_focus_north = ["alt - k" "alt - uparrow"];
+        window_focus_south = ["alt - j" "alt - downarrow"];
 
         # ── Move / swap windows ──────────────────────────────────
         # niri: Mod+Shift+H/Left move-column-left, Mod+Shift+L/Right move-column-right
-        window_swap_west = [ "alt + shift - h" "alt + shift - leftarrow" ];
-        window_swap_east = [ "alt + shift - l" "alt + shift - rightarrow" ];
+        window_swap_west = ["alt + shift - h" "alt + shift - leftarrow"];
+        window_swap_east = ["alt + shift - l" "alt + shift - rightarrow"];
         # niri: Mod+Shift+K/Up move-window-up, Mod+Shift+J/Down move-window-down
-        window_swap_north = [ "alt + shift - k" "alt + shift - uparrow" ];
-        window_swap_south = [ "alt + shift - j" "alt + shift - downarrow" ];
+        window_swap_north = ["alt + shift - k" "alt + shift - uparrow"];
+        window_swap_south = ["alt + shift - j" "alt + shift - downarrow"];
 
         # ── Sizing ───────────────────────────────────────────────
         # niri: Mod+R switch-preset-column-width

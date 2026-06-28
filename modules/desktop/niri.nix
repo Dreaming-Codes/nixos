@@ -1,12 +1,27 @@
-{pkgs, ...}: {
-  programs.niri = {
-    enable = true;
-    useNautilus = false;
-  };
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}: let
+  cfg = config.dreaming.desktop.niri;
+in {
+  options.dreaming.desktop.niri.enable =
+    lib.mkEnableOption "Niri compositor + DankMaterialShell"
+    // {
+      default = true;
+    };
 
-  environment.systemPackages = with pkgs; [
-    niri
-    niriswitcher
-    xwayland-satellite
-  ];
+  config = lib.mkIf cfg.enable {
+    programs.niri = {
+      enable = true;
+      useNautilus = false;
+    };
+
+    environment.systemPackages = with pkgs; [
+      niri
+      niriswitcher
+      xwayland-satellite
+    ];
+  };
 }

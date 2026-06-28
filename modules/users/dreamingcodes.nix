@@ -35,7 +35,13 @@ in {
     description = "Common groups shared by all users";
   };
 
-  config = {
+  options.dreaming.users.dreamingcodes.enable =
+    lib.mkEnableOption "primary user 'dreamingcodes' and Home Manager wiring"
+    // {
+      default = true;
+    };
+
+  config = lib.mkIf config.dreaming.users.dreamingcodes.enable {
     # Ensure flatpak group exists even on systems without flatpak enabled
     users.groups.flatpak = {};
     # Group for non-admin users to access nix

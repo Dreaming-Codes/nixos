@@ -4,7 +4,7 @@
   pkgs,
   ...
 }: let
-  cfg = config.programs.pwaApps;
+  cfg = config.dreaming.programs.pwaApps;
 
   # A PWA "app": a native browser window (Brave `--app=`) that shares the normal browser profile.
   mkPwaApp = {
@@ -57,7 +57,7 @@
         ++ lib.optional (iconFile != null) iconPkg;
     };
 in {
-  options.programs.pwaApps = {
+  options.dreaming.programs.pwaApps = {
     enable = lib.mkEnableOption "native browser PWA app launchers";
 
     browser = lib.mkOption {

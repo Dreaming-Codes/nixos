@@ -4,7 +4,7 @@
   pkgs,
   ...
 }: let
-  cfg = config.dreamingoptimal.optimization.processTuning;
+  cfg = config.dreaming.optimization.processTuning;
 in {
   config = lib.mkIf cfg.enable {
     services.ananicy = {

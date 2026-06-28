@@ -3,14 +3,19 @@
   lib,
   ...
 }: let
-  cfg = config.custom.networking;
+  cfg = config.dreaming.networking;
 in {
-  options.custom.networking = {
+  options.dreaming.networking = {
+    enable =
+      lib.mkEnableOption "core networking (NetworkManager/resolved/firewall/WARP)"
+      // {
+        default = true;
+      };
     wpaSupplicant.enable = lib.mkEnableOption "wpa_supplicant with enterprise WiFi (eduroam/WPA-Enterprise) tuning";
     intelWifi.enable = lib.mkEnableOption "Intel iwlwifi power-saving tweaks";
   };
 
-  config = {
+  config = lib.mkIf cfg.enable {
     boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
 
     # Intel AX210 WiFi optimizations - disable power saving for better stability

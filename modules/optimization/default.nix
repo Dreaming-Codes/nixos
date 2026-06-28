@@ -5,7 +5,7 @@
   ...
 }: let
   inherit (lib) mkDefault mkEnableOption mkIf;
-  cfg = config.dreamingoptimal.optimization;
+  cfg = config.dreaming.optimization;
 in {
   imports = [
     ./ram.nix
@@ -18,8 +18,8 @@ in {
     ./envfs.nix
   ];
 
-  options.dreamingoptimal.optimization = {
-    enable = mkEnableOption "DreamingOptimal optimization profile";
+  options.dreaming.optimization = {
+    enable = mkEnableOption "system optimization profile";
 
     ram.enable = mkEnableOption "compressed RAM swap (zram)";
     swapFallback.enable = mkEnableOption "disk swap fallback when zram is exhausted";
@@ -32,7 +32,7 @@ in {
   };
 
   config = mkIf cfg.enable {
-    dreamingoptimal.optimization = {
+    dreaming.optimization = {
       ram.enable = mkDefault true;
       swapFallback.enable = mkDefault true;
       processTuning.enable = mkDefault true;

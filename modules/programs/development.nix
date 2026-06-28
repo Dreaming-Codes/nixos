@@ -4,44 +4,55 @@
   lib,
   ...
 }: let
-  inherit (lib) mapAttrs' mkEnableOption mkIf mkOption nameValuePair types;
+  inherit
+    (lib)
+    mapAttrs'
+    mkEnableOption
+    mkIf
+    mkOption
+    nameValuePair
+    types
+    ;
 
-  cfg = config.custom.misc.sdks;
+  cfg = config.dreaming.programs.development;
   sdksDirectory = "/nixos/.sdks";
 in {
   ###### interface
 
-  options = {
-    custom.misc.sdks = {
-      enable = mkEnableOption "sdk links";
-
-      links = mkOption {
-        type = types.attrs;
-        default = {};
-        example = {"link-name" = pkgs.python3;};
-        description = ''
-          Links to generate in `/etc/nixos/.sdks` directory.
-        '';
+  options.dreaming.programs.development = {
+    enable =
+      mkEnableOption "development tooling (SDK links, nix-ld, partition-manager)"
+      // {
+        default = true;
       };
+
+    sdks.links = mkOption {
+      type = types.attrs;
+      default = {};
+      example = {
+        "link-name" = pkgs.python3;
+      };
+      description = ''
+        Links to generate in `/etc/nixos/.sdks` directory.
+      '';
     };
   };
 
   ###### implementation
 
-  config = {
+  config = mkIf cfg.enable {
     # SDK links implementation
-    environment.etc = mkIf cfg.enable (mapAttrs' (name: package:
-      nameValuePair "${sdksDirectory}/${name}" {source = package;})
-    cfg.links);
+    environment.etc =
+      mapAttrs' (
+        name: package: nameValuePair "${sdksDirectory}/${name}" {source = package;}
+      )
+      cfg.sdks.links;
 
     # SDK configuration
-    custom.misc.sdks = {
-      enable = true;
-      links = {
-        nodejs = pkgs.nodejs;
-        jdk = pkgs.temurin-bin;
-        jdk17 = pkgs.temurin-bin-17;
-      };
+    dreaming.programs.development.sdks.links = {
+      nodejs = pkgs.nodejs;
+      jdk = pkgs.temurin-bin;
+      jdk17 = pkgs.temurin-bin-17;
     };
 
     # Partition-manager does not work if not installed globally

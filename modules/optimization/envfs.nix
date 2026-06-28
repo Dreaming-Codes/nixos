@@ -3,7 +3,7 @@
   config,
   ...
 }: let
-  cfg = config.dreamingoptimal.optimization;
+  cfg = config.dreaming.optimization;
 in {
   config = lib.mkIf cfg.envfs.enable {
     # Fix FUSE race condition where mount.envfs returns before the kernel

@@ -5,7 +5,7 @@
   pkgs,
   ...
 }: let
-  cfg = config.dreamingoptimal.optimization.cachykernel;
+  cfg = config.dreaming.optimization.cachykernel;
 
   # CPU info from nixos-facter report (safely handles missing facter module)
   hasFacter = config ? facter && config.facter ? report && config.facter.report ? hardware;
@@ -58,7 +58,7 @@
   archSuffix = lib.optionalString (cfg.cpuArch != null) "-${cfg.cpuArch}";
   kernelAttr = "linuxPackages-cachyos-latest${ltoSuffix}${archSuffix}";
 in {
-  options.dreamingoptimal.optimization.cachykernel = {
+  options.dreaming.optimization.cachykernel = {
     lto = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -96,10 +96,10 @@ in {
     boot.kernelPackages = pkgs.cachyosKernels.${kernelAttr};
 
     warnings = lib.optional (!hasFacter) ''
-      dreamingoptimal.optimization.cachykernel: nixos-facter report not available.
+      dreaming.optimization.cachykernel: nixos-facter report not available.
       CPU architecture could not be auto-detected; falling back to generic kernel (${kernelAttr}).
       For optimal performance, either configure nixos-facter or set
-      dreamingoptimal.optimization.cachykernel.cpuArch manually.
+      dreaming.optimization.cachykernel.cpuArch manually.
     '';
   };
 }

@@ -4,28 +4,34 @@
   config,
   nix-index-database,
   ...
-}: {
-  # Riccardo user (desktop only)
-  users.users.riccardo = {
-    isNormalUser = true;
-    description = "Riccardo";
-    extraGroups = config.users.commonGroups;
-    shell = pkgs.fish;
-  };
+}: let
+  cfg = config.dreaming.users.riccardo;
+in {
+  options.dreaming.users.riccardo.enable = lib.mkEnableOption "secondary user 'riccardo'";
 
-  # PAM kwallet for riccardo
-  security.pam.services."riccardo" = {
-    kwallet = {
-      enable = true;
-      package = pkgs.kdePackages.kwallet-pam;
+  config = lib.mkIf cfg.enable {
+    # Riccardo user (desktop only)
+    users.users.riccardo = {
+      isNormalUser = true;
+      description = "Riccardo";
+      extraGroups = config.users.commonGroups;
+      shell = pkgs.fish;
     };
-  };
 
-  # Riccardo Home Manager configuration
-  home-manager.users.riccardo = {
-    imports = [
-      nix-index-database.homeModules.nix-index
-      ../../home/common.nix
-    ];
+    # PAM kwallet for riccardo
+    security.pam.services."riccardo" = {
+      kwallet = {
+        enable = true;
+        package = pkgs.kdePackages.kwallet-pam;
+      };
+    };
+
+    # Riccardo Home Manager configuration
+    home-manager.users.riccardo = {
+      imports = [
+        nix-index-database.homeModules.nix-index
+        ../../home/common.nix
+      ];
+    };
   };
 }

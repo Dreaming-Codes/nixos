@@ -3,7 +3,7 @@
   lib,
   ...
 }: let
-  cfg = config.dreamingoptimal.optimization.sysctl;
+  cfg = config.dreaming.optimization.sysctl;
 in {
   config = lib.mkIf cfg.enable {
     boot.kernel.sysctl = {

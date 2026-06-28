@@ -1,53 +1,64 @@
 {
+  config,
   lib,
   pkgs,
   ...
-}: {
-  # System-wide MIME associations to ensure consistency with portal usage
-  xdg.mime = {
-    enable = true;
-    defaultApplications = {
-      "application/pdf" = "brave-browser.desktop";
-      "x-scheme-handler/http" = "brave-browser.desktop";
-      "x-scheme-handler/https" = "brave-browser.desktop";
-      "text/html" = "brave-browser.desktop";
+}: let
+  cfg = config.dreaming.desktop.xdg;
+in {
+  options.dreaming.desktop.xdg.enable =
+    lib.mkEnableOption "XDG portals/desktop integration"
+    // {
+      default = true;
     };
-  };
 
-  xdg.portal = {
-    xdgOpenUsePortal = true;
-    enable = true;
-
-    config = {
-      niri = lib.mkForce {
-        default = [
-          "gnome"
-          "gtk"
-          "kwallet"
-          "kde"
-        ];
-        "org.freedesktop.impl.portal.Access" = "gtk";
-        "org.freedesktop.impl.portal.FileChooser" = "kde";
-        "org.freedesktop.impl.portal.Notification" = "gtk";
-        "org.freedesktop.impl.portal.OpenURI" = "kde";
-        "org.freedesktop.impl.portal.Secret" = "kwallet";
-      };
-      plasma = {
-        default = [
-          "kde"
-          "gtk"
-        ];
-        "org.freedesktop.impl.portal.FileChooser" = "kde";
-        "org.freedesktop.impl.portal.OpenURI" = "kde";
+  config = lib.mkIf cfg.enable {
+    # System-wide MIME associations to ensure consistency with portal usage
+    xdg.mime = {
+      enable = true;
+      defaultApplications = {
+        "application/pdf" = "brave-browser.desktop";
+        "x-scheme-handler/http" = "brave-browser.desktop";
+        "x-scheme-handler/https" = "brave-browser.desktop";
+        "text/html" = "brave-browser.desktop";
       };
     };
 
-    extraPortals = with pkgs; [
-      xdg-desktop-portal-gnome
-      # Add xdg-desktop-portal-gtk for Wayland GTK apps (font issues etc.)
-      xdg-desktop-portal-gtk
-      kdePackages.kwallet
-      kdePackages.xdg-desktop-portal-kde
-    ];
+    xdg.portal = {
+      xdgOpenUsePortal = true;
+      enable = true;
+
+      config = {
+        niri = lib.mkForce {
+          default = [
+            "gnome"
+            "gtk"
+            "kwallet"
+            "kde"
+          ];
+          "org.freedesktop.impl.portal.Access" = "gtk";
+          "org.freedesktop.impl.portal.FileChooser" = "kde";
+          "org.freedesktop.impl.portal.Notification" = "gtk";
+          "org.freedesktop.impl.portal.OpenURI" = "kde";
+          "org.freedesktop.impl.portal.Secret" = "kwallet";
+        };
+        plasma = {
+          default = [
+            "kde"
+            "gtk"
+          ];
+          "org.freedesktop.impl.portal.FileChooser" = "kde";
+          "org.freedesktop.impl.portal.OpenURI" = "kde";
+        };
+      };
+
+      extraPortals = with pkgs; [
+        xdg-desktop-portal-gnome
+        # Add xdg-desktop-portal-gtk for Wayland GTK apps (font issues etc.)
+        xdg-desktop-portal-gtk
+        kdePackages.kwallet
+        kdePackages.xdg-desktop-portal-kde
+      ];
+    };
   };
 }
