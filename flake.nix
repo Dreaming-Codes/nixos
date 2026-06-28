@@ -76,6 +76,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     easy-hosts.url = "github:tgirlcloud/easy-hosts";
+    disko = {
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs @ {
