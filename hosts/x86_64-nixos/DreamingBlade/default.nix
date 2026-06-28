@@ -1,12 +1,13 @@
 {
   inputs,
+  self,
   pkgs,
   lib,
   config,
   ...
 }: let
   razer-energy = pkgs.writeShellScriptBin "razer-energy" (
-    builtins.readFile ../../scripts/razer-energy.sh
+    builtins.readFile "${self}/scripts/razer-energy.sh"
   );
   razer-laptop-control =
     inputs.razer-laptop-controller.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs
@@ -19,12 +20,6 @@
         '';
     });
 in {
-  imports = [
-    ../common-x86.nix
-    ../../modules/core/campus-switch.nix
-    ../../modules/programs/virtualization/waydroid.nix
-  ];
-
   boot.initrd.availableKernelModules = [
     "nvme"
     "xhci_pci"

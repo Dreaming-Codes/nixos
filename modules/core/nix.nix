@@ -5,9 +5,9 @@
   inputs,
   ...
 }: let
-  # Single source of truth: flake.nix's nixConfig. We import the flake file
-  # directly (not via the flake machinery) to read its literal attrs.
-  flakeNixConfig = (import ../../flake.nix).nixConfig;
+  # Single source of truth: ../../nixConfig.nix (also used by flake.nix's
+  # nixConfig and flake-modules/devshell.nix).
+  flakeNixConfig = import ../../nixConfig.nix;
   determinateNixPackages = inputs.determinate.inputs.nix.packages.${pkgs.stdenv.hostPlatform.system};
   emptySentryNative = pkgs.runCommand "empty-sentry-native" {} ''
     mkdir -p $out/bin $out/lib/debug
@@ -15,14 +15,13 @@
   determinateNixNoSentry = determinateNixPackages.nix.override {
     sentry-native = emptySentryNative;
     nix-cli = determinateNixPackages.nix-cli.overrideAttrs (old: {
-      buildInputs =
-        lib.filter
-        (pkg: (pkg.pname or pkg.name or "") != "sentry-native")
-        (old.buildInputs or []);
+      buildInputs = lib.filter (pkg: (pkg.pname or pkg.name or "") != "sentry-native") (
+        old.buildInputs or []
+      );
       mesonFlags =
-        lib.filter
-        (flag: !(lib.hasPrefix "-Dcrashpad-handler=" flag) && flag != "-Dsentry=enabled")
-        (old.mesonFlags or [])
+        lib.filter (flag: !(lib.hasPrefix "-Dcrashpad-handler=" flag) && flag != "-Dsentry=enabled") (
+          old.mesonFlags or []
+        )
         ++ ["-Dsentry=disabled"];
     });
   };

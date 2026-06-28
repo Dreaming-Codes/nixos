@@ -1,10 +1,10 @@
 {
   description = "NixOS system flake";
 
-  # Binary caches. This is the single source of truth; modules/core/nix.nix
-  # imports this same attrset via `(import ./flake.nix).nixConfig`.
-  # Note: per Nix flake spec, `nixConfig` must be a literal attrset — we cannot
-  # compute it from JSON or another file, so the literal lives here.
+  # NOTE: Nix requires `nixConfig` to be a literal attrset (it is read before
+  # evaluation), so it cannot `import ./nixConfig.nix`. Keep this in sync with
+  # ./nixConfig.nix, which is the version consumed by modules/core/nix.nix and
+  # flake-modules/devshell.nix.
   nixConfig = {
     substituters = [
       "https://artifact-s3-gateway.int.n7k.io/n7k-nix-cache?priority=10"
@@ -70,81 +70,39 @@
       url = "github:karinushka/paneru";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    flake-parts = {
+      url = "github:hercules-ci/flake-parts";
+      inputs.nixpkgs-lib.follows = "nixpkgs";
+    };
+    haumea = {
+      url = "github:nix-community/haumea";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    easy-hosts.url = "github:tgirlcloud/easy-hosts";
   };
 
   outputs = inputs @ {
-    self,
-    nixpkgs,
-    razer-laptop-controller,
+    flake-parts,
+    haumea,
+    easy-hosts,
     ...
-  }: let
-    mkHost = (import ./lib/mkHost.nix {inherit inputs;}).mkHost;
-    mkDarwin = (import ./lib/mkDarwin.nix {inherit inputs;}).mkDarwin;
-  in {
-    nixosModules = {
-      nix-file-overlay = ./modules/nix-file-overlay;
-      dreamingoptimal = ./modules/dreamingoptimal;
-      dreamingoptimal-ram = ./modules/dreamingoptimal/ram.nix;
-      dreamingoptimal-swap-fallback = ./modules/dreamingoptimal/swap-fallback.nix;
-      dreamingoptimal-process-tuning = ./modules/dreamingoptimal/process-tuning.nix;
-      dreamingoptimal-sysctl = ./modules/dreamingoptimal/sysctl.nix;
-      dreamingoptimal-bpftune = ./modules/dreamingoptimal/bpftune.nix;
-      dreamingoptimal-cachykernel = ./modules/dreamingoptimal/cachykernel.nix;
-      dreamingoptimal-fstrim = ./modules/dreamingoptimal/fstrim.nix;
-      dreamingoptimal-envfs = ./modules/dreamingoptimal/envfs.nix;
-    };
-
-    hmModules = {
-      nix-file-overlay = ./modules/nix-file-overlay/hm-module.nix;
-    };
-
-    nixosConfigurations = {
-      DreamingDesk = mkHost {
-        hostname = "DreamingDesk";
-        hostPath = "dreamingdesk";
-        extraModules = [
-          # ./modules/programs/virtualization  # Enable when ready
-        ];
-      };
-
-      DreamingBlade = mkHost {
-        hostname = "DreamingBlade";
-        hostPath = "dreamingblade";
-        extraModules = [
-          razer-laptop-controller.nixosModules.default
-          {
-            powerManagement = {
-              enable = true;
-              powertop.enable = true;
-            };
+  }:
+    flake-parts.lib.mkFlake {inherit inputs;} {
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+        "aarch64-darwin"
+      ];
+      imports =
+        [
+          easy-hosts.flakeModule
+        ]
+        ++ builtins.attrValues (
+          haumea.lib.load {
+            src = ./flake-modules;
+            loader = haumea.lib.loaders.path;
           }
-        ];
-      };
-
-      DreamingWorkDell = mkHost {
-        hostname = "DreamingWorkDell";
-        hostPath = "dreamingworkdell";
-        # No facter.json yet — generate on the real Dell and switch this to true
-        # (plus drop the line below) once hosts/dreamingworkdell/facter.json exists.
-        useFacter = false;
-      };
-
-      DreamingWork = mkHost {
-        hostname = "DreamingWork";
-        hostPath = "dreamingwork";
-        system = "aarch64-linux";
-        useFacter = false;
-        extraModules = [
-          inputs.apple-silicon.nixosModules.apple-silicon-support
-        ];
-      };
+        );
     };
-
-    darwinConfigurations = {
-      DreamingNeuraBook = mkDarwin {
-        hostname = "DreamingNeuraBook";
-        hostPath = "dreamingneurabook";
-      };
-    };
-  };
 }

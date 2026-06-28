@@ -4,10 +4,6 @@
   config,
   ...
 }: {
-  imports = [
-    ../common-x86.nix
-  ];
-
   # TODO: Generate the real hardware report on the Dell and place it here:
   #   sudo nixos-facter -o hosts/dreamingworkdell/facter.json
   # Until then the values below are placeholders and MUST be corrected

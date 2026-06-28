@@ -6,7 +6,6 @@
   osConfig,
   ...
 }: let
-  toggleMic = pkgs.writeShellScriptBin "toggleMic" (builtins.readFile ../scripts/mictoggle.sh);
   vibeMerge = pkgs.writeShellScriptBin "vibe-merge" (builtins.readFile ../scripts/vibeMerge.sh);
   vibeCommit = pkgs.writeShellScriptBin "vibe-commit" (builtins.readFile ../scripts/vibeCommit.sh);
   codexStandalone = pkgs.writeShellScriptBin "codex" ''
@@ -413,9 +412,7 @@ in {
     };
   };
 
-  # DreamingCodes-only packages (toggleMic script)
   home.packages = [
-    toggleMic
     vibeMerge
     vibeCommit
     codexStandalone
