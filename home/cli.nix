@@ -96,10 +96,6 @@ in {
     };
   };
 
-  # btop writes its own config from the settings below; force overwrite any
-  # pre-existing on-disk config so the declarative settings win.
-  xdg.configFile."btop/btop.conf".force = true;
-
   programs = {
     # Shell and CLI tools
     helix.enable = true;
@@ -156,14 +152,6 @@ in {
 
     btop = {
       enable = true;
-      settings = {
-        graph_symbol = "block";
-        graph_symbol_cpu = "block";
-        graph_symbol_gpu = "block";
-        graph_symbol_mem = "block";
-        graph_symbol_net = "block";
-        graph_symbol_proc = "block";
-      };
     };
 
     fzf = {
