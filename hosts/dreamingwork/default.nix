@@ -69,8 +69,11 @@ in {
       else {extractPeripheralFirmware = true;}
     );
 
-  # Asahi/U-Boot UEFI boot: systemd-boot, and never touch EFI variables.
-  boot.loader.systemd-boot.enable = true;
+  # Asahi/U-Boot UEFI boot: firmware only loads the removable EFI fallback
+  # path (EFI/BOOT/BOOTAA64.EFI) and exposes no EFI variables, so Limine must
+  # install itself as the removable loader.
+  boot.loader.limine.enable = true;
+  boot.loader.limine.efiInstallAsRemovable = true;
   boot.loader.efi.canTouchEfiVariables = false;
 
   boot.kernelParams = ["appledrm.show_notch=1"];
