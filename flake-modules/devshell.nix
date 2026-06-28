@@ -2,9 +2,7 @@
   perSystem = {pkgs, ...}: let
     hashFlakeState = import ../lib/hash-flake-state.nix {inherit pkgs;};
 
-    # Single source of truth for caches (also used by flake.nix nixConfig and
-    # modules/core/nix.nix).
-    flakeNixConfig = import ../nixConfig.nix;
+    flakeNixConfig = (import ../flake.nix).nixConfig;
     cacheFlags = builtins.concatStringsSep " " [
       "--option extra-substituters"
       "\"${builtins.concatStringsSep " " flakeNixConfig.substituters}\""

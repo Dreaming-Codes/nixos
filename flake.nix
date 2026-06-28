@@ -1,10 +1,6 @@
 {
   description = "NixOS system flake";
 
-  # NOTE: Nix requires `nixConfig` to be a literal attrset (it is read before
-  # evaluation), so it cannot `import ./nixConfig.nix`. Keep this in sync with
-  # ./nixConfig.nix, which is the version consumed by modules/core/nix.nix and
-  # flake-modules/devshell.nix.
   nixConfig = {
     substituters = [
       "https://artifact-s3-gateway.int.n7k.io/n7k-nix-cache?priority=10"
