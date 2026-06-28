@@ -4,11 +4,6 @@
   config,
   ...
 }: {
-  imports = [
-    ../common-x86.nix
-    ../../modules/users/riccardo.nix
-  ];
-
   environment.systemPackages = with pkgs; [
     # amd gpu utility
     lact

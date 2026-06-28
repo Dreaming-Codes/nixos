@@ -1,5 +1,6 @@
 {
   inputs,
+  self,
   lib,
   ...
 }: let
@@ -25,10 +26,7 @@ in {
   # The ./firmware dir (Asahi peripheral firmware copied off the EFI system
   # partition) is also produced at install time by scripts/asahi-install.sh.
   imports =
-    [
-      ../../modules/programs/pwa-apps.nix
-    ]
-    ++ lib.optional (builtins.pathExists ./hardware-configuration.nix) ./hardware-configuration.nix
+    lib.optional (builtins.pathExists ./hardware-configuration.nix) ./hardware-configuration.nix
     ++ lib.optional hasLocalNixSettings (import localNixSettingsPath);
 
   # Require the machine-local settings on this machine. If the file is missing,
@@ -128,7 +126,7 @@ in {
 
   home-manager.users.dreamingcodes = {
     home.file.".config/niri/dms/host-local.kdl" = {
-      source = ../../config/niri/dms/host-dreamingwork.kdl;
+      source = self + "/config/niri/dms/host-dreamingwork.kdl";
       force = true;
     };
   };
