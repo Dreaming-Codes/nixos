@@ -62,7 +62,6 @@
             powertop.enable = true;
           };
         }
-        ../modules/core/campus-switch.nix
         ../modules/programs/virtualization/waydroid.nix
       ];
 
