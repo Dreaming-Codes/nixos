@@ -114,6 +114,7 @@ in {
         pkgs.gnutar
         pkgs.gzip
         pkgs.coreutils
+        pkgs.curl
       ]
     }:$PATH" \
         ${pkgs.curl}/bin/curl -fsSL https://chatgpt.com/codex/install.sh | \
@@ -122,6 +123,7 @@ in {
         pkgs.gnutar
         pkgs.gzip
         pkgs.coreutils
+        pkgs.curl
       ]
     }:$PATH" sh
     fi
