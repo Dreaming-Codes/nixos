@@ -22,14 +22,6 @@ in {
   # partition) is also produced at install time by scripts/asahi-install.sh.
   imports = lib.optional (builtins.pathExists ./hardware-configuration.nix) ./hardware-configuration.nix;
 
-  # Neuralink Internal Root CA. The cert lives in this repo under
-  # secrets/certs/ encrypted at rest with git-crypt; the working tree holds the
-  # decrypted PEM, so security.pki bakes it into the system CA bundle at build
-  # time (no --impure needed).
-  security.pki.certificateFiles = [
-    (self + "/secrets/certs/neuralink-internal-root-ca.crt")
-  ];
-
   nixpkgs.hostPlatform = "aarch64-linux";
 
   # Asahi manages its own boot loader and graphics stack (below / via the
