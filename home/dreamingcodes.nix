@@ -109,7 +109,21 @@ in {
 
   home.activation.codexStandalone = lib.hm.dag.entryAfter ["writeBoundary"] ''
     if [ ! -x /home/dreamingcodes/.codex/packages/standalone/current/bin/codex ]; then
-      ${pkgs.curl}/bin/curl -fsSL https://chatgpt.com/codex/install.sh | sh
+      PATH="${
+      lib.makeBinPath [
+        pkgs.gnutar
+        pkgs.gzip
+        pkgs.coreutils
+      ]
+    }:$PATH" \
+        ${pkgs.curl}/bin/curl -fsSL https://chatgpt.com/codex/install.sh | \
+        PATH="${
+      lib.makeBinPath [
+        pkgs.gnutar
+        pkgs.gzip
+        pkgs.coreutils
+      ]
+    }:$PATH" sh
     fi
     mkdir -p /home/dreamingcodes/.local/bin
     ln -sfn /home/dreamingcodes/.codex/packages/standalone/current/bin/codex /home/dreamingcodes/.local/bin/codex
