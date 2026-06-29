@@ -49,18 +49,5 @@ in {
     nix.extraOptions = ''
       !include ${config.sops.templates."nix-access-tokens.conf".path}
     '';
-
-    system.activationScripts.setupSecrets.text = lib.mkMerge [
-      (lib.mkBefore ''
-        _sops_status_before=$_status
-      '')
-      (lib.mkAfter ''
-        if [ "''${_localstatus:-0}" -gt 0 ] && [ ! -e ${lib.escapeShellArg ageKeyFile} ]; then
-          echo "warning: ${ageKeyFile} is missing; ignoring sops-nix activation failure"
-          _status=$_sops_status_before
-          _localstatus=0
-        fi
-      '')
-    ];
   };
 }
