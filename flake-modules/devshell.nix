@@ -217,6 +217,7 @@
         pkgs.nixd
         pkgs.nixfmt
         pkgs.sops
+        pkgs.git-crypt
         pkgs.kdePackages.qtdeclarative
         system-current
         hashFlakeState

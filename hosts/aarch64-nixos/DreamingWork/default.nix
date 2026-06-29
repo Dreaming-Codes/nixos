@@ -11,11 +11,6 @@
       inputs.apple-silicon.overlays.default
     ];
   };
-  # Machine-local private NixOS settings (internal binary cache + CA trust)
-  # live OUTSIDE this public repo so their URLs/keys/certs are never committed.
-  # Reading this absolute path requires building with `--impure`.
-  localNixSettingsPath = "/home/dreamingcodes/.config/nixos-local/local-nix-settings.nix";
-  hasLocalNixSettings = builtins.pathExists localNixSettingsPath;
 in {
   # Apple Silicon work laptop running Asahi Linux (aarch64).
   # Installed via the upstream nixos-apple-silicon installer ISO; see
@@ -25,27 +20,14 @@ in {
   # `nixos-generate-config` after partitioning, then committed here.
   # The ./firmware dir (Asahi peripheral firmware copied off the EFI system
   # partition) is also produced at install time by scripts/asahi-install.sh.
-  imports =
-    lib.optional (builtins.pathExists ./hardware-configuration.nix) ./hardware-configuration.nix
-    ++ lib.optional hasLocalNixSettings (import localNixSettingsPath);
+  imports = lib.optional (builtins.pathExists ./hardware-configuration.nix) ./hardware-configuration.nix;
 
-  # Require the machine-local settings on this machine. If the file is missing,
-  # fail loudly rather than silently building without the internal cache/CA.
-  # NOTE: reading the local file requires `--impure`; without it the path is
-  # not visible and this assertion will trip, which is the intended signal.
-  assertions = [
-    {
-      assertion = hasLocalNixSettings;
-      message = ''
-        Expected local Nix settings at ${localNixSettingsPath} but it was not found.
-
-        This file holds machine-local private NixOS settings (internal binary
-        cache + Neuralink Internal Root CA), kept outside the public flake.
-        Restore it, then rebuild with `--impure`, e.g.:
-
-          nh os switch -- --impure
-      '';
-    }
+  # Neuralink Internal Root CA. The cert lives in this repo under
+  # secrets/certs/ encrypted at rest with git-crypt; the working tree holds the
+  # decrypted PEM, so security.pki bakes it into the system CA bundle at build
+  # time (no --impure needed).
+  security.pki.certificateFiles = [
+    (self + "/secrets/certs/neuralink-internal-root-ca.crt")
   ];
 
   nixpkgs.hostPlatform = "aarch64-linux";
