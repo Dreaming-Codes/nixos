@@ -330,7 +330,9 @@ in {
     seed_file() {
       path="$1"
       source="$2"
-      if [ ! -e "$path" ]; then
+      # Seed when missing or when a stale empty file shadows real config
+      # (e.g. leftovers surviving a reinstall). Non-empty user files are kept.
+      if [ ! -e "$path" ] || [ ! -s "$path" ]; then
         ${pkgs.coreutils}/bin/cp "$source" "$path"
         ${pkgs.coreutils}/bin/chmod u+w "$path"
       fi
