@@ -6,6 +6,7 @@
   cfg = config.dreaming.optimization;
 in {
   config = lib.mkIf cfg.envfs.enable {
+    services.envfs.enable = true;
     # Fix FUSE race condition where mount.envfs returns before the kernel
     # registers the mount, causing systemd to report "Failed to mount /usr/bin"
     # and the subsequent dep /bin
