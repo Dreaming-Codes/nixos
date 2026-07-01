@@ -13,8 +13,6 @@ in {
     };
 
   config = lib.mkIf cfg.enable {
-    services.envfs.enable = true;
-
     services.xserver.enable = true;
 
     services.displayManager.dms-greeter = {
