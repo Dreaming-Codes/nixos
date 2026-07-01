@@ -1,7 +1,7 @@
 {
   lib,
   config,
-  pkgs
+  pkgs,
   ...
 }: let
   cfg = config.dreaming.optimization;
