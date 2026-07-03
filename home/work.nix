@@ -1,7 +1,9 @@
 {config, ...}: {
+  imports = [./work-secret.nix];
+
   programs.opencode.settings = {
     model = "amazon-bedrock/anthropic.claude-opus-4-8";
-    small_model = "amazon-bedrock/anthropic.claude-sonnet-4-6";
+    small_model = "amazon-bedrock/anthropic.claude-sonnet-5";
   };
 
   home.file.".config/nixos-local-aws/config".source = ../config/aws/work.config;
