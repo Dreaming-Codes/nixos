@@ -370,6 +370,28 @@ in {
 
   programs.obs-studio.enable = true;
 
+  # NetworkManager secret agent. Niri ships no NM agent, so agent-owned
+  # secrets (e.g. the N7K EAP-TLS private-key passphrase) have nowhere to be
+  # stored/served and auto-connect fails. nm-applet registers the agent and
+  # persists secrets in the active Secret Service (KWallet here). --indicator
+  # avoids requiring a system tray under niri.
+  systemd.user.services.nm-applet = {
+    Unit = {
+      Description = "NetworkManager secret agent (nm-applet)";
+      PartOf = ["graphical-session.target"];
+      After = ["graphical-session.target" "kwallet-pam.service"];
+      Wants = ["kwallet-pam.service"];
+    };
+    Install = {
+      WantedBy = ["graphical-session.target"];
+    };
+    Service = {
+      ExecStart = "${pkgs.networkmanagerapplet}/bin/nm-applet --indicator";
+      Restart = "on-failure";
+      RestartSec = 3;
+    };
+  };
+
   # KWallet daemon for auto-unlock in Wayland sessions
   systemd.user.services.kwallet-pam = {
     Unit = {
