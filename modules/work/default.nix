@@ -18,6 +18,8 @@ in {
       ../../secrets/certs/neuralink-internal-root-ca.crt
     ];
 
+    services.tailscale.enable = true;
+
     # Work-only secrets (from secrets/secrets.yaml)
     sops.secrets.xai_work_api_key = {
       owner = "dreamingcodes";
