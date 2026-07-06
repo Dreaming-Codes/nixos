@@ -70,7 +70,7 @@ in {
       ];
     };
 
-    # Per-host extras + facter (only DreamingDesk/DreamingBlade have facter.json).
+    # Per-host extras + facter (Desk/Blade/WorkDell have facter.json).
     hosts = {
       DreamingDesk.modules = [
         inputs.nixos-facter-modules.nixosModules.facter
@@ -101,6 +101,8 @@ in {
       # by-uuid fileSystems.
       DreamingWorkDell.modules = [
         inputs.disko.nixosModules.disko
+        inputs.nixos-facter-modules.nixosModules.facter
+        {facter.reportPath = ../hosts/x86_64-nixos/DreamingWorkDell/facter.json;}
         {dreaming.work.enable = true;}
       ];
     };
