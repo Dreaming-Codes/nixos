@@ -6,7 +6,8 @@
 }: {
   imports = [./disk-config.nix];
 
-  # TODO: Generate the real hardware report on the Dell and place it here:
+  # Hardware report: hosts/x86_64-nixos/DreamingWorkDell/facter.json
+  # (wired via flake-modules/hosts.nix). Regenerate with:
   #   sudo nixos-facter -o hosts/x86_64-nixos/DreamingWorkDell/facter.json
   boot.initrd.availableKernelModules = [
     "nvme"
