@@ -88,58 +88,13 @@ in {
       RestartSec = lib.mkForce 5;
     };
   };
-  # Enable cuda support for the dGPU on the laptop. The AMD iGPU works fine
-  # without rocmSupport for display/graphics (Vulkan/OpenGL/VAAPI). We avoid
-  # global rocmSupport because no binary cache covers rocm-tainted closures
-  # broadly — enabling it would force vtk/opencv4Full/etc. to compile locally.
-  # If a specific package needs ROCm compute later, override it per-package.
-  nixpkgs.config.cudaSupport = true;
-
   boot.kernelModules = ["kvm-amd"];
-  # nvidia.NVreg_EnableGpuFirmware=0
-  boot.kernelParams = ["nvidia.NVreg_PreserveVideoMemoryAllocations=1"];
 
-  hardware.nvidia-container-toolkit.enable = true;
-
-  ### Nvidia STUFF
-  hardware.graphics = {
+  # Hybrid AMD iGPU + NVIDIA dGPU (see modules/hardware/optimus.nix).
+  dreaming.hardware.optimus = {
     enable = true;
-  };
-
-  # Load nvidia driver for Xorg and Wayland
-  services.xserver.videoDrivers = [
-    "nvidia"
-    "amdgpu"
-  ];
-
-  hardware.nvidia = {
-    # Modesetting is required.
-    modesetting.enable = true;
-
-    # Nvidia power management. Experimental, and can cause sleep/suspend to fail.
-    # Enable this if you have graphical corruption issues or application crashes after waking
-    # up from sleep. This fixes it by saving the entire VRAM memory to /tmp/ instead
-    # of just the bare essentials.
-    powerManagement.enable = true;
-
-    # Fine-grained power management. Turns off GPU when not in use.
-    # Experimental and only works on modern Nvidia GPUs (Turing or newer).
-    powerManagement.finegrained = true;
-
-    # Use the NVidia open source kernel module (not to be confused with the
-    # independent third-party "nouveau" open source driver).
-    # Support is limited to the Turing and later architectures. Full list of
-    # supported GPUs is at:
-    # https://github.com/NVIDIA/open-gpu-kernel-modules#compatible-gpus
-    # Only available from driver 515.43.04+
-    # Currently alpha-quality/buggy, so false is currently the recommended setting.
-    open = true;
-
-    # Enable the Nvidia settings menu,
-    # accessible via `nvidia-settings`.
-    nvidiaSettings = false;
-
-    package = config.boot.kernelPackages.nvidiaPackages.stable;
+    nvidiaBusId = "PCI:1:0:0";
+    amdgpuBusId = "PCI:4:0:0";
   };
 
   hardware.keyboard.qmk.enable = true;
@@ -164,75 +119,4 @@ in {
   # Disable USB autosuspend for all HID input devices at boot (runs after powertop which enables autosuspend)
   # Re-disable USB autosuspend for HID input devices after powertop enables it globally
   systemd.services.powertop.serviceConfig.ExecStartPost = "${pkgs.bash}/bin/bash -c 'for intf in /sys/bus/usb/devices/*:*/bInterfaceClass; do if [ -f \"$intf\" ] && [ \"$(cat \"$intf\")\" = \"03\" ]; then devpath=\"$(dirname \"$intf\")\"; parent=\"$(readlink -f \"$devpath/..\")\"; if [ -f \"$parent/power/control\" ]; then echo on > \"$parent/power/control\"; fi; fi; done'";
-
-  hardware.nvidia.prime = {
-    offload = {
-      enable = true;
-      enableOffloadCmd = true;
-    };
-    nvidiaBusId = "PCI:1:0:0";
-    amdgpuBusId = "PCI:4:0:0";
-  };
-
-  specialisation = let
-    # Base specialisations (without open/proprietary split)
-    baseSpecialisations = {
-      performance = {
-        system.nixos.tags = ["performance"];
-        hardware.nvidia = {
-          powerManagement.finegrained = lib.mkForce false;
-          prime.offload.enable = lib.mkForce false;
-          prime.offload.enableOffloadCmd = lib.mkForce false;
-          prime.sync.enable = lib.mkForce true;
-        };
-      };
-
-      reverse = {
-        system.nixos.tags = ["reverse"];
-        hardware.nvidia = {
-          powerManagement.finegrained = lib.mkForce false;
-          prime.offload.enable = lib.mkForce false;
-          prime.offload.enableOffloadCmd = lib.mkForce false;
-          prime.sync.enable = lib.mkForce false;
-          prime.reverseSync.enable = lib.mkForce true;
-        };
-      };
-    };
-
-    # Function to generate open/proprietary variants
-    mkVariants = name: cfg: {
-      "${name}-open".configuration =
-        cfg
-        // {
-          system.nixos.tags = cfg.system.nixos.tags ++ ["open"];
-          hardware.nvidia.open = lib.mkForce true;
-        };
-    };
-
-    # Merge all generated variants
-    generated = lib.foldl' lib.recursiveUpdate {} (lib.mapAttrsToList mkVariants baseSpecialisations);
-  in
-    generated
-    // {
-      # Keep no-gpu as is (no variants)
-      no-gpu.configuration = {
-        system.nixos.tags = ["no-gpu"];
-        boot.extraModprobeConfig = ''
-          blacklist nouveau
-          options nouveau modeset=0
-        '';
-        services.udev.extraRules = ''
-          ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x0c0330", ATTR{power/control}="auto", ATTR{remove}="1"
-          ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x0c8000", ATTR{power/control}="auto", ATTR{remove}="1"
-          ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x040300", ATTR{power/control}="auto", ATTR{remove}="1"
-          ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x03[0-9]*", ATTR{power/control}="auto", ATTR{remove}="1"
-        '';
-        boot.blacklistedKernelModules = [
-          "nouveau"
-          "nvidia"
-          "nvidia_drm"
-          "nvidia_modeset"
-        ];
-      };
-    };
 }
