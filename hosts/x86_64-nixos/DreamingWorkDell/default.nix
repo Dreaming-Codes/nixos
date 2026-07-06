@@ -22,13 +22,13 @@
 
   boot.kernelModules = ["kvm-intel"];
 
-  # Intel iGPU only — Mesa handles display/graphics/VAAPI.
-  hardware.graphics = {
+  # Hybrid Intel Arc iGPU + NVIDIA RTX 5000 Ada (see modules/hardware/optimus.nix).
+  # Bus IDs from lspci: 00:02.0 Intel, 01:00.0 NVIDIA.
+  dreaming.hardware.optimus = {
     enable = true;
-    enable32Bit = true;
+    nvidiaBusId = "PCI:1:0:0";
+    intelBusId = "PCI:0:2:0";
   };
-
-  services.xserver.videoDrivers = ["modesetting"];
 
   # howdy (IR scanner) — face unlock
   services = {
