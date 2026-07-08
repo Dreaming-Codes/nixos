@@ -104,6 +104,8 @@ in {
         inputs.nixos-facter-modules.nixosModules.facter
         {facter.reportPath = ../hosts/x86_64-nixos/DreamingWorkDell/facter.json;}
         {dreaming.work.enable = true;}
+        # aarch64 emulation so this x86 box can cross-build Raspberry Pi images/tools via QEMU binfmt.
+        {boot.binfmt.emulatedSystems = ["aarch64-linux"];}
       ];
     };
   };
