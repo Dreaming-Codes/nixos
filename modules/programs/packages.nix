@@ -308,10 +308,5 @@ in {
     environment.sessionVariables = {
       NIX_PACKAGE_SEARCH_EXPERIMENTAL = "true";
     };
-    environment.extraInit = ''
-      export LD_LIBRARY_PATH="${
-        pkgs.lib.makeLibraryPath [pkgs.openssl]
-      }''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-    '';
   };
 }
