@@ -12,19 +12,26 @@ hidden = false
 [editor.indent-guides]
 render = true
 
-# Yazi integration
-[keys.normal.C-y]
-# Open the file(s) in the current window
-y = ":sh zellij run -c -f -x 10%% -y 10%% --width 80%% --height 80%% -- bash ~/.config/helix/yazi-picker.sh open \"%{buffer_name}\""
-# Open the file(s) in a vertical pane
-v = ":sh zellij run -c -f -x 10%% -y 10%% --width 80%% --height 80%% -- bash ~/.config/helix/yazi-picker.sh vsplit \"%{buffer_name}\""
-# Open the file(s) in a horizontal pane
-h = ":sh zellij run -c -f -x 10%% -y 10%% --width 80%% --height 80%% -- bash ~/.config/helix/yazi-picker.sh hsplit \"%{buffer_name}\""
+[keys.normal.space]
+e = "file_explorer_in_current_buffer_directory"
+# Copy current buffer path to clipboard
+c = ":sh wl-copy -- \"%{buffer_name}\""
+# Copy path:line or path:start-end for the primary selection
+C = ":sh if [ %{selection_line_start} -eq %{selection_line_end} ]; then wl-copy -- \"%{buffer_name}:%{selection_line_start}\"; else wl-copy -- \"%{buffer_name}:%{selection_line_start}-%{selection_line_end}\"; fi"
 
-# Gitui integration
+# Same copy bindings in select mode (when highlighting with v)
+[keys.select.space]
+c = ":sh wl-copy -- \"%{buffer_name}\""
+C = ":sh if [ %{selection_line_start} -eq %{selection_line_end} ]; then wl-copy -- \"%{buffer_name}:%{selection_line_start}\"; else wl-copy -- \"%{buffer_name}:%{selection_line_start}-%{selection_line_end}\"; fi"
+
+# Gitui + merge helpers (GIT_EDITOR opens files back in this Helix via zellij)
+# %sh is synchronous so :reload! runs after checkout finishes (:sh would race)
 [keys.normal.space.g]
 c = "changed_file_picker"
-g = ":sh zellij run -c -f -x 10%% -y 10%% --width 80%% --height 80%% -- gitui"
+g = ":sh zellij run -c -f -x 10%% -y 10%% --width 80%% --height 80%% -- env GIT_EDITOR=$HOME/.config/helix/gitui-editor.sh gitui"
+# Accept merge conflict for current buffer, stage, then force-reload
+o = [":noop %sh{git checkout --ours -- \"%{buffer_name}\" && git add -- \"%{buffer_name}\"}", ":reload!"]
+t = [":noop %sh{git checkout --theirs -- \"%{buffer_name}\" && git add -- \"%{buffer_name}\"}", ":reload!"]
 
 [keys.insert]
 C-space = "completion"
