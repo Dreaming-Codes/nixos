@@ -246,6 +246,15 @@ in {
         bindings = bufferLocal // shared;
       }
       {
+        # No buffer open: the Editor context above never matches, so route
+        # space e to the pane directly. pane::RevealInProjectPanel falls back
+        # to focusing the project panel when there is no file to reveal.
+        context = "EmptyPane && !menu";
+        bindings = {
+          "space e" = "pane::RevealInProjectPanel";
+        };
+      }
+      {
         # Agent UI: project/agent chords only (no current-buffer actions).
         context = agentOrEditor;
         bindings = shared // {space = null;};
