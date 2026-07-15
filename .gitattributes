@@ -1,2 +1,1 @@
 secrets/certs/** filter=git-crypt diff=git-crypt
-home/work-secret.nix filter=git-crypt diff=git-crypt

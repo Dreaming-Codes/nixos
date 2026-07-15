@@ -30,8 +30,8 @@ C = ":sh if [ %{selection_line_start} -eq %{selection_line_end} ]; then wl-copy 
 c = "changed_file_picker"
 g = ":sh zellij run -c -f -x 10%% -y 10%% --width 80%% --height 80%% -- env GIT_EDITOR=$HOME/.config/helix/gitui-editor.sh gitui"
 # Accept merge conflict for current buffer, stage, then force-reload
-o = [":noop %sh{git checkout --ours -- \"%{buffer_name}\" && git add -- \"%{buffer_name}\"}", ":reload!"]
-t = [":noop %sh{git checkout --theirs -- \"%{buffer_name}\" && git add -- \"%{buffer_name}\"}", ":reload!"]
+o = [":noop %sh{git checkout --ours -- \"%{buffer_name}\" && git add -- \"%{buffer_name}\"}", ":reload"]
+t = [":noop %sh{git checkout --theirs -- \"%{buffer_name}\" && git add -- \"%{buffer_name}\"}", ":reload"]
 
 [keys.insert]
 C-space = "completion"
