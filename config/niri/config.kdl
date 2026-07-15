@@ -10,10 +10,20 @@ input {
         tap
         natural-scroll
         drag false
+        // Clickpad zones: middle third would emit middle-click with button-areas.
+        // clickfinger = 1 finger left, 2 right (no middle-by-pressing-center).
+        click-method "clickfinger"
     }
 
     tablet {
         map-to-output "current"
+    }
+
+    // Built-in panel digitizer (ELAN). Without this, absolute touch is mapped
+    // across the whole layout, so with an external monitor presses on the
+    // laptop hit the wrong output.
+    touch {
+        map-to-output "eDP-1"
     }
 
     focus-follows-mouse
