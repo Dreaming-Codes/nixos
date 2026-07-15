@@ -1,5 +1,4 @@
 {
-  pkgs,
   lib,
   config,
   ...
@@ -31,19 +30,11 @@
     intelBusId = "PCI:0:2:0";
   };
 
-  # howdy (IR scanner) — face unlock
-  services = {
-    howdy = {
-      enable = true;
-    };
-    linux-enable-ir-emitter.enable = true;
-  };
-  security.pam.howdy.enable = true;
-  security.pam.services.login.howdy.enable = false;
-  security.pam.services.greetd.howdy.enable = false;
-  security.pam.services.dms-greeter.howdy.enable = false;
-  security.pam.services.dankshell = {};
-  security.pam.services.dankshell.rules.auth.howdy.control = lib.mkForce "sufficient";
-  security.pam.services.dankshell.rules.auth.howdy.order = lib.mkForce 13000;
+  # Fingerprint for lock/sudo etc.; disabled at boot below (need password for fscrypt).
   services.fprintd.enable = true;
+  # Boot/login: password only (no biometrics). Fingerprint is useless/harmful
+  # at greeter with fscrypt home
+  security.pam.services.login.fprintAuth = false;
+  security.pam.services.greetd.fprintAuth = false;
+  security.pam.services.dms-greeter.fprintAuth = false;
 }
