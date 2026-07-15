@@ -54,17 +54,20 @@ in {
   services = {
     howdy = {
       enable = true;
+      # Either face or password is enough (not 2FA).
+      control = "sufficient";
       settings.video.dark_threshold = 90;
     };
     linux-enable-ir-emitter.enable = true;
   };
   security.pam.howdy.enable = true;
+  # Boot/login: password only (no biometrics). Face is useless/harmful at greeter
+  # with fscrypt home
   security.pam.services.login.howdy.enable = false;
   security.pam.services.greetd.howdy.enable = false;
   security.pam.services.dms-greeter.howdy.enable = false;
+  # Screen lock: keep howdy at its default auto-order
   security.pam.services.dankshell = {};
-  security.pam.services.dankshell.rules.auth.howdy.control = lib.mkForce "sufficient";
-  security.pam.services.dankshell.rules.auth.howdy.order = lib.mkForce 13000;
 
   services.razer-laptop-control = {
     enable = true;
