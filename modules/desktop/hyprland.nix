@@ -30,6 +30,7 @@ in {
       elisa
       krdp
       plasma-browser-integration
+      qrca
     ];
 
     # Set the menu prefix so kbuildsycoca6 knows to look for plasma-applications.menu
