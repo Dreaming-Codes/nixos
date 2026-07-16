@@ -85,10 +85,6 @@ in {
         timeout = 600000;
       };
       plugin = ["@mohak34/opencode-notifier@latest"];
-      agent = {
-        build.model = "amazon-bedrock/anthropic.claude-opus-4-8";
-        explore.model = "amazon-bedrock/anthropic.claude-opus-4-8";
-      };
       lsp.rust = {
         command = ["rust-analyzer"];
         initialization.rust-analyzer.check.command = "clippy";
