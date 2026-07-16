@@ -7,11 +7,6 @@
   wallpaper = ../config/wallpaper/neuralink-4k.png;
   wallpaperDest = "${config.home.homeDirectory}/Pictures/neuralink-4k.png";
 in {
-  programs.opencode.settings = {
-    model = "amazon-bedrock/anthropic.claude-opus-4-8";
-    small_model = "amazon-bedrock/anthropic.claude-sonnet-5";
-  };
-
   # BedrockAccess (AWS) + xAI. API key comes from XAI_API_KEY via the work
   # sops template (environment.d/90-xai.conf); Zed reads that env var natively.
   # Linux already has zed-editor in systemPackages; only manage settings here.
