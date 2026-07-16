@@ -90,7 +90,7 @@ in {
     services = {
       usbmuxd = {
         enable = true;
-        package = pkgs.usbmuxd2;
+        package = pkgs.usbmuxd; # classic: mode-switch + reliable ASR restore; usbmuxd2 lacks Apple USB modes
       };
       acpid.enable = true;
       power-profiles-daemon.enable = true;
