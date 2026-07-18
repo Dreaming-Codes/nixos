@@ -5,7 +5,6 @@
   ...
 }: let
   cfg = config.dreaming.work;
-  openlogi = pkgs.callPackage ../../packages/openlogi {};
 in {
   options.dreaming.work.enable = lib.mkEnableOption "work (Neuralink/Bedrock) tooling: opencode model + AWS profile";
 
@@ -22,24 +21,9 @@ in {
 
     services.tailscale.enable = true;
 
-    # OpenLogi — local-first Logitech Options+ alternative (HID++ mice).
-    # Prebuilt Linux debs from upstream; nixpkgs only ships a Darwin build.
-    environment.systemPackages = [openlogi];
-    services.udev.packages = [openlogi];
-    boot.kernelModules = ["uinput"];
-
-    # Background agent owns HID++ I/O; GUI/CLI talk to it.
-    systemd.user.services.openlogi-agent = {
-      description = "OpenLogi background agent (Logitech HID++ device control)";
-      wantedBy = ["graphical-session.target"];
-      partOf = ["graphical-session.target"];
-      after = ["graphical-session.target"];
-      serviceConfig = {
-        ExecStart = "${openlogi}/bin/openlogi-agent";
-        Restart = "on-failure";
-        RestartSec = 5;
-      };
-    };
+    # Keychron: hidraw access for VIA / Keychron Launcher (vendor 3434).
+    hardware.keyboard.qmk.enable = true;
+    services.udev.packages = [pkgs.keychron-udev-rules];
 
     # Work-only secrets (from secrets/secrets.yaml)
     sops.secrets.xai_work_api_key = {
