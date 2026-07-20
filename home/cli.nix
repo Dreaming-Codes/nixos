@@ -138,6 +138,9 @@ in {
         diff = {
           external = "difft";
         };
+        lfs = {
+          sshtransfer = "never";
+        };
       };
     };
 
