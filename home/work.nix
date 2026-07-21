@@ -125,13 +125,13 @@ in {
           region = "us-west-2";
           profile = "BedrockAccess";
         };
-        # Builtin xAI list stops at 4.3 / 4.20 — add 4.5 until Zed ships it.
+        # Builtin xAI list stops at 4.3 / 4.20; add 4.5 until Zed ships it.
         x_ai.available_models = [
           {
             name = "grok-4.5";
             display_name = "Grok 4.5";
             max_tokens = 500000;
-            max_output_tokens = 64000;
+            max_output_tokens = 500000;
             supports_tools = true;
             supports_images = true;
             parallel_tool_calls = true;
