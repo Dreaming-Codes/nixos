@@ -141,6 +141,11 @@ in {
         lfs = {
           sshtransfer = "never";
         };
+        # gs wtadd <path>: pick a branch (gs bco -n) and add a worktree
+        # gs wtadd <path> <branch>: create <branch> from HEAD, add worktree, track it
+        "spice.shorthand" = {
+          wtadd = ''!path="''${1:?worktree path required}" && if [ -n "''${2-}" ]; then base=$(git branch --show-current) && git worktree add -b "$2" "$path" && gs -C "$path" branch track --base "$base"; else branch=$(gs bco -n) && git worktree add "$path" "$branch"; fi'';
+        };
       };
     };
 
