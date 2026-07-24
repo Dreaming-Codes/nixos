@@ -79,11 +79,6 @@ in {
           "terraform import*" = "ask";
         };
       };
-      provider.amazon-bedrock.options = {
-        region = "us-west-2";
-        profile = "BedrockAccess";
-        timeout = 600000;
-      };
       plugin = ["@mohak34/opencode-notifier@latest"];
       lsp.rust = {
         command = ["rust-analyzer"];

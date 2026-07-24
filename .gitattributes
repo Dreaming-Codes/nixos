@@ -1,1 +1,2 @@
 secrets/certs/** filter=git-crypt diff=git-crypt
+secrets/work/** filter=git-crypt diff=git-crypt
