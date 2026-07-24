@@ -82,6 +82,7 @@ in {
       terminal.env.ZELLIJ = "1";
       terminal.font_family = "IoskeleyMono Nerd Font";
       git.inline_blame.location = "status_bar";
+      git.worktree_directory = "~/Documents/worktrees";
       # Project tree left; agent/chat right.
       agent.dock = "right";
       project_panel.dock = "left";
