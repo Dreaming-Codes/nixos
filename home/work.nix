@@ -6,11 +6,47 @@
 }: let
   wallpaper = ../config/wallpaper/neuralink-4k.png;
   wallpaperDest = "${config.home.homeDirectory}/Pictures/neuralink-4k.png";
+
+  # Model lists generated from git-crypt'd gateway catalog dumps.
+  gatewayModels = import ./nlk-gateway-models.nix {inherit lib;};
+
+  # PATH helper: auth/login install token into user env (no app wrappers).
+  nlk-llm-proxy = pkgs.writeShellApplication {
+    name = "nlk-llm-proxy";
+    runtimeInputs = [
+      pkgs.python3
+      pkgs.jq
+      pkgs.coreutils
+    ];
+    text = builtins.replaceStrings ["@llm_proxy_py@"] ["${../secrets/work/llm_proxy.py}"] (
+      builtins.readFile ./nlk-llm-proxy.sh
+    );
+  };
 in {
-  # BedrockAccess (AWS) + xAI. API key comes from XAI_API_KEY via the work
-  # sops template (environment.d/90-xai.conf); Zed reads that env var natively.
-  # Linux already has zed-editor in systemPackages; only manage settings here.
-  # Darwin still installs via HM (package left at the option default).
+  home.packages = [
+    nlk-llm-proxy
+  ];
+
+  # Stock OpenCode binary (cli.nix); only provider config is work-specific.
+  # Token lands in ~/.local/share/opencode/auth.json via `nlk-llm-proxy auth`.
+  programs.opencode = {
+    settings = {
+      provider = lib.mkForce {
+        nlk-gateway = {
+          npm = "@ai-sdk/openai-compatible";
+          name = "Neuralink AI Gateway";
+          options = {
+            baseURL = gatewayModels.apiUrl;
+          };
+          models = gatewayModels.opencodeModels;
+        };
+      };
+      model = lib.mkDefault "nlk-gateway/${gatewayModels.defaultModelId}";
+    };
+  };
+
+  # Stock zed (system on Linux, HM default on Darwin). Reads NLK_GATEWAY_API_KEY
+  # from the user environment after `nlk-llm-proxy login` / shell hook / auth.
   programs.zed-editor = {
     enable = true;
     package = lib.mkIf pkgs.stdenv.isLinux null;
@@ -120,27 +156,17 @@ in {
         };
       };
       language_models = {
-        bedrock = {
-          authentication_method = "named_profile";
-          region = "us-west-2";
-          profile = "BedrockAccess";
+        # Corp LiteLLM gateway (auth: NLK_GATEWAY_API_KEY via zeditor wrapper).
+        # available_models generated from secrets/work/ai-gateway-*.json.
+        openai_compatible.nlk-gateway = {
+          api_url = gatewayModels.apiUrl;
+          available_models = gatewayModels.zedAvailableModels;
         };
-        # Builtin xAI list stops at 4.3 / 4.20; add 4.5 until Zed ships it.
-        x_ai.available_models = [
-          {
-            name = "grok-4.5";
-            display_name = "Grok 4.5";
-            max_tokens = 500000;
-            max_output_tokens = 500000;
-            supports_tools = true;
-            supports_images = true;
-            parallel_tool_calls = true;
-          }
-        ];
       };
       agent.default_model = {
-        provider = "x_ai";
-        model = "grok-4.5";
+        # Nested key under language_models.openai_compatible.
+        provider = "nlk-gateway";
+        model = gatewayModels.defaultModelId;
       };
       # Helix :reload reloads the buffer; Zed has no such colon cmd, so the
       # palette fuzzy-matches workspace::Reload (app restart). Alias to file reload.
@@ -269,14 +295,50 @@ in {
     ];
   };
 
-  home.file.".config/nixos-local-aws/config".source = ../config/aws/work.config;
-
   home.file."Pictures/neuralink-4k.png".source = wallpaper;
 
-  home.sessionVariables = {
-    AWS_CONFIG_FILE = "${config.home.homeDirectory}/.config/nixos-local-aws/config";
-    AWS_PROFILE = "BedrockAccess";
-    AWS_REGION = "us-west-2";
+  # Interactive shells: pull gateway token into this shell if missing.
+  # `nlk-llm-proxy auth` (Grok apiKeyHelper, etc.) also reinstalls user env.
+  programs.fish.interactiveShellInit = lib.mkAfter ''
+    if command -q nlk-llm-proxy; and not set -q NLK_GATEWAY_API_KEY
+      nlk-llm-proxy env 2>/dev/null | source
+    end
+  '';
+  programs.bash.initExtra = lib.mkAfter ''
+    if command -v nlk-llm-proxy >/dev/null 2>&1 && [ -z "''${NLK_GATEWAY_API_KEY:-}" ]; then
+      eval "$(nlk-llm-proxy env 2>/dev/null)" || true
+    fi
+  '';
+
+  # At graphical login, install token into environment.d / systemd --user so
+  # stock zeditor (desktop) sees NLK_GATEWAY_API_KEY without a wrapper.
+  systemd.user.services.nlk-gateway-env = lib.mkIf pkgs.stdenv.isLinux {
+    Unit = {
+      Description = "Neuralink AI gateway token →  user environment";
+      After = ["graphical-session-pre.target" "sops-nix.service"];
+      PartOf = ["graphical-session.target"];
+    };
+    Service = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.writeShellScript "nlk-gateway-env-start" ''
+        exec ${nlk-llm-proxy}/bin/nlk-llm-proxy auth >/dev/null
+      ''}";
+      # Don't fail the session if SSO hasn't been done yet.
+      SuccessExitStatus = "0 1";
+      RemainAfterExit = true;
+    };
+    Install.WantedBy = ["graphical-session.target"];
+  };
+
+  # Refresh before typical id_token expiry (~1h).
+  systemd.user.timers.nlk-gateway-env = lib.mkIf pkgs.stdenv.isLinux {
+    Unit.Description = "Refresh Neuralink AI gateway token";
+    Timer = {
+      OnStartupSec = "30s";
+      OnUnitActiveSec = "45min";
+      Persistent = true;
+    };
+    Install.WantedBy = ["timers.target"];
   };
 
   # Pin wallpaper on work hosts. Runs after dmsDefaults (when present) so the
