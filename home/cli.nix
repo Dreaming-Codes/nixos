@@ -310,7 +310,7 @@ in {
       enableFishIntegration = true;
       extraOptions = [
         "-al"
-        "--icons"
+        "--icons=auto"
       ];
     };
 
