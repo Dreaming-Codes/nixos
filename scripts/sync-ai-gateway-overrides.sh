@@ -128,11 +128,22 @@ Per-model fields (all optional except that an entry should be useful):
 | \`reasoning_efforts\` | array of allowed efforts (GPT Mantle models) |
 
 Keys should be **gateway-facing model ids** as they appear in
-\`ai-gateway-models.json\` / \`ai-gateway-model-info.json\` (and aliases that
-the generator may match), e.g. \`global.anthropic.claude-opus-5\`,
-\`openai.gpt-5.6-sol\`, \`gpt-5.6-sol\`, \`grok-4.5\`. Prefer the canonical
-id the picker collapses to (see generator ranking in nlk-gateway-models.nix),
-and keep short aliases only when clients actually call them.
+\`ai-gateway-models.json\` / \`ai-gateway-model-info.json\`, e.g.
+\`global.anthropic.claude-opus-5\`, \`openai.gpt-5.6-sol\`, \`grok-4.5\`.
+
+**Prefer the long / canonical id only.** Do **not** add short aliases
+(\`gpt-5.6-sol\`, \`claude-opus-5\`, \`gemini\`, \`grok\`, …) just because
+clients or docs mention them. The generator collapses alias ids that share
+a LiteLLM upstream onto one picker entry, so one canonical team key usually
+covers the whole group (see ranking in nlk-gateway-models.nix).
+
+**When an alias key is allowed:** only if that exact id is already present
+in the model catalog (\`ai-gateway-models.json\` / model-info) **and** it
+needs its own override; e.g. a separate \`litellm_params.model\` upstream
+so it does not collapse with the canonical id, or catalog limits/caps for
+that id are null/wrong and harnesses would otherwise pick bad values.
+Never invent alias keys that are not in the catalog. Drop short-alias
+override keys when the canonical entry already covers the group.
 
 ## How overrides are consumed
 
@@ -226,9 +237,11 @@ Terraform module:
    known Anthropic 1M / Grok 500k / provider defaults.
 4. Update \`${overrides_file}\` only: keep stable JSON key order where
    practical; preserve \`_comment\` intent; do not rewrite catalog JSON.
-5. Sanity-check: every override key should correspond to a real gateway
-   id or a still-used client alias. Remove stale keys for models no
-   longer in the catalog unless an alias still points at them.
+5. Sanity-check: every override key must be a real catalog model id.
+   Prefer one canonical (long) key per upstream group. Do not keep short
+   aliases unless they are in the catalog and need their own override
+   (separate upstream or otherwise would leave harnesses with wrong
+   limits). Remove stale keys for models no longer in the catalog.
 6. Summarize what you changed and which models still lack limits (would
    be skipped by the Nix generator).
 
