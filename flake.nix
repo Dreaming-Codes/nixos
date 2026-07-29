@@ -22,7 +22,7 @@
   };
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable-small";
     nixpkgs-discord-vk.url = "github:LuckShiba/nixpkgs/discord-vk";
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
     nix-cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/release";
