@@ -1,5 +1,5 @@
 - Avoid excessive comments, when code is written correctly it's already readable enough. Avoid over detailed explanations.
-- You're running on NixOS/Nix. If a tool or command is not installed on my system, use `nix-shell -p <package>` to make it available. For example: `nix-shell -p jq --run 'jq . file.json'`.
-- Always default to **bun** for JavaScript/TypeScript package management (install, run, build, test, etc.) unless the project already has a lockfile from another package manager (`package-lock.json` for npm, `yarn.lock` for yarn, `pnpm-lock.yaml` for pnpm). If one of those lockfiles exists, use the corresponding package manager instead.
-- When inside a project you use a complex command to do something frequently enough add it to the justfile
-- Always use the related package manager to add new deps like bun add or cargo add when possible, try to not edit the file manually, this ensure last version of every deps.
+- Avoid useless tests. Do not test obvious behavior, language features, or library functions.
+- Running on NixOS/Nix. If a command or tool is missing, use `nix-shell -p <package> --run '…'`. Example: `nix-shell -p jq --run 'jq . file.json'`.
+- JavaScript/TypeScript: default to **bun** (install, run, build, test). If the project already has `package-lock.json`, `yarn.lock`, or `pnpm-lock.yaml`, use the matching package manager instead.
+- Always add dependencies with the project’s package manager (`bun add`, `cargo add`, `go get`, `npm install`, etc.). Never hand-edit lockfiles or dependency lists when the tool can do it—this keeps versions current.
