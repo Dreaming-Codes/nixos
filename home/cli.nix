@@ -53,6 +53,8 @@ in {
   home.file.".config/opencode/opencode-notifier.json".source =
     ../config/opencode/opencode-notifier.json;
 
+  home.file.".grok/AGENTS.md".source = ../config/opencode/AGENTS.md;
+
   programs.opencode = {
     enable = true;
     package = opencode;
