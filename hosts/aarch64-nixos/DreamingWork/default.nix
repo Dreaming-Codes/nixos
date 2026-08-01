@@ -35,6 +35,7 @@ in {
   # the EFI partition (works for non-flake / installer-time builds).
   hardware.asahi =
     {
+      enable = true;
       # Use nixos-apple-silicon's own pinned nixpkgs for the major Asahi
       # packages. Its Cachix is built for that input set; using the host
       # nixpkgs here causes cache misses and kernel builds during install.
