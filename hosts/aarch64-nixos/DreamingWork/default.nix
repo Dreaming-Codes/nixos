@@ -18,8 +18,8 @@ in {
   #
   # NOTE: hardware-configuration.nix is generated on the target with
   # `nixos-generate-config` after partitioning, then committed here.
-  # The ./firmware dir (Asahi peripheral firmware copied off the EFI system
-  # partition) is also produced at install time by scripts/asahi-install.sh.
+  # The ./firmware dir holds vendorfw/firmware.cpio copied off the ESP
+  # (nixos-apple-silicon no longer extracts from all_firmware.tar.gz).
   imports = lib.optional (builtins.pathExists ./hardware-configuration.nix) ./hardware-configuration.nix;
 
   nixpkgs.hostPlatform = "aarch64-linux";
@@ -29,10 +29,9 @@ in {
   dreaming.core.boot.enable = false;
   dreaming.hardware.graphics.enable = false;
 
-  # Flakes forbid the default impure reference to the firmware on the EFI
-  # system partition. If scripts/asahi-install.sh has copied the firmware into
-  # ./firmware, reference it purely; otherwise fall back to extracting it from
-  # the EFI partition (works for non-flake / installer-time builds).
+  # Flakes forbid the default impure reference to /boot/vendorfw on the ESP.
+  # If ./firmware/firmware.cpio is present, use it purely; otherwise fall back
+  # to the module default (/boot/vendorfw) for installer-time builds.
   hardware.asahi =
     {
       enable = true;
@@ -42,7 +41,7 @@ in {
       pkgs = lib.mkForce asahiPkgs;
     }
     // (
-      if builtins.pathExists ./firmware
+      if builtins.pathExists ./firmware/firmware.cpio
       then {peripheralFirmwareDirectory = ./firmware;}
       else {extractPeripheralFirmware = true;}
     );
