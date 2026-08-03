@@ -54,6 +54,8 @@ in {
     ../config/opencode/opencode-notifier.json;
 
   home.file.".grok/AGENTS.md".source = ../config/opencode/AGENTS.md;
+  home.file.".grok/agents/conversation.md".source =
+    ../config/grok/agents/conversation.md;
 
   programs.opencode = {
     enable = true;
