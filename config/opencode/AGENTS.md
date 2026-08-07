@@ -2,4 +2,4 @@
 - Avoid useless tests. Do not test obvious behavior, language features, or library functions.
 - Running on NixOS/Nix. If a command or tool is missing, use `nix-shell -p <package> --run '…'`. Example: `nix-shell -p jq --run 'jq . file.json'`.
 - JavaScript/TypeScript: default to **bun** (install, run, build, test). If the project already has `package-lock.json`, `yarn.lock`, or `pnpm-lock.yaml`, use the matching package manager instead.
-- Always add dependencies with the project’s package manager (`bun add`, `cargo add`, `go get`, `npm install`, etc.). Never hand-edit lockfiles or dependency lists when the tool can do it—this keeps versions current.
+- Always add dependencies with the project’s package manager (`bun add`, `cargo add`, `go get`, `npm install`, etc.). Never hand-edit lockfiles or dependency lists when the tool can do it; this keeps versions current.
