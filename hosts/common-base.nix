@@ -17,6 +17,15 @@
     geoProviderUrl = "https://cloudflare-location-service.dreamingcodes.workers.dev/";
   };
 
+  services.openssh = {
+    enable = true;
+    openFirewall = true;
+    settings = {
+      PasswordAuthentication = false;
+      PermitRootLogin = "no";
+    };
+  };
+
   dreaming.optimization.enable = true;
 
   dreaming.nixFileOverlay = {
