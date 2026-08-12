@@ -5,6 +5,8 @@
 #      (only when the catalog omits context_window / name)
 #
 # Alias ids that share a LiteLLM upstream collapse to one picker entry.
+# Team keys ending in -extended fold onto the base id (Grok's 200k/500k
+# split is a CLI pin, not a second gateway model).
 # Refresh catalog: scripts/update-ai-gateway-models.sh
 {lib}: let
   modelsFile = ../secrets/work/ai-gateway-models.json;
@@ -15,7 +17,26 @@
   infoJson = builtins.fromJSON (builtins.readFile infoFile);
   teamJson = builtins.fromJSON (builtins.readFile teamFile);
 
-  teamModels = teamJson.models;
+  # Prefer *-extended limits; drop the 200k sibling and the -extended key.
+  teamModels = let
+    raw = teamJson.models;
+    extendedKeys = builtins.filter (k: lib.hasSuffix "-extended" k) (builtins.attrNames raw);
+    fold = acc: extKey: let
+      base = lib.removeSuffix "-extended" extKey;
+      ext = raw.${extKey};
+      prev = acc.${base} or {};
+      stripped =
+        if (ext.name or null) != null
+        then builtins.replaceStrings [" Extended"] [""] ext.name
+        else null;
+      name = prev.name or stripped;
+    in
+      acc
+      // {
+        ${base} = ext // lib.optionalAttrs (name != null) {inherit name;};
+      };
+  in
+    builtins.removeAttrs (lib.foldl' fold raw extendedKeys) extendedKeys;
   providerDefaultContext = teamJson.provider_default_context_window;
 
   modelsById = builtins.listToAttrs (

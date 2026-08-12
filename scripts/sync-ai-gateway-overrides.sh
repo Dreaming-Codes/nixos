@@ -235,6 +235,10 @@ Terraform module:
 3. Prefer **managed_config.toml version_overrides** for Grok/Claude/GPT
    gateway models when present; fall back to product docs / README /
    known Anthropic 1M / Grok 500k / provider defaults.
+   Grok \`*-extended\` is a CLI-only 200k/500k pin on the same gateway
+   id. Do not add \`*-extended\` keys. Put the larger (extended) window
+   on the base catalog id; the generator also folds \`*-extended\` onto
+   the base and drops the 200k sibling.
 4. Update \`${overrides_file}\` only: keep stable JSON key order where
    practical; preserve \`_comment\` intent; do not rewrite catalog JSON.
 5. Sanity-check: every override key must be a real catalog model id.
