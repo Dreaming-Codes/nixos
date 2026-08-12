@@ -1,5 +1,4 @@
 {
-  pkgs,
   config,
   lib,
   ...
@@ -16,11 +15,6 @@
   services.geoclue2 = {
     enable = true;
     geoProviderUrl = "https://cloudflare-location-service.dreamingcodes.workers.dev/";
-  };
-
-  services.espanso = {
-    enable = true;
-    package = pkgs.espanso-wayland;
   };
 
   dreaming.optimization.enable = true;
