@@ -37,19 +37,6 @@
     openFirewall = true;
   };
 
-  services.openssh = {
-    enable = true;
-    openFirewall = true;
-    settings = {
-      PasswordAuthentication = false;
-      PermitRootLogin = "no";
-    };
-  };
-
-  users.users.dreamingcodes.openssh.authorizedKeys.keys = [
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAVaA+L9bwCFPsPztLCjPa8V/vYgTuXVeEP55LcXS/vi"
-  ];
-
   # Additional kernel modules needed for virtualization
   boot.initrd.availableKernelModules = [
     "vfio_pci"

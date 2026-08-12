@@ -66,6 +66,9 @@ in {
       description = "DreamingCodes";
       extraGroups = commonGroups ++ adminGroups;
       shell = pkgs.fish;
+      openssh.authorizedKeys.keys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAVaA+L9bwCFPsPztLCjPa8V/vYgTuXVeEP55LcXS/vi"
+      ];
     };
 
     # Home Manager configuration
