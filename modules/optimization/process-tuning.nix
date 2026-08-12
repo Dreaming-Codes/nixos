@@ -7,6 +7,27 @@
   cfg = config.dreaming.optimization.processTuning;
 in {
   config = lib.mkIf cfg.enable {
+    # clang 21 no longer transitively provides <cstring>/<cstdint>; 1.2.0 still
+    # uses std::strerror / std::memset / std::int32_t without those includes.
+    # CXX-only: NIX_CFLAGS_COMPILE would also hit the BPF C objects.
+    nixpkgs.overlays = [
+      (_final: prev: {
+        ananicy-cpp = prev.ananicy-cpp.overrideAttrs (old: {
+          postPatch =
+            (old.postPatch or "")
+            + ''
+              for f in \
+                src/platform/linux/singleton_process.cpp \
+                src/platform/linux/backtrace.cpp \
+                src/utility/argument_parsing/argument.cpp
+              do
+                sed -i '1i#include <cstdint>\n#include <cstring>' "$f"
+              done
+            '';
+        });
+      })
+    ];
+
     services.ananicy = {
       enable = true;
       package = pkgs.ananicy-cpp;
