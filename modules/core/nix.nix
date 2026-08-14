@@ -18,23 +18,6 @@
     if isWork
     then flakeNixConfig.extra-trusted-public-keys
     else builtins.filter (k: !isN7k k) flakeNixConfig.extra-trusted-public-keys;
-  determinateNixPackages = inputs.determinate.inputs.nix.packages.${pkgs.stdenv.hostPlatform.system};
-  emptySentryNative = pkgs.runCommand "empty-sentry-native" {} ''
-    mkdir -p $out/bin $out/lib/debug
-  '';
-  determinateNixNoSentry = determinateNixPackages.nix.override {
-    sentry-native = emptySentryNative;
-    nix-cli = determinateNixPackages.nix-cli.overrideAttrs (old: {
-      buildInputs = lib.filter (pkg: (pkg.pname or pkg.name or "") != "sentry-native") (
-        old.buildInputs or []
-      );
-      mesonFlags =
-        lib.filter (flag: !(lib.hasPrefix "-Dcrashpad-handler=" flag) && flag != "-Dsentry=enabled") (
-          old.mesonFlags or []
-        )
-        ++ ["-Dsentry=disabled"];
-    });
-  };
 in {
   options.dreaming.core.nix.enable =
     lib.mkEnableOption "core Nix daemon/registry/nh configuration"
@@ -108,8 +91,6 @@ in {
 
       # Make legacy nix commands consistent as well
       nixPath = lib.mapAttrsToList (key: value: "${key}=${value.to.path}") config.nix.registry;
-
-      package = lib.mkForce determinateNixNoSentry;
 
       # Automtaically pin registries based on inputs
       registry = lib.mapAttrs (_: v: {flake = v;}) inputs;
