@@ -30,6 +30,7 @@ in {
       elisa
       krdp
       plasma-browser-integration
+      plasma-workspace-wallpapers
       qrca
     ];
 
