@@ -82,16 +82,12 @@ in {
         inputs.nixos-facter-modules.nixosModules.facter
         {facter.reportPath = ../hosts/x86_64-nixos/DreamingBlade/facter.json;}
         inputs.razer-laptop-controller.nixosModules.default
-        {
-          powerManagement = {
-            enable = true;
-            powertop.enable = true;
-          };
-        }
+        ../hosts/common-laptop.nix
       ];
 
       DreamingWork.modules = [
         inputs.apple-silicon.nixosModules.apple-silicon-support
+        ../hosts/common-laptop.nix
         {dreaming.programs.pwaApps.enable = true;}
         {dreaming.work.enable = true;}
       ];
@@ -103,6 +99,7 @@ in {
         inputs.disko.nixosModules.disko
         inputs.nixos-facter-modules.nixosModules.facter
         {facter.reportPath = ../hosts/x86_64-nixos/DreamingWorkDell/facter.json;}
+        ../hosts/common-laptop.nix
         {dreaming.work.enable = true;}
         # aarch64 emulation so this x86 box can cross-build Raspberry Pi images/tools via QEMU binfmt.
         {boot.binfmt.emulatedSystems = ["aarch64-linux"];}

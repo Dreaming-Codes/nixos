@@ -16,6 +16,7 @@ in {
     ./cachykernel.nix
     ./fstrim.nix
     ./envfs.nix
+    ./battery.nix
   ];
 
   options.dreaming.optimization = {
@@ -29,6 +30,8 @@ in {
     cachykernel.enable = mkEnableOption "CachyOS kernel";
     fstrim.enable = mkEnableOption "periodic SSD TRIM";
     envfs.enable = mkEnableOption "envfs mount timeout fix";
+    # Laptop-only; enabled via hosts/common-laptop.nix, not the base profile.
+    battery.enable = mkEnableOption "laptop battery optimization (powertop)";
   };
 
   config = mkIf cfg.enable {
