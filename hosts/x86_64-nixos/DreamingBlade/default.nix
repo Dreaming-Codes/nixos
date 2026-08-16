@@ -106,20 +106,10 @@ in {
     pkgs.keychron-udev-rules
   ];
 
-  # Keychron Q6 Pro - grant hidraw access for VIA/QMK configurator
-  # Keychron Q6 Pro udev rules
+  # Keychron Q6 Pro + Saleae (HID autosuspend fix lives in dreaming.optimization.battery)
   services.udev.extraRules = ''
-    # Keychron Q6 Pro - world read/write for WebHID browser access
     KERNEL=="hidraw*", ATTRS{idVendor}=="3434", ATTRS{idProduct}=="0660", MODE="0666", GROUP="plugdev", TAG+="uaccess"
-    # Disable USB autosuspend for all HID input devices (keyboards, mice, etc.)
-    # When an interface with HID class (03) is added, walk up to the parent usb_device and disable autosuspend
-    ACTION=="add", SUBSYSTEM=="usb", ATTR{bInterfaceClass}=="03", RUN+="${pkgs.bash}/bin/bash -c 'echo on > /sys$devpath/../power/control 2>/dev/null || true'"
-    # Saleae Logic analyzers
     SUBSYSTEM=="usb", ATTR{idVendor}=="0925", ATTR{idProduct}=="3881", MODE="0666"
     SUBSYSTEM=="usb", ATTR{idVendor}=="21a9", MODE="0666"
   '';
-
-  # Disable USB autosuspend for all HID input devices at boot (runs after powertop which enables autosuspend)
-  # Re-disable USB autosuspend for HID input devices after powertop enables it globally
-  systemd.services.powertop.serviceConfig.ExecStartPost = "${pkgs.bash}/bin/bash -c 'for intf in /sys/bus/usb/devices/*:*/bInterfaceClass; do if [ -f \"$intf\" ] && [ \"$(cat \"$intf\")\" = \"03\" ]; then devpath=\"$(dirname \"$intf\")\"; parent=\"$(readlink -f \"$devpath/..\")\"; if [ -f \"$parent/power/control\" ]; then echo on > \"$parent/power/control\"; fi; fi; done'";
 }
