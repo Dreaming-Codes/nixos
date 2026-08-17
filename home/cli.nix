@@ -53,9 +53,16 @@ in {
   home.file.".config/opencode/opencode-notifier.json".source =
     ../config/opencode/opencode-notifier.json;
 
+  home.file.".local/bin/grok-notify" = {
+    source = ../scripts/grok-notify.sh;
+    executable = true;
+  };
+
   home.file.".grok/AGENTS.md".source = ../config/opencode/AGENTS.md;
   home.file.".grok/agents/conversation.md".source =
     ../config/grok/agents/conversation.md;
+  home.file.".grok/hooks/notify.json".source =
+    ../config/grok/hooks/notify.json;
 
   programs.opencode = {
     enable = true;
