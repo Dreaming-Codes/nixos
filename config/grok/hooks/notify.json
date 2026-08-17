@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "ask_user_question",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.local/bin/grok-notify question",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
