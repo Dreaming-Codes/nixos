@@ -364,7 +364,7 @@ in {
       extraOptionOverrides = {
         WarnWeakCrypto = "no";
       };
-      settings = {};
+      matchBlocks."*" = {};
     };
 
     zoxide = {
