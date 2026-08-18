@@ -364,6 +364,7 @@ in {
       extraOptionOverrides = {
         WarnWeakCrypto = "no";
       };
+      settings = {};
     };
 
     zoxide = {
