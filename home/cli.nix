@@ -364,11 +364,6 @@ in {
       extraOptionOverrides = {
         WarnWeakCrypto = "no";
       };
-      matchBlocks."*" = {
-        controlMaster = "auto";
-        controlPath = "~/.ssh/sockets/%r@%h-%p";
-        controlPersist = "15s";
-      };
     };
 
     zoxide = {
