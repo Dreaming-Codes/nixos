@@ -229,7 +229,6 @@ in {
         alejandra
 
         ffmpeg
-        mpv
 
         # better diffs
         difftastic
