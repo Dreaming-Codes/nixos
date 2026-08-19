@@ -30,3 +30,6 @@ foreground = "#e6e0e9"
 opacity = 1.0
 opacity-cells = false
 blur = false
+
+[navigation]
+mode = "Plain"
