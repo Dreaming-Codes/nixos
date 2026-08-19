@@ -107,21 +107,6 @@ in {
       DETSYS_IDS_TELEMETRY = "disabled";
     };
 
-    # Print a diff when running system updates
-    system.activationScripts.diff = ''
-      if [[ -e /run/current-system ]]; then
-        (
-          for i in {1..3}; do
-            result=$(${config.nix.package}/bin/nix store diff-closures /run/current-system "$systemConfig" 2>&1)
-            if [ $? -eq 0 ]; then
-              printf '%s\n' "$result"
-              break
-            fi
-          done
-        )
-      fi
-    '';
-
     # Store config hash after successful activation for update-system to check
     system.activationScripts.storeConfigHash = let
       flakeDir = config.users.users.dreamingcodes.home + "/.nixos";
