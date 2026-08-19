@@ -90,7 +90,6 @@ in {
       glew_1_10
       glib
       libgcc
-      gcc
       libepoxy
       gmp
       gst_all_1.gst-plugins-base
