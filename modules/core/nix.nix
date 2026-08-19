@@ -99,6 +99,10 @@ in {
     # Allow unfree packages
     nixpkgs.config.allowUnfree = true;
 
+    # Flake defaults pin pkgs.path into NIX_PATH and the system registry.
+    nixpkgs.flake.setNixPath = false;
+    nixpkgs.flake.setFlakeRegistry = false;
+
     # Standard SSL cert location for precompiled binaries
     environment.variables = {
       SSL_CERT_FILE = "/etc/ssl/certs/ca-certificates.crt";
