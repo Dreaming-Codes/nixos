@@ -147,6 +147,9 @@ in {
         lfs = {
           sshtransfer = "never";
         };
+        alias = {
+          fc = "!git fetch && git checkout";
+        };
         # Nested gs under shell aliases inherits GIT_SPICE=1 and often a non-TTY
         # stdin from command substitution, so force --prompt and read from /dev/tty.
         "spice.branchCreate" = {
