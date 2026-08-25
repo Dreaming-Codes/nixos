@@ -1,5 +1,5 @@
-# Build OpenCode / Zed model configs from git-crypt'd secrets/work/:
-#   1. ai-gateway-models.json           ←-GET …/v1/models
+# Build OpenCode / Zed / Grok model configs from git-crypt'd secrets/work/:
+#   1. ai-gateway-models.json           ← GET …/v1/models
 #   2. ai-gateway-model-info.json       ← GET …/v1/model/info
 #   3. ai-gateway-team-overrides.json   ← Neuralink Grok managed_config
 #      (only when the catalog omits context_window / name)
@@ -7,6 +7,8 @@
 # Alias ids that share a LiteLLM upstream collapse to one picker entry.
 # Team keys ending in -extended fold onto the base id (Grok's 200k/500k
 # split is a CLI pin, not a second gateway model).
+# Grok Build: work.nix activation rewrites [model.*] in ~/.grok/config.toml
+# from grokConfigModelsToml (picker slugs → catalog limits).
 # Refresh catalog: scripts/update-ai-gateway-models.sh
 {lib}: let
   modelsFile = ../secrets/work/ai-gateway-models.json;
@@ -191,6 +193,7 @@
       else null;
   in {
     id = best.id;
+    aliases = aliasIds;
     inherit mode max_input_tokens;
     # If still null after catalog+team, mirror context window once known.
     max_output_tokens =
@@ -314,10 +317,72 @@
     if sortedOpus != []
     then (lib.last sortedOpus).id
     else (builtins.head resolved).id;
+
+  # Lookup resolved row by any catalog alias id in its upstream group.
+  resolvedByAlias = lib.listToAttrs (
+    lib.concatMap (
+      r:
+        map (a: {
+          name = a;
+          value = r;
+        })
+        (lib.unique ([r.id] ++ r.aliases))
+    )
+    resolved
+  );
+
+  # Grok Build picker ids (managed version_overrides keys) → gateway catalog id.
+  # Limits come from resolved; slug is what config.toml [model.<id>] must use.
+  grokManagedSlugs = {
+    "claude-sonnet-gateway" = "global.anthropic.claude-sonnet-5";
+    "claude-opus-gateway" = "global.anthropic.claude-opus-5";
+    "claude-haiku-gateway" = "global.anthropic.claude-haiku-4-5-20251001-v1:0";
+    "claude-sonnet-4-6-gateway" = "global.anthropic.claude-sonnet-4-6";
+    "claude-opus-4-7-gateway" = "global.anthropic.claude-opus-4-7";
+    "fable-gateway" = "global.anthropic.claude-fable-5";
+    "gpt-5-6-sol-gateway" = "openai.gpt-5.6-sol";
+    "gpt-5-6-luna-gateway" = "openai.gpt-5.6-luna";
+    "gpt-5-6-terra-gateway" = "openai.gpt-5.6-terra";
+    "grok-4.5" = "grok-4.5";
+    "grok-4.6" = "grok-4.6";
+    "grok-4.6-extended" = "grok-4.6";
+  };
+
+  tomlModelKey = id:
+    if builtins.match "[A-Za-z0-9_-]+" id != null
+    then id
+    else ''"${id}"'';
+
+  toGrokModelToml = slug: r: let
+    out =
+      if r.max_output_tokens != null
+      then r.max_output_tokens
+      else r.max_input_tokens;
+  in ''
+    [model.${tomlModelKey slug}]
+    context_window = ${toString r.max_input_tokens}
+    max_completion_tokens = ${toString out}
+  '';
+
+  grokConfigModelsToml = let
+    slugs = lib.sort (a: b: a < b) (builtins.attrNames grokManagedSlugs);
+    parts =
+      map (
+        slug: let
+          catalogId = grokManagedSlugs.${slug};
+          r = resolvedByAlias.${catalogId} or null;
+        in
+          if r == null
+          then ""
+          else toGrokModelToml slug r
+      )
+      slugs;
+  in
+    lib.concatStrings parts;
 in {
   apiUrl = "https://ai-gateway.svc.int.n7k.io/v1";
 
-  inherit defaultModelId resolved;
+  inherit defaultModelId resolved grokConfigModelsToml;
 
   skippedNoLimits =
     map (r: r.id)

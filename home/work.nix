@@ -342,6 +342,45 @@ in {
     Install.WantedBy = ["timers.target"];
   };
 
+  # Grok Build: rewrite [model.*] in ~/.grok/config.toml from the gateway
+  # generator (context_window / max_completion_tokens). Leaves the rest of the
+  # file alone so UI settings stay user-editable. config.toml beats managed.
+  home.activation.nlkGrokModels = let
+    modelsToml = pkgs.writeText "grok-nlk-models.toml" gatewayModels.grokConfigModelsToml;
+  in
+    lib.hm.dag.entryAfter ["writeBoundary"] ''
+      config="$HOME/.grok/config.toml"
+      fragment="${modelsToml}"
+      mkdir -p "$HOME/.grok"
+      tmp="$(${pkgs.coreutils}/bin/mktemp)"
+      if [ -f "$config" ]; then
+        ${pkgs.gawk}/bin/awk '
+          /^\[model\./ { skip = 1; next }
+          /^\[/ { skip = 0 }
+          !skip { print }
+        ' "$config" > "$tmp"
+      else
+        : > "$tmp"
+      fi
+      # Drop trailing blank lines, then append generated model blocks.
+      ${pkgs.gawk}/bin/awk '
+        { lines[n++] = $0 }
+        END {
+          end = n
+          while (end > 0 && lines[end - 1] ~ /^[ \t]*$/) end--
+          for (i = 0; i < end; i++) print lines[i]
+          if (end > 0) print ""
+        }
+      ' "$tmp" > "$tmp.stripped"
+      {
+        ${pkgs.coreutils}/bin/cat "$tmp.stripped"
+        ${pkgs.coreutils}/bin/printf '%s\n' '# nlk-gateway-models (home-manager activation — do not edit)'
+        ${pkgs.coreutils}/bin/cat "$fragment"
+      } > "$tmp"
+      ${pkgs.coreutils}/bin/mv "$tmp" "$config"
+      ${pkgs.coreutils}/bin/rm -f "$tmp.stripped"
+    '';
+
   # Pin wallpaper on work hosts. Runs after dmsDefaults (when present) so the
   # merge of shared session defaults cannot override the work path.
   home.activation.setWorkWallpaper = lib.hm.dag.entryAfter ["writeBoundary" "dmsDefaults"] ''
