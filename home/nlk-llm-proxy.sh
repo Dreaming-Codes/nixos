@@ -4,6 +4,7 @@
 #   nlk-llm-proxy auth    — print a fresh id_token (apiKeyHelper); also installs
 #                           it into the user environment for Zed/OpenCode/etc.
 #   nlk-llm-proxy env     — auth + print shell exports (eval/source me)
+#   nlk-llm-proxy logout  — drop cached identity-proxy credential + user-env copies
 #
 # On every successful auth/login the token is written to:
 #   - ~/.config/environment.d/80-nlk-gateway.conf  (next graphical login)
@@ -85,6 +86,29 @@ do_login() {
   echo "nlk-llm-proxy: gateway token installed into user environment." >&2
 }
 
+clear_user_env() {
+  local env_file="${XDG_CONFIG_HOME:-$HOME/.config}/environment.d/80-nlk-gateway.conf"
+  local auth_file="${XDG_DATA_HOME:-$HOME/.local/share}/opencode/auth.json"
+
+  rm -f "$env_file"
+
+  if command -v systemctl >/dev/null 2>&1; then
+    systemctl --user unset-environment \
+      NLK_GATEWAY_API_KEY OPENAI_API_KEY ANTHROPIC_API_KEY 2>/dev/null || true
+  fi
+
+  if [[ -f "$auth_file" ]] && command -v jq >/dev/null 2>&1; then
+    jq 'del(.["nlk-gateway"])' "$auth_file" >"$auth_file.tmp"
+    mv "$auth_file.tmp" "$auth_file"
+    chmod 600 "$auth_file"
+  fi
+}
+
+do_logout() {
+  run_proxy logout "$@"
+  clear_user_env
+}
+
 do_env() {
   local key
   key="$(do_auth)"
@@ -98,9 +122,10 @@ usage() {
   cat <<'EOF'
 Usage: nlk-llm-proxy <command>
 
-  login   One-time SSO (device code), then install token into user env
-  auth    Print fresh id_token; install into user env (Grok/Claude apiKeyHelper)
-  env     Like auth, but print export lines for eval/source in a shell
+  login    One-time SSO (device code), then install token into user env
+  auth     Print fresh id_token; install into user env (Grok/Claude apiKeyHelper)
+  env      Like auth, but print export lines for eval/source in a shell
+  logout   Remove cached credential and user-env copies (OpenCode/systemd/env.d)
 
 EOF
 }
@@ -114,6 +139,10 @@ auth)
 login)
   shift
   do_login "$@"
+  ;;
+logout)
+  shift
+  do_logout "$@"
   ;;
 env)
   shift
