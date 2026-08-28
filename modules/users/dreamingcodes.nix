@@ -17,6 +17,7 @@
     "pipewire"
     "wireshark"
     "dialout"
+    "video"
     "flatpak"
     "nix"
     "ydotool"

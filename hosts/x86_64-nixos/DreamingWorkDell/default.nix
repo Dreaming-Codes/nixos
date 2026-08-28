@@ -182,6 +182,12 @@ in {
 
   boot.kernelModules = ["kvm-intel"];
 
+  # Intel IPU6 MIPI webcam (Precision 5690 Meteor Lake + OmniVision OV02E10).
+  hardware.ipu6 = {
+    enable = true;
+    platform = "ipu6epmtl";
+  };
+
   # Hybrid Intel Arc iGPU + NVIDIA RTX 5000 Ada (see modules/hardware/optimus.nix).
   # Bus IDs from lspci: 00:02.0 Intel, 01:00.0 NVIDIA.
   dreaming.hardware.optimus = {
