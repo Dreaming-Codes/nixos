@@ -342,9 +342,8 @@ in {
     Install.WantedBy = ["timers.target"];
   };
 
-  # Grok Build: rewrite [model.*] in ~/.grok/config.toml from the gateway
-  # generator (context_window / max_completion_tokens). Leaves the rest of the
-  # file alone so UI settings stay user-editable. config.toml beats managed.
+  # Replace [model.*] in ~/.grok/config.toml with gatewayModels.grokConfigModelsToml.
+  # Other keys stay. User config wins over managed version_overrides on the same id.
   home.activation.nlkGrokModels = let
     modelsToml = pkgs.writeText "grok-nlk-models.toml" gatewayModels.grokConfigModelsToml;
   in
@@ -362,7 +361,7 @@ in {
       else
         : > "$tmp"
       fi
-      # Drop trailing blank lines, then append generated model blocks.
+      # Strip trailing blanks, append generated [model.*] blocks.
       ${pkgs.gawk}/bin/awk '
         { lines[n++] = $0 }
         END {

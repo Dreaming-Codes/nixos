@@ -1,15 +1,13 @@
-# Build OpenCode / Zed / Grok model configs from git-crypt'd secrets/work/:
-#   1. ai-gateway-models.json           ← GET …/v1/models
-#   2. ai-gateway-model-info.json       ← GET …/v1/model/info
-#   3. ai-gateway-team-overrides.json   ← Neuralink Grok managed_config
-#      (only when the catalog omits context_window / name)
+# OpenCode / Zed / Grok model lists from git-crypt'd secrets/work/:
+#   1. ai-gateway-models.json          GET /v1/models
+#   2. ai-gateway-model-info.json      GET /v1/model/info
+#   3. ai-gateway-team-overrides.json  caps when the catalog omits them
 #
-# Alias ids that share a LiteLLM upstream collapse to one picker entry.
-# Team keys ending in -extended fold onto the base id (Grok's 200k/500k
-# split is a CLI pin, not a second gateway model).
-# Grok Build: work.nix activation rewrites [model.*] in ~/.grok/config.toml
-# from grokConfigModelsToml (picker slugs → catalog limits).
-# Refresh catalog: scripts/update-ai-gateway-models.sh
+# Ids that share a LiteLLM upstream collapse to one picker row.
+# Team keys ending in -extended fold onto the base id (Grok 200k vs 500k is a
+# CLI pin on one gateway model).
+# work.nix writes grokConfigModelsToml as [model.*] into ~/.grok/config.toml.
+# Refresh: scripts/update-ai-gateway-models.sh
 {lib}: let
   modelsFile = ../secrets/work/ai-gateway-models.json;
   infoFile = ../secrets/work/ai-gateway-model-info.json;
@@ -19,7 +17,7 @@
   infoJson = builtins.fromJSON (builtins.readFile infoFile);
   teamJson = builtins.fromJSON (builtins.readFile teamFile);
 
-  # Prefer *-extended limits; drop the 200k sibling and the -extended key.
+  # Fold *-extended team keys onto the base id; keep the larger window.
   teamModels = let
     raw = teamJson.models;
     extendedKeys = builtins.filter (k: lib.hasSuffix "-extended" k) (builtins.attrNames raw);
@@ -127,7 +125,6 @@
     then fromRows.${field}
     else fromModels;
 
-  # First team override matching any alias id in the group.
   teamFor = aliasIds:
     lib.findFirst (id: teamModels ? ${id}) null aliasIds;
 
@@ -149,7 +146,7 @@
       then out
       else mt;
 
-    # API first; else team context_window; else provider default if team lists the model.
+    # catalog max_input_tokens, else team.context_window, else provider default.
     max_input_tokens =
       if catalogIn != null
       then catalogIn
@@ -159,11 +156,9 @@
       then providerDefaultContext
       else null;
 
-    # API first; else team max_output_tokens; else same as context (input).
-    # Zed shows 0 if max_output_tokens is missing entirely.
+    # catalog max_output_tokens / max_tokens, else team; null filled below.
     max_output_tokens = let
       teamOut = team.max_output_tokens or null;
-      # max_input may still be null here; resolved after both are known.
       raw =
         if catalogOut != null
         then catalogOut
@@ -174,7 +169,7 @@
       raw;
 
     catalogMode = field "mode";
-    # Prefer catalog mode; else map team api_backend.
+    # catalog mode, else chat when team.api_backend is messages or chat_completions.
     mode =
       if catalogMode != null
       then catalogMode
@@ -184,7 +179,6 @@
       then "chat"
       else null;
 
-    # Caps: catalog first, else team override (null stays null until toZed).
     pickCap = catalogVal: teamAttr:
       if catalogVal != null
       then catalogVal
@@ -195,7 +189,6 @@
     id = best.id;
     aliases = aliasIds;
     inherit mode max_input_tokens;
-    # If still null after catalog+team, mirror context window once known.
     max_output_tokens =
       if max_output_tokens != null
       then max_output_tokens
@@ -207,14 +200,16 @@
     parallel = field "parallel";
     reasoning_effort = team.reasoning_effort or null;
     reasoning_efforts = team.reasoning_efforts or null;
-    # Team display name when present; else derived from id later.
+    api_backend = team.api_backend or null;
     teamName = team.name or null;
+    # Override key hit by teamFor; used as wire id when no managed slug.
+    teamKey = teamKey;
     fromTeamLimits = catalogIn == null && max_input_tokens != null;
   };
 
   resolvedUnsorted = lib.mapAttrsToList pickGroup byUpstream;
 
-  # Keep rows with a context size from API or team hardcodes.
+  # Drop rows with no context size from catalog or team.
   resolvedWithLimits =
     builtins.filter (r: r.max_input_tokens != null) resolvedUnsorted;
 
@@ -269,15 +264,14 @@
 
   toZedModel = r: let
     supportsReasoning = cap r.reasoning;
-    # Responses-API models (GPT via mantle): chat_completions=false.
-    # Chat models with reasoning: enable interleaved thinking stream.
+    # mode == responses => chat_completions false (GPT mantle).
     useResponses = r.mode == "responses";
   in
     {
       name = r.id;
       display_name = displayOf r;
       max_tokens = r.max_input_tokens;
-      # Always set — omitting this makes Zed UI show output limit 0.
+      # Zed shows output limit 0 if this field is missing.
       max_output_tokens =
         if r.max_output_tokens != null
         then r.max_output_tokens
@@ -298,7 +292,7 @@
         max_tokens_parameter = false;
       };
     }
-    # Zed: non-none reasoning_effort enables thinking UI / effort control.
+    # reasoning_effort turns on Zed thinking UI for reasoning models.
     // lib.optionalAttrs supportsReasoning {
       reasoning_effort =
         if r.reasoning_effort != null
@@ -318,7 +312,6 @@
     then (lib.last sortedOpus).id
     else (builtins.head resolved).id;
 
-  # Lookup resolved row by any catalog alias id in its upstream group.
   resolvedByAlias = lib.listToAttrs (
     lib.concatMap (
       r:
@@ -331,8 +324,7 @@
     resolved
   );
 
-  # Grok Build picker ids (managed version_overrides keys) → gateway catalog id.
-  # Limits come from resolved; slug is what config.toml [model.<id>] must use.
+  # managed_config version_overrides key -> catalog wire id.
   grokManagedSlugs = {
     "claude-sonnet-gateway" = "global.anthropic.claude-sonnet-5";
     "claude-opus-gateway" = "global.anthropic.claude-opus-5";
@@ -348,37 +340,189 @@
     "grok-4.6-extended" = "grok-4.6";
   };
 
+  # Same wire model; picker context_window only (managed_config pins).
+  grokContextPin = {
+    "grok-4.6" = 200000;
+    "grok-4.6-extended" = 500000;
+  };
+
+  grokExtendedName = {
+    "grok-4.6-extended" = "Grok 4.6 Extended (AI Gateway)";
+  };
+
   tomlModelKey = id:
     if builtins.match "[A-Za-z0-9_-]+" id != null
     then id
     else ''"${id}"'';
 
-  toGrokModelToml = slug: r: let
+  tomlString = s: let
+    esc = builtins.replaceStrings ["\\" "\""] ["\\\\" "\\\""] s;
+  in ''"${esc}"'';
+
+  tomlStringArray = xs: let
+    body = lib.concatStringsSep ",\n    " (map tomlString xs);
+  in "[\n    ${body},\n]";
+
+  isAnthropicId = id:
+    (lib.hasInfix "anthropic" id)
+    || (lib.hasPrefix "claude" id)
+    || (lib.hasInfix "fable" id);
+
+  isGrokId = id: lib.hasPrefix "grok" id;
+
+  # Grok agent path uses responses (managed_config). Anthropic uses messages.
+  # Otherwise team.api_backend, then catalog mode, else chat_completions.
+  grokApiBackend = r:
+    if isGrokId r.id
+    then "responses"
+    else if isAnthropicId r.id
+    then "messages"
+    else if (r.api_backend or null) != null
+    then r.api_backend
+    else if r.mode == "responses"
+    then "responses"
+    else "chat_completions";
+
+  # managed slug if this row is in grokManagedSlugs, else catalog id.
+  grokSlugFor = r: let
+    matching =
+      lib.filterAttrs (
+        slug: cid:
+          cid == r.id || builtins.elem cid r.aliases
+      )
+      grokManagedSlugs;
+    nonExt =
+      lib.filterAttrs (slug: _: !(lib.hasSuffix "-extended" slug)) matching;
+    pick = attrs:
+      if attrs == {}
+      then null
+      else builtins.head (lib.sort (a: b: a < b) (builtins.attrNames attrs));
+    fromNonExt = pick nonExt;
+    fromAny = pick matching;
+  in
+    if fromNonExt != null
+    then fromNonExt
+    else if fromAny != null
+    then fromAny
+    else r.id;
+
+  # Request model id: managed map, else teamKey, else ranked catalog id.
+  grokWireModel = slug: r:
+    if grokManagedSlugs ? ${slug}
+    then grokManagedSlugs.${slug}
+    else if (r.teamKey or null) != null
+    then r.teamKey
+    else r.id;
+
+  # system_prompt_label for Grok rows (extended keeps the base label).
+  grokSystemLabel = slug: wire: display:
+    if grokExtendedName ? ${slug}
+    then "Grok 4.6"
+    else if isGrokId wire
+    then lib.removeSuffix " (AI Gateway)" display
+    else display;
+
+  toGrokModelToml = {
+    slug,
+    r,
+    context ? null,
+    name ? null,
+  }: let
+    wire = grokWireModel slug r;
     out =
       if r.max_output_tokens != null
       then r.max_output_tokens
       else r.max_input_tokens;
-  in ''
-    [model.${tomlModelKey slug}]
-    context_window = ${toString r.max_input_tokens}
-    max_completion_tokens = ${toString out}
-  '';
+    ctx =
+      if context != null
+      then context
+      else if grokContextPin ? ${slug}
+      then grokContextPin.${slug}
+      else r.max_input_tokens;
+    display =
+      if name != null
+      then name
+      else if grokExtendedName ? ${slug}
+      then grokExtendedName.${slug}
+      else displayOf r;
+    backend = grokApiBackend (r // {id = wire;});
+    efforts = r.reasoning_efforts or null;
+    effort = r.reasoning_effort or null;
+    lines =
+      [
+        "[model.${tomlModelKey slug}]"
+        "model = ${tomlString wire}"
+        "name = ${tomlString display}"
+        "model_provider = \"nlk-gateway\""
+        "api_backend = ${tomlString backend}"
+        "context_window = ${toString ctx}"
+        "max_completion_tokens = ${toString out}"
+      ]
+      ++ lib.optional (isGrokId wire) "system_prompt_label = ${tomlString (grokSystemLabel slug wire display)}"
+      ++ lib.optional (isGrokId wire) "supports_backend_search = true"
+      ++ lib.optional (efforts != null) "supports_reasoning_effort = true"
+      ++ lib.optional (efforts != null) "reasoning_efforts = ${tomlStringArray efforts}"
+      ++ lib.optional (effort != null && efforts == null) "reasoning_effort = ${tomlString effort}"
+      ++ lib.optional (backend == "messages") ""
+      ++ lib.optional (backend == "messages") "[model.${tomlModelKey slug}.extra_headers]"
+      ++ lib.optional (backend == "messages") "anthropic-version = \"2023-06-01\"";
+  in
+    lib.concatStringsSep "\n" lines + "\n";
 
   grokConfigModelsToml = let
-    slugs = lib.sort (a: b: a < b) (builtins.attrNames grokManagedSlugs);
-    parts =
+    # One [model.*] per resolved upstream.
+    primary =
+      map (
+        r: let
+          slug = grokSlugFor r;
+        in {
+          inherit slug r;
+          context = null;
+          name = null;
+        }
+      )
+      resolved;
+
+    # Managed *-extended slugs: extra picker row, same wire id as the base.
+    extended =
+      lib.filter (e: e != null) (
+        map (
+          slug: let
+            catalogId = grokManagedSlugs.${slug};
+            r = resolvedByAlias.${catalogId} or null;
+          in
+            if !(lib.hasSuffix "-extended" slug) || r == null
+            then null
+            else {
+              inherit slug r;
+              context = grokContextPin.${slug} or null;
+              name = grokExtendedName.${slug} or null;
+            }
+        ) (builtins.attrNames grokManagedSlugs)
+      );
+
+    # Fold by slug; later entries overwrite (extended after primary).
+    bySlug = lib.foldl' (
+      acc: e:
+        acc // {${e.slug} = e;}
+    ) {} (primary ++ extended);
+
+    slugs = lib.sort (a: b: a < b) (builtins.attrNames bySlug);
+  in
+    lib.concatStrings (
       map (
         slug: let
-          catalogId = grokManagedSlugs.${slug};
-          r = resolvedByAlias.${catalogId} or null;
+          e = bySlug.${slug};
         in
-          if r == null
-          then ""
-          else toGrokModelToml slug r
+          toGrokModelToml {
+            inherit slug;
+            inherit (e) r;
+            context = e.context;
+            name = e.name;
+          }
       )
-      slugs;
-  in
-    lib.concatStrings parts;
+      slugs
+    );
 in {
   apiUrl = "https://ai-gateway.svc.int.n7k.io/v1";
 
