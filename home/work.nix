@@ -374,7 +374,7 @@ in {
       ' "$tmp" > "$tmp.stripped"
       {
         ${pkgs.coreutils}/bin/cat "$tmp.stripped"
-        ${pkgs.coreutils}/bin/printf '%s\n' '# nlk-gateway-models (home-manager activation — do not edit)'
+        ${pkgs.coreutils}/bin/printf '%s\n' '# nlk-gateway-models (home-manager activation; do not edit)'
         ${pkgs.coreutils}/bin/cat "$fragment"
       } > "$tmp"
       ${pkgs.coreutils}/bin/mv "$tmp" "$config"
