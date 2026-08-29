@@ -446,8 +446,19 @@
       then grokExtendedName.${slug}
       else displayOf r;
     backend = grokApiBackend (r // {id = wire;});
-    efforts = r.reasoning_efforts or null;
-    effort = r.reasoning_effort or null;
+    supportsReasoning = cap r.reasoning;
+    efforts =
+      if r.reasoning_efforts != null
+      then r.reasoning_efforts
+      else if supportsReasoning && !isAnthropicId wire
+      then ["none" "low" "medium" "high"]
+      else null;
+    effort =
+      if r.reasoning_effort != null
+      then r.reasoning_effort
+      else if supportsReasoning
+      then "high"
+      else null;
     lines =
       [
         "[model.${tomlModelKey slug}]"
