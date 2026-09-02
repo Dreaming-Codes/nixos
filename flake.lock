@@ -19,22 +19,6 @@
         "type": "github"
       }
     },
-    "brave-origin": {
-      "locked": {
-        "lastModified": 1781218297,
-        "narHash": "sha256-s3AaHH0lMV3Y0J+Ppg1QmJ6TeM3osQDyS/vM94b6nk4=",
-        "owner": "Dreaming-Codes",
-        "repo": "nixpkgs",
-        "rev": "d75790057ceacaa5770ee20d2537241fcf7f7df3",
-        "type": "github"
-      },
-      "original": {
-        "owner": "Dreaming-Codes",
-        "ref": "brave-channels",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "crane": {
       "locked": {
         "lastModified": 1785541369,
@@ -865,7 +849,6 @@
     "root": {
       "inputs": {
         "apple-silicon": "apple-silicon",
-        "brave-origin": "brave-origin",
         "determinate": "determinate",
         "disko": "disko",
         "dms-plugin-registry": "dms-plugin-registry",
