@@ -159,7 +159,7 @@ in {
         rustscan
 
         nur.repos.forkprince.helium-nightly
-        inputs.brave-origin.legacyPackages.${pkgs.stdenv.hostPlatform.system}.brave
+        brave
 
         playerctl
         brightnessctl
