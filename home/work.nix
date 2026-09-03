@@ -326,7 +326,6 @@ in {
       ''}";
       # Don't fail the session if SSO hasn't been done yet.
       SuccessExitStatus = "0 1";
-      RemainAfterExit = true;
     };
     Install.WantedBy = ["graphical-session.target"];
   };
@@ -336,7 +335,7 @@ in {
     Unit.Description = "Refresh Neuralink AI gateway token";
     Timer = {
       OnStartupSec = "30s";
-      OnUnitActiveSec = "45min";
+      OnUnitInactiveSec = "45min";
       Persistent = true;
     };
     Install.WantedBy = ["timers.target"];
