@@ -111,6 +111,7 @@ in {
         kdePackages.qt6ct
         libsForQt5.qt5ct
         gcc
+        gnumake
         openssl
         pkg-config
         powertop
