@@ -9,7 +9,7 @@
   cfg = config.dreaming.core.sops;
 in {
   options.dreaming.core.sops.enable =
-    lib.mkEnableOption "sops-nix secrets (github/telegram tokens)"
+    lib.mkEnableOption "sops-nix secrets (github token)"
     // {
       default = true;
     };
@@ -29,18 +29,11 @@ in {
       age.keyFile = ageKeyFile;
 
       # Secrets definition
-      secrets = {
-        github_token = {
-          # Will be available at /run/secrets/github_token
-          owner = "dreamingcodes";
-          group = "users";
-          mode = "0400";
-        };
-        telegram_bot_token = {
-          owner = "dreamingcodes";
-          group = "users";
-          mode = "0400";
-        };
+      secrets.github_token = {
+        # Will be available at /run/secrets/github_token
+        owner = "dreamingcodes";
+        group = "users";
+        mode = "0400";
       };
 
       # Template for nix access-tokens configuration
