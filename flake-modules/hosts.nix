@@ -104,6 +104,21 @@ in {
         # aarch64 emulation so this x86 box can cross-build Raspberry Pi images/tools via QEMU binfmt.
         {boot.binfmt.emulatedSystems = ["aarch64-linux"];}
       ];
+
+      # Same role as the Dell. facter.json is wired only once generated on the machine.
+      DreamingWorkGalaxyBook.modules = let
+        facterReport = ../hosts/x86_64-nixos/DreamingWorkGalaxyBook/facter.json;
+      in
+        [
+          inputs.disko.nixosModules.disko
+          ../hosts/common-laptop.nix
+          {dreaming.work.enable = true;}
+          {boot.binfmt.emulatedSystems = ["aarch64-linux"];}
+        ]
+        ++ lib.optionals (builtins.pathExists facterReport) [
+          inputs.nixos-facter-modules.nixosModules.facter
+          {facter.reportPath = facterReport;}
+        ];
     };
   };
 }
