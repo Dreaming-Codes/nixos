@@ -2,6 +2,7 @@
   config,
   pkgs,
   lib,
+  inputs,
   ...
 }: let
   ageKeyFile = "/home/dreamingcodes/.nixos/secrets/identity.age";
@@ -15,6 +16,12 @@ in {
 
   config = lib.mkIf cfg.enable {
     sops = {
+      # Upstream sops-nix still uses buildGo125Module, which nixpkgs removed
+      package =
+        (import inputs.sops-nix {
+          pkgs = pkgs.extend (final: _: {buildGo125Module = final.buildGoModule;});
+        }).sops-install-secrets;
+
       # Default sops file containing all secrets
       defaultSopsFile = ../../secrets/secrets.yaml;
 
