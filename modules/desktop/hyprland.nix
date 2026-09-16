@@ -49,7 +49,6 @@ in {
         enable = true;
         restartIfChanged = true;
       };
-      enableClipboardPaste = true;
       plugins =
         {
           dankBitwarden.enable = true;
