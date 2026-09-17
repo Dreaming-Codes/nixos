@@ -6,6 +6,7 @@
   imports = [
     ./disk-config.nix
     ./display-profiles.nix
+    ./ish-firmware.nix
   ];
 
   # Samsung Galaxy Book6 Ultra (Panther Lake).
