@@ -22,6 +22,7 @@
   boot.loader.limine.efiInstallAsRemovable = lib.mkForce true;
   boot.loader.efi.canTouchEfiVariables = lib.mkForce false;
   boot.loader.limine.secureBoot.enable = true;
+  boot.kernelParams = ["fsck.repair=yes"];
   environment.systemPackages = [pkgs.sbctl];
 
   # NumLock before LUKS/FIDO PIN so the keypad works at the unlock prompt.
