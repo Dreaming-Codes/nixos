@@ -51,6 +51,38 @@
   # Webcam is Intel IPU7 (no nixpkgs support yet) and the fingerprint reader is
   # an Egis sensor needing a patched libfprint, so neither is configured.
 
+  # Fingerprint: EGIS ETU906Axx-E (1c7a:05d5). Chip list/enroll returns
+  # storage errors (list 65 fe, enroll-mode 91 00) under stock egismoc; needs
+  # likeablob ETU906 SDCP fork (Joshua Grisham SDCP-v2 + 05b1) plus 05d5.
+  # https://github.com/likeablob/libfprint-fmv-etu906axx-e
+  nixpkgs.overlays = [
+    (final: prev: {
+      libfprint = prev.libfprint.overrideAttrs (old: {
+        version = "1.94.9-etu906axx-sdcp-05d5";
+        src = prev.fetchFromGitHub {
+          owner = "likeablob";
+          repo = "libfprint-fmv-etu906axx-e";
+          rev = "e105528828a04dffde789cda48742c204183386d";
+          hash = "sha256-Hp5as35tfzTO57uAwN9FsXp7dS23gb7TaCHrYDab74w=";
+        };
+        patches = [./libfprint-egismoc-1c7a-05d5-sdcp.patch];
+        postPatch = ''
+          # SDCP fork tests need GI/umockdev at configure; keep vars for examples.
+          cat > tests/meson.build <<'EOF'
+          installed_tests = get_option('installed-tests')
+          installed_tests_execdir = libexecdir / 'installed-tests' / versioned_libname
+          installed_tests_testdir = datadir / 'installed-tests' / versioned_libname
+          installed_tests_libdir = libdir
+          EOF
+        '';
+        mesonFlags = (old.mesonFlags or []) ++ ["-Dinstalled-tests=false"];
+        doCheck = false;
+        doInstallCheck = false;
+      });
+    })
+  ];
+  services.fprintd.enable = true;
+
   # FDE is the boot gate: skip greeter password after LUKS unlock.
   # dms-greeter implements this via greetd initial_session.
   services.displayManager.autoLogin = {
