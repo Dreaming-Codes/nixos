@@ -16,8 +16,8 @@
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
-  boot.loader.limine.efiInstallAsRemovable = true;
-  boot.loader.efi.canTouchEfiVariables = false;
+  boot.loader.limine.efiInstallAsRemovable = lib.mkForce true;
+  boot.loader.efi.canTouchEfiVariables = lib.mkForce false;
 
   # Intel Arc B390 iGPU only, no dGPU.
   hardware.graphics.enable = true;
