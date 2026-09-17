@@ -12,13 +12,27 @@
 
   home-manager.users.dreamingcodes.services.wluma = {
     enable = true;
-    # Nothing else dims the backlight on idle: DMS fades are overlays, and
-    # Plasma's "dim screen automatically" must stay off so its writes are not
-    # learned as preferences. Fires before the DMS lock at 180 s.
-    settings.idle = {
-      enabled = true;
-      timeout = 120;
-      brightness = 30;
+    settings = {
+      # Galaxy Book6 Ultra ISH ALS at iio:device0 (name=als).
+      als.iio = {
+        path = "/sys/bus/iio/devices";
+        thresholds = {
+          "0" = "night";
+          "20" = "dark";
+          "80" = "dim";
+          "250" = "normal";
+          "500" = "bright";
+          "800" = "outdoors";
+        };
+      };
+
+      output.backlight = [
+        {
+          name = "eDP-1";
+          path = "/sys/class/backlight/intel_backlight";
+          capturer = "auto";
+        }
+      ];
     };
   };
 }
