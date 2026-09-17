@@ -1,6 +1,7 @@
 {
   lib,
   config,
+  pkgs,
   ...
 }: {
   imports = [
@@ -20,6 +21,8 @@
 
   boot.loader.limine.efiInstallAsRemovable = lib.mkForce true;
   boot.loader.efi.canTouchEfiVariables = lib.mkForce false;
+  boot.loader.limine.secureBoot.enable = true;
+  environment.systemPackages = [pkgs.sbctl];
 
   # Intel Arc B390 iGPU only, no dGPU.
   hardware.graphics.enable = true;
