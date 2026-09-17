@@ -193,11 +193,9 @@ in {
     set_xsettings_key "$HOME/.config/xsettingsd/xsettingsd.conf" Net/ThemeName adw-gtk3-dark
 
     # dconf needs a session bus; HM activation often has none (system unit).
-    ${pkgs.dbus}/bin/dbus-run-session -- ${pkgs.bash}/bin/bash -c '
-      ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/color-scheme "'\''prefer-dark'\''"
-      ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/gtk-theme "'\''adw-gtk3-dark'\''"
-      ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/icon-theme "'\''breeze-dark'\''"
-    '
+    ${pkgs.dbus}/bin/dbus-run-session -- ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'"
+    ${pkgs.dbus}/bin/dbus-run-session -- ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/gtk-theme "'adw-gtk3-dark'"
+    ${pkgs.dbus}/bin/dbus-run-session -- ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/icon-theme "'breeze-dark'"
   '';
 
   home.activation.dmsQtColors = lib.hm.dag.entryAfter ["writeBoundary"] ''
