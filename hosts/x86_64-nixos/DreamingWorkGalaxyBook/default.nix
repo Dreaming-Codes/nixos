@@ -41,8 +41,12 @@
     };
   };
 
-  # Intel Arc B390 iGPU only, no dGPU.
-  hardware.graphics.enable = true;
+  # Intel Arc B390 iGPU only, no dGPU. iHD VA-API for hw decode/encode.
+  hardware.graphics = {
+    enable = true;
+    extraPackages = with pkgs; [intel-media-driver];
+    extraPackages32 = with pkgs.pkgsi686Linux; [intel-media-driver];
+  };
 
   # Webcam is Intel IPU7 (no nixpkgs support yet) and the fingerprint reader is
   # an Egis sensor needing a patched libfprint, so neither is configured.
