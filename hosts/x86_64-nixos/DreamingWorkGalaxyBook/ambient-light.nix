@@ -12,7 +12,13 @@
 
   home-manager.users.dreamingcodes.services.wluma = {
     enable = true;
-    # DMS and powerdevil already dim on idle.
-    settings.idle.enabled = false;
+    # Nothing else dims the backlight on idle: DMS fades are overlays, and
+    # Plasma's "dim screen automatically" must stay off so its writes are not
+    # learned as preferences. Fires before the DMS lock at 180 s.
+    settings.idle = {
+      enabled = true;
+      timeout = 120;
+      brightness = 30;
+    };
   };
 }
