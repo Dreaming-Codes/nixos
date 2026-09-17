@@ -25,4 +25,27 @@
 
   # Webcam is Intel IPU7 (no nixpkgs support yet) and the fingerprint reader is
   # an Egis sensor needing a patched libfprint, so neither is configured.
+
+  # FDE is the boot gate: skip greeter password after LUKS unlock.
+  # dms-greeter implements this via greetd initial_session.
+  services.displayManager.autoLogin = {
+    enable = true;
+    user = "dreamingcodes";
+  };
+
+  # niri enables gnome-keyring by default; this host uses KWallet as the
+  # Secret portal, and autologin cannot unlock a login-password keyring.
+  services.gnome.gnome-keyring.enable = lib.mkForce false;
+
+  # Empty-password KWallet (set on disk already). LUKS covers secrets at rest
+  home-manager.users.dreamingcodes = {
+    xdg.configFile."kwalletrc".text = ''
+      [Wallet]
+      Close When Unused=false
+      Enabled=true
+      First Use=false
+      Leave Open=true
+      Prompt on Open=false
+    '';
+  };
 }
