@@ -8,19 +8,6 @@
 }: let
   vibeMerge = pkgs.writeShellScriptBin "vibe-merge" (builtins.readFile ../scripts/vibeMerge.sh);
   vibeCommit = pkgs.writeShellScriptBin "vibe-commit" (builtins.readFile ../scripts/vibeCommit.sh);
-  codexStandalone = pkgs.writeShellScriptBin "codex" ''
-    exec /home/dreamingcodes/.codex/packages/standalone/current/bin/codex "$@"
-  '';
-  codexRemoteControlPath = lib.makeSearchPath "bin" [
-    config.home.profileDirectory
-    pkgs.bash
-    pkgs.coreutils
-    pkgs.findutils
-    pkgs.git
-    pkgs.gnugrep
-    pkgs.gnused
-    pkgs.openssh
-  ];
   syncDmsKdeColors = pkgs.writeShellScriptBin "sync-dms-kde-colors" ''
     set -euo pipefail
 
@@ -107,30 +94,6 @@ in {
     fi
   '';
 
-  home.activation.codexStandalone = lib.hm.dag.entryAfter ["writeBoundary"] ''
-    if [ ! -x /home/dreamingcodes/.codex/packages/standalone/current/bin/codex ]; then
-      PATH="${
-      lib.makeBinPath [
-        pkgs.gnutar
-        pkgs.gzip
-        pkgs.coreutils
-        pkgs.curl
-      ]
-    }:$PATH" \
-        ${pkgs.curl}/bin/curl -fsSL https://chatgpt.com/codex/install.sh | \
-        PATH="${
-      lib.makeBinPath [
-        pkgs.gnutar
-        pkgs.gzip
-        pkgs.coreutils
-        pkgs.curl
-      ]
-    }:$PATH" sh
-    fi
-    mkdir -p /home/dreamingcodes/.local/bin
-    ln -sfn /home/dreamingcodes/.codex/packages/standalone/current/bin/codex /home/dreamingcodes/.local/bin/codex
-  '';
-
   programs.fish = {
     completions = {
       vibe-merge = ''
@@ -147,35 +110,6 @@ in {
     "/home/dreamingcodes/.cargo/bin"
     "/home/dreamingcodes/.bun/bin"
   ];
-
-  systemd.user.services.codex-remote-control = {
-    Unit = {
-      Description = "Codex remote-control app-server";
-      Documentation = "file:%h/.codex/packages/standalone/current/codex";
-      After = ["network-online.target"];
-      Wants = ["network-online.target"];
-      StartLimitIntervalSec = 300;
-      StartLimitBurst = 5;
-    };
-    Service = {
-      Type = "simple";
-      Environment = [
-        "CODEX_HOME=/home/dreamingcodes/.codex"
-        "PATH=${codexRemoteControlPath}"
-        "LOG_FORMAT=json"
-        "RUST_LOG=info,codex_app_server_transport::transport::remote_control=debug"
-      ];
-      ExecStartPre = "-${pkgs.coreutils}/bin/rm -f %h/.codex/app-server-control/app-server-control.sock";
-      ExecStart = "${codexStandalone}/bin/codex app-server --remote-control --listen unix://";
-      KillMode = "control-group";
-      Restart = "always";
-      RestartSec = 10;
-      TimeoutStopSec = 10;
-    };
-    Install = {
-      WantedBy = ["default.target"];
-    };
-  };
 
   home.activation.dmsDefaults = lib.hm.dag.entryAfter ["writeBoundary"] ''
     DMS_CONFIG="$HOME/.config/DankMaterialShell"
@@ -455,7 +389,6 @@ in {
   home.packages = [
     vibeMerge
     vibeCommit
-    codexStandalone
     syncDmsKdeColors
   ];
 
