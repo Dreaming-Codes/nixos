@@ -22,11 +22,18 @@ in {
       ];
       plymouth = {
         enable = true;
-        theme = "connect";
+        theme = "catppuccin-macchiato";
+        font = "${pkgs.ioskeley-mono.normal-NF}/share/fonts/truetype/IoskeleyMonoNerdFont-Regular.ttf";
         themePackages = [
-          (pkgs.adi1090x-plymouth-themes.override {
-            selected_themes = ["connect"];
-          })
+          (pkgs.runCommand "catppuccin-plymouth-ioskeley" {} ''
+            mkdir -p $out/share/plymouth/themes
+            cp -a ${pkgs.catppuccin-plymouth}/share/plymouth/themes/catppuccin-macchiato \
+              $out/share/plymouth/themes/
+            substituteInPlace \
+              $out/share/plymouth/themes/catppuccin-macchiato/catppuccin-macchiato.plymouth \
+              --replace-fail "Font=Noto Sans 12" "Font=IoskeleyMono Nerd Font 12" \
+              --replace-fail "TitleFont=Noto Sans Light 30" "TitleFont=IoskeleyMono Nerd Font 30"
+          '')
         ];
       };
     };
