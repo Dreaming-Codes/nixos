@@ -20,6 +20,15 @@ in {
       kernelParams = [
         "acpi_call"
       ];
+      plymouth = {
+        enable = true;
+        theme = "connect";
+        themePackages = [
+          (pkgs.adi1090x-plymouth-themes.override {
+            selected_themes = ["connect"];
+          })
+        ];
+      };
     };
 
     # Console font
