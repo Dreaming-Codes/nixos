@@ -35,8 +35,6 @@ in {
       enable = true;
       forceRun = true;
     };
-    # fscrypt for home folder encryption
-    security.pam.enableFscrypt = true;
     security.pam.loginLimits = [
       {
         domain = "*";
