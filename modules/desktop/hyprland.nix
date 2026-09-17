@@ -47,6 +47,7 @@ in {
       enable = true;
       systemd = {
         enable = true;
+        target = "niri.service";
         restartIfChanged = true;
       };
       plugins =
