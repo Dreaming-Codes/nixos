@@ -28,7 +28,10 @@
             # fido2-device=auto: try systemd-cryptenroll FIDO2 token at unlock.
             settings = {
               allowDiscards = true;
-              crypttabExtraOpts = ["fido2-device=auto"];
+              crypttabExtraOpts = [
+                "fido2-device=auto"
+                "token-timeout=0"
+              ];
             };
             content = {
               type = "filesystem";
