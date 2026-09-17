@@ -7,6 +7,7 @@
     ./disk-config.nix
     ./display-profiles.nix
     ./ish-firmware.nix
+    ./ambient-light.nix
   ];
 
   # Samsung Galaxy Book6 Ultra (Panther Lake).
