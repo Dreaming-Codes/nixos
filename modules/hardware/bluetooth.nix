@@ -53,9 +53,21 @@ in {
         # ISO endpoint (alt 6), and force_scofix=Y + enable_autosuspend=N keeps
         # that endpoint active.
         "bluez5.hw-offload-sco" = false;
-        "bluez5.auto-connect" = [
+        # PipeWire default bluez5.roles (media + headset), minus laptop-as-speaker
+        # roles so phones do not route media/calls here. Defaults from
+        # spa/plugins/bluez5/bluez5-dbus.c parse_roles (MEDIA_SINK|MEDIA_SOURCE|
+        # ASHA_SINK) and backend-native.c DEFAULT_ENABLED_PROFILES (HFP_HF|HFP_AG).
+        # Dropped: a2dp_sink bap_sink bap_bcast_sink asha_sink hfp_ag
+        "bluez5.roles" = [
+          "a2dp_source"
+          "bap_source"
+          "bap_bcast_source"
           "hfp_hf"
-          "hsp_hs"
+        ];
+        "bluez5.auto-connect" = [
+          "a2dp_source"
+          "bap_source"
+          "hfp_hf"
         ];
       };
     };
