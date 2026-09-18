@@ -1,0 +1,9 @@
+[package]
+name = "cryptroot-fido-or-pass"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+libc = "0.2.189"
+smol = "2.0.2"
+udev = "0.9.3"

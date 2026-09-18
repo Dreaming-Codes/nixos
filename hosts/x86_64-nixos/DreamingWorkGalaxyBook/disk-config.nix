@@ -25,13 +25,10 @@
             type = "luks";
             name = "cryptroot";
             # NVMe: let periodic fstrim pass discards through dm-crypt.
-            # fido2-device=auto: try systemd-cryptenroll FIDO2 token at unlock.
+            # FIDO2 is handled by cryptroot-fido-or-pass in initrd; crypttab is
+            # passphrase-only so systemd-cryptsetup is the password fallback.
             settings = {
               allowDiscards = true;
-              crypttabExtraOpts = [
-                "fido2-device=auto"
-                "token-timeout=0"
-              ];
             };
             content = {
               type = "filesystem";

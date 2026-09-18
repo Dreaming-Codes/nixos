@@ -25,21 +25,7 @@
   boot.kernelParams = ["fsck.repair=yes"];
   environment.systemPackages = [pkgs.sbctl];
 
-  # NumLock before LUKS/FIDO PIN so the keypad works at the unlock prompt.
-  boot.initrd.systemd = {
-    extraBin.setleds = "${pkgs.kbd}/bin/setleds";
-    services.numlock = {
-      description = "Enable NumLock";
-      wantedBy = ["initrd.target"];
-      before = ["cryptsetup-pre.target"];
-      unitConfig.DefaultDependencies = false;
-      serviceConfig = {
-        Type = "oneshot";
-        # setleds needs a tty on stdin; -D also sets VT defaults for later prompts
-        ExecStart = "/bin/sh -c 'for t in /dev/tty[1-8]; do [ -c \"$t\" ] && /bin/setleds -D +num < \"$t\" || true; done'";
-      };
-    };
-  };
+  dreaming.core.cryptroot-fido-or-pass.enable = true;
 
   # Intel Arc B390 iGPU only, no dGPU. iHD VA-API for hw decode/encode.
   hardware.graphics = {
