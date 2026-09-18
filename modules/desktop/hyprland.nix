@@ -45,6 +45,17 @@ in {
 
     programs.dms-shell = {
       enable = true;
+      # Lock-screen fprint PAM defaults to max-tries=5 and timeout=30s, so the
+      # sensor stops listening after a short idle on the lock screen. Negative
+      # values keep verify armed for the whole lock session (see pam_fprintd(8)).
+      package = pkgs.dms-shell.overrideAttrs (old: {
+        preBuild =
+          (old.preBuild or "")
+          + ''
+            substituteInPlace ../quickshell/assets/pam/fprint \
+              --replace-fail 'max-tries=5' 'max-tries=-1 timeout=-1'
+          '';
+      });
       systemd = {
         enable = true;
         target = "niri.service";
