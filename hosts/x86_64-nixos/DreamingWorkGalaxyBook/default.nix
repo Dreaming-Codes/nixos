@@ -37,6 +37,9 @@
   # IPU7 + SC200PC (SSLC2000); see modules/hardware/galaxybook6-camera.nix.
   dreaming.hardware.galaxybook6-camera.enable = true;
 
+  # Copilot key -> Meta; see modules/hardware/galaxybook6-keys.nix.
+  dreaming.hardware.galaxybook6-keys.enable = true;
+
   # Fingerprint: EGIS ETU906Axx-E (1c7a:05d5). Chip list/enroll returns
   # storage errors (list 65 fe, enroll-mode 91 00) under stock egismoc; needs
   # likeablob ETU906 SDCP fork (Joshua Grisham SDCP-v2 + 05b1) plus 05d5.
