@@ -3,11 +3,7 @@
   lib,
   config,
   ...
-}: let
-  opencode = pkgs.writeShellScriptBin "opencode" ''
-    exec ${pkgs.bun}/bin/bunx opencode-ai@latest "$@"
-  '';
-in {
+}: {
   home.stateVersion = "26.05";
 
   home.shell.enableShellIntegration = true;
@@ -50,9 +46,6 @@ in {
   # Ensure the SSH ControlPath socket directory exists for connection multiplexing.
   home.file.".ssh/sockets/.keep".text = "";
 
-  home.file.".config/opencode/opencode-notifier.json".source =
-    ../config/opencode/opencode-notifier.json;
-
   home.file.".local/bin/grok-notify" = {
     source = ../scripts/grok-notify.sh;
     executable = true;
@@ -66,7 +59,7 @@ in {
 
   programs.opencode = {
     enable = true;
-    package = opencode;
+    package = null;
     context = ../config/opencode/AGENTS.md;
     agents.git-detective = ../config/opencode/agent/git-detective.md;
     settings = {
@@ -90,7 +83,7 @@ in {
           "terraform import*" = "ask";
         };
       };
-      plugin = ["@mohak34/opencode-notifier@latest"];
+      plugin = ["@ex-machina/opencode-anthropic-auth@next"];
       lsp.rust = {
         command = ["rust-analyzer"];
         initialization.rust-analyzer.check.command = "clippy";
