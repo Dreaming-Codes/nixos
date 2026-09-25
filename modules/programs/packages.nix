@@ -137,8 +137,6 @@ in {
         libimobiledevice
         ifuse
 
-        claude-code
-
         socat
 
         (pantheon.switchboard-with-plugs.override {
