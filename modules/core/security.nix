@@ -27,8 +27,7 @@ in {
       });
     '';
 
-    # Ship the setuid pkexec wrapper; off by default in nixpkgs. The wheel
-    # rule above then authorizes escalation without a password prompt.
+    # Ship the setuid pkexec wrapper; off by default in nixpkgs
     security.polkit.enablePkexecWrapper = true;
 
     security.rtkit.enable = true;
