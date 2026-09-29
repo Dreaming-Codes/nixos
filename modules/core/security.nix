@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   cfg = config.dreaming.core.security;
@@ -26,6 +27,15 @@ in {
           return polkit.Result.YES;
       });
     '';
+
+    # NixOS ships pkexec without the setuid bit, so it refuses to run.
+    # Wrap it so polkit escalation works; the wheel rule above authorizes it.
+    security.wrappers.pkexec = {
+      owner = "root";
+      group = "root";
+      setuid = true;
+      source = "${pkgs.polkit.bin}/bin/pkexec";
+    };
 
     security.rtkit.enable = true;
     security.sudo-rs.enable = true;
