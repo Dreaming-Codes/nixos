@@ -627,22 +627,6 @@
         "type": "github"
       }
     },
-    "nixpkgs-discord-vk": {
-      "locked": {
-        "lastModified": 1781205785,
-        "narHash": "sha256-ZsqGzg2hD8e40wwc1kgJGt2qgI8dsp7uDR9OiTGGPbc=",
-        "owner": "LuckShiba",
-        "repo": "nixpkgs",
-        "rev": "36e2217e8c30e59f1708e44df9bf00c31565e476",
-        "type": "github"
-      },
-      "original": {
-        "owner": "LuckShiba",
-        "ref": "discord-vk",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "nixpkgs-lib": {
       "locked": {
         "lastModified": 1788057806,
@@ -864,7 +848,6 @@
         "nixos-facter-modules": "nixos-facter-modules",
         "nixpkgs": "nixpkgs_7",
         "nixpkgs-davinci": "nixpkgs-davinci",
-        "nixpkgs-discord-vk": "nixpkgs-discord-vk",
         "nur": "nur",
         "paneru": "paneru",
         "razer-laptop-controller": "razer-laptop-controller",

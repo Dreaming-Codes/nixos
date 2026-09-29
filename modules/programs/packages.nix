@@ -44,25 +44,6 @@ in {
     };
 
   config = lib.mkIf cfg.enable {
-    nixpkgs.overlays = lib.optionals isX86 [
-      (
-        final: prev: let
-          discordPkgs = import inputs.nixpkgs-discord-vk {
-            inherit (prev) system;
-            config = prev.config;
-          };
-        in {
-          inherit
-            (discordPkgs)
-            discord
-            discord-canary
-            discord-development
-            discord-ptb
-            ;
-        }
-      )
-    ];
-
     programs.fish = {
       enable = true;
       generateCompletions = false;
