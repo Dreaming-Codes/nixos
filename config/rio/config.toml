@@ -7,19 +7,19 @@ size = 14
 use-drawable-chars = false
 
 [fonts.regular]
-family = "IoskeleyMono Nerd Font"
+family = "IoskeleyMono Nerd Font Mono"
 style = "Regular"
 
 [fonts.bold]
-family = "IoskeleyMono Nerd Font"
+family = "IoskeleyMono Nerd Font Mono"
 style = "Bold"
 
 [fonts.italic]
-family = "IoskeleyMono Nerd Font"
+family = "IoskeleyMono Nerd Font Mono"
 style = "Italic"
 
 [fonts.bold-italic]
-family = "IoskeleyMono Nerd Font"
+family = "IoskeleyMono Nerd Font Mono"
 style = "Bold Italic"
 
 [colors]
