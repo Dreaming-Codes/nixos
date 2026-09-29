@@ -14,7 +14,7 @@ in {
 
   config = lib.mkIf cfg.enable {
     fonts.packages = with pkgs; [
-      ioskeley-mono.normal-NF
+      ioskeley-mono.nf
     ];
   };
 }

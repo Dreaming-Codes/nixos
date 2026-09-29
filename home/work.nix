@@ -61,8 +61,8 @@ in {
       # Enables Helix keybindings (and vim mode as a dependency).
       helix_mode = true;
       # Match Rio terminal (config/rio/config.toml).
-      buffer_font_family = "IoskeleyMono Nerd Font";
-      ui_font_family = "IoskeleyMono Nerd Font";
+      buffer_font_family = "IoskeleyMono Nerd Font Mono";
+      ui_font_family = "IoskeleyMono Nerd Font Mono";
       buffer_line_height = "standard";
       # Helix config.toml: line-number = "relative"
       relative_line_numbers = "enabled";
@@ -80,7 +80,7 @@ in {
       close_on_file_delete = true;
       # Pretend we're already in Zellij so shell hooks don't nest it in Zed.
       terminal.env.ZELLIJ = "1";
-      terminal.font_family = "IoskeleyMono Nerd Font";
+      terminal.font_family = "IoskeleyMono Nerd Font Mono";
       git.inline_blame.location = "status_bar";
       git.worktree_directory = "~/Documents/worktrees";
       # Project tree left; agent/chat right.
