@@ -65,6 +65,7 @@ in {
     };
 
     programs.virt-manager.enable = true;
+    virtualisation.libvirtd.enable = true;
 
     programs.ydotool.enable = true;
 
@@ -255,7 +256,6 @@ in {
         (discord.override {
           withOpenASAR = true;
         })
-        qemu
         spotify
         mullvad-browser
         tor-browser
