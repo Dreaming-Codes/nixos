@@ -255,6 +255,7 @@ in {
         (discord.override {
           withOpenASAR = true;
         })
+        qemu
         spotify
         mullvad-browser
         tor-browser
