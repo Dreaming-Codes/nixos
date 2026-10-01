@@ -254,7 +254,7 @@ in {
         zoom-us
         slack
         (discord.override {
-          withOpenASAR = true;
+          withEquicord = true;
         })
         spotify
         mullvad-browser
