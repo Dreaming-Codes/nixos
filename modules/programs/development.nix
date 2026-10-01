@@ -179,6 +179,7 @@ in {
       xz
       zlib
       pipewire
+      libva
     ];
   };
 }
