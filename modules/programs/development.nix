@@ -178,6 +178,7 @@ in {
       libbsd
       xz
       zlib
+      pipewire
     ];
   };
 }
