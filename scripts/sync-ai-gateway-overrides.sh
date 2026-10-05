@@ -22,7 +22,7 @@ info_file="${out_dir}/ai-gateway-model-info.json"
 generator="${repo_root}/home/nlk-gateway-models.nix"
 
 # Neuralink monorepo: model IDs, aliases, and product defaults live here.
-sw_repo="${NLK_SW_REPO:-/home/dreamingcodes/Documents/sw}"
+sw_repo="${NLK_SW_REPO:-/home/dreamingcodes/Documents/codeProjects/neuralink/sw/root}"
 grok_bin="${GROK_BIN:-grok}"
 
 need() {
