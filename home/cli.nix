@@ -83,7 +83,7 @@
           "terraform import*" = "ask";
         };
       };
-      plugin = ["@ex-machina/opencode-anthropic-auth@next"];
+      plugin = [];
       lsp.rust = {
         command = ["rust-analyzer"];
         initialization.rust-analyzer.check.command = "clippy";
