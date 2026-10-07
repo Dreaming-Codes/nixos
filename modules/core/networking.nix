@@ -36,6 +36,8 @@ in {
           DNSOverTLS = "opportunistic";
           # Resolve single-label names (e.g. `go/`) via upstream DNS
           ResolveUnicastSingleLabel = "yes";
+          # Avahi owns mDNS (cups-browsed / .local via nss-mdns)
+          MulticastDNS = "no";
           FallbackDNS = [
             "1.1.1.1#cloudflare-dns.com"
             "1.0.0.1#cloudflare-dns.com"
