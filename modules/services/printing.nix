@@ -13,18 +13,13 @@ in {
     };
 
   config = lib.mkIf cfg.enable {
+    # No avahi: cups-browsed tracks services.avahi.enable and stays off.
+    # Dense Bonjour LANs make avahi expensive; add printers by IP/IPP.
     services.printing = {
       enable = true;
       drivers = [
         pkgs.hplipWithPlugin
       ];
-    };
-
-    # Browse-only mDNS for cups-browsed / AirPrint
-    services.avahi = {
-      enable = true;
-      nssmdns4 = true;
-      openFirewall = true;
     };
   };
 }
