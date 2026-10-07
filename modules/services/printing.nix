@@ -19,5 +19,12 @@ in {
         pkgs.hplipWithPlugin
       ];
     };
+
+    # Browse-only mDNS for cups-browsed / AirPrint
+    services.avahi = {
+      enable = true;
+      nssmdns4 = true;
+      openFirewall = true;
+    };
   };
 }
