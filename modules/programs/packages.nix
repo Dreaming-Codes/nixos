@@ -241,7 +241,6 @@ in {
         kdePackages.kleopatra
         gnupg
         pinentry-qt
-        jetbrains-toolbox
         bitwarden-desktop
         just
 
