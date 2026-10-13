@@ -4,3 +4,4 @@
 - Running on NixOS/Nix. If a command or tool is missing, use `nix-shell -p <package> --run '…'`. Example: `nix-shell -p jq --run 'jq . file.json'`.
 - JavaScript/TypeScript: default to **bun** (install, run, build, test). If the project already has `package-lock.json`, `yarn.lock`, or `pnpm-lock.yaml`, use the matching package manager instead.
 - Always add dependencies with the project’s package manager (`bun add`, `cargo add`, `go get`, `npm install`, etc.). Never hand-edit dependency lists (e.g. Cargo.toml, package.json) when the tool can do it; this keeps versions current.
+- When giving me an instruction to `cd` into a folder always give me the full path
