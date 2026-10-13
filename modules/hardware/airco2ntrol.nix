@@ -14,9 +14,20 @@
   exporter = pkgs.writeShellScript "airco2ntrol-exporter" ''
     set -euo pipefail
     out=${textfileDir}/airco2ntrol.prom
-    ${lib.getExe co2mon} | while read -r temp _ ppm _; do
+    # No valid reading for 60 s (co2mon only logs read errors) -> drop the
+    # stale file so node_exporter stops exposing old values.
+    last=$SECONDS
+    ${lib.getExe co2mon} 2>&1 | while :; do
+      rc=0
+      read -r -t 15 temp _ ppm _ || rc=$?
+      (( rc == 0 || rc > 128 )) || exit 1 # EOF: co2mon exited
       temp=''${temp%,}
-      [[ $ppm =~ ^[0-9]+$ ]] || continue
+      if (( rc != 0 )) || ! [[ $ppm =~ ^[0-9]+$ ]]; then
+        [[ -n $temp ]] && (( rc == 0 )) && echo "$temp $ppm" >&2 # co2mon error line
+        (( SECONDS - last >= 60 )) && rm -f "$out"
+        continue
+      fi
+      last=$SECONDS
       printf '%s\n' \
         "# HELP airco2ntrol_co2_ppm CO2 concentration (NDIR)" \
         "# TYPE airco2ntrol_co2_ppm gauge" \
@@ -61,6 +72,8 @@ in {
         after = ["dev-airco2ntrol.device"];
         serviceConfig = {
           ExecStart = exporter;
+          # Also covers BindsTo stops on unplug.
+          ExecStopPost = "${pkgs.coreutils}/bin/rm -f ${textfileDir}/airco2ntrol.prom";
           # Static user (not DynamicUser): /var/lib/private is 0700 and
           # node_exporter must read the textfile.
           User = "airco2ntrol";
