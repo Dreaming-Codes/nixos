@@ -20,6 +20,8 @@
         '';
     });
 in {
+  dreaming.core.boot.aspect = "16x9";
+
   boot.initrd.availableKernelModules = [
     "nvme"
     "xhci_pci"

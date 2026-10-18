@@ -1,0 +1,969 @@
+# Neuralink splash logic. generate.py prepends L (layout) and D (thread geometry), both
+# in reference canvas pixels. Variables assigned inside functions resolve to globals
+# of the same name, so locals never reuse a global or function name.
+
+Window.SetBackgroundTopColor(0, 0, 0);
+Window.SetBackgroundBottomColor(0, 0, 0);
+
+FONT = "IoskeleyMono Nerd Font Mono ";
+FPS = 50;
+DT = 1 / FPS;
+TAU = 2 * Math.Pi;
+PULSE_SPEED = 950;
+SWEEP_SPEED = 300;
+
+N_COMET = 96;
+N_LED = 2;
+N_PULSE = 40;
+N_FLASH = 24;
+N_TICK = 220;
+N_PING = 36;
+N_RING = 3;
+N_BULLET = 20;
+
+Z_MESH = 1;
+Z_FLASH = 2;
+Z_PULSE = 3;
+Z_PING = 4;
+Z_IMPLANT = 5;
+Z_RING = 6;
+Z_HALO = 7;
+Z_MARK = 8;
+Z_COMET = 9;
+Z_HUD = 10;
+Z_HUD_TOP = 11;
+
+
+COLS = ["status", "entry", "mesh", "rate", "spin", "breathe", "glow", "noise", "volley", "hold", "ring", "led", "led_hz"];
+
+fun mode_row(values)
+{
+  for (i = 0; COLS[i]; i++)
+    r[COLS[i]] = values[i];
+  return r;
+}
+
+# status: "" shows the Plymouth.GetMode() phase word. entry: input shown under the prompt.
+# rate, noise: neuron firings and raster-only spikes per second. spin: comet revolutions per
+# second. breathe: depth of the searching pulse. volley: pulses launched on entry.
+# hold: seconds before falling back to the base mode, 0 waits for an event.
+# ring: how lit the white ring is. led: the two status dots in its gap, "blink" alternates them.
+#                            status               entry      mesh  rate spin  breathe glow  noise volley hold  ring  led        led_hz
+MODES.boot      = mode_row(["",                   "",        1.00, 4.0, 0.32, 0.0,    0.14, 14,   0,     0,    0.55, "blink",   1.2]);
+MODES.awaiting  = mode_row(["SEARCHING FOR LINK", "",        0.55, 0.8, 1.10, 1.0,    0.06, 3,    0,     0,    0.0,  "breathe", 0.5]);
+MODES.password  = mode_row(["AUTHENTICATE",       "bullets", 0.32, 0.5, 0.22, 0.0,    0.30, 3,    6,     0,    0.75, "breathe", 0.9]);
+MODES.retry     = mode_row(["LINK REJECTED",      "bullets", 0.32, 0.5, 0.22, 0.0,    0.30, 3,    0,     0,    0.35, "blink",   5.0]);
+MODES.question  = mode_row(["INPUT REQUIRED",     "text",    0.32, 0.5, 0.22, 0.0,    0.30, 3,    6,     0,    0.75, "breathe", 0.9]);
+MODES.verifying = mode_row(["VERIFYING",          "",        0.65, 14,  0.90, 0.4,    0.34, 36,   12,    12,   0.3,  "blink",   6.0]);
+MODES.linked    = mode_row(["LINK ESTABLISHED",   "",        1.00, 8,   0.45, 0.0,    0.40, 48,   40,    2.8,  1.0,  "solid",   0]);
+
+PHASE["boot"] = "INITIALIZING";
+PHASE["shutdown"] = "POWERING DOWN";
+PHASE["reboot"] = "RESTARTING";
+PHASE["updates"] = "UPDATING";
+PHASE["system-upgrade"] = "UPDATING";
+PHASE["firmware-upgrade"] = "UPDATING";
+PHASE["system-reset"] = "RESETTING";
+
+ui.mode = "boot";
+ui.since = 0;
+ui.nmsgs = 0;
+ui.prompt = "";
+ui.last_prompt = "";
+ui.bullets = 0;
+ui.entry = "";
+ui.bullets_shown = 0;
+ui.caret_on = 0;
+
+fx.t = 0;
+fx.fire_acc = 0;
+fx.noise_acc = 0;
+fx.spin = 0;
+fx.rim = 0;
+fx.mesh = 1;
+fx.mesh_shown = -1;
+fx.ring = 0.55;
+fx.ring_shown = -1;
+fx.ping_gain = 0;
+fx.shock_at = -100;
+fx.shock_gain = 0;
+fx.progress = 0;
+fx.progress_target = 0;
+fx.seg_lit = -1;
+fx.caps = -1;
+fx.spikes = 0;
+fx.spikes_since = 0;
+fx.pulse_rr = 0;
+fx.flash_rr = 0;
+
+# A hash first assigned inside a function is local to it, so every shared hash starts here.
+view.s = 0;
+view.w = -1;
+img.src = [];
+spr.mesh = 0;
+slots.status = 0;
+rs.count = 0;
+pg.step = 0;
+
+
+fun base_mode()
+{
+  if (ui.nmsgs > 0)
+    return "awaiting";
+  return "boot";
+}
+
+fun enter_mode(m)
+{
+  if (m == ui.mode)
+    return;
+  ui.mode = m;
+  ui.since = fx.t;
+  launch_volley(MODES[m].volley);
+}
+
+# Modes without an input or a hold timer follow the message list.
+fun settle()
+{
+  row = MODES[ui.mode];
+  if (row.entry == "" && row.hold == 0)
+    enter_mode(base_mode());
+  render_ui();
+}
+
+fun on_message(text)
+{
+  for (i = 0; i < ui.nmsgs; i++)
+    if (ui.msgs[i] == text)
+      return;
+  ui.msgs[ui.nmsgs] = text;
+  ui.nmsgs = ui.nmsgs + 1;
+  settle();
+}
+
+fun on_hide_message(text)
+{
+  kept = 0;
+  for (i = 0; i < ui.nmsgs; i++)
+    {
+      if (ui.msgs[i] != text)
+        {
+          ui.msgs[kept] = ui.msgs[i];
+          kept = kept + 1;
+        }
+    }
+  ui.nmsgs = kept;
+  settle();
+}
+
+fun on_password(prompt, bullets)
+{
+  m = "password";
+  if (prompt == ui.last_prompt && (ui.mode == "verifying" || ui.mode == "retry"))
+    m = "retry";
+  if (bullets > ui.bullets)
+    keystroke(bullets - ui.bullets);
+  ui.prompt = prompt;
+  ui.bullets = bullets;
+  enter_mode(m);
+  render_ui();
+}
+
+fun on_question(prompt, entry_text)
+{
+  grown = String(entry_text).Length() - String(ui.entry).Length();
+  if (grown > 0)
+    keystroke(grown);
+  ui.prompt = prompt;
+  ui.entry = entry_text;
+  enter_mode("question");
+  render_ui();
+}
+
+fun on_normal()
+{
+  kind = MODES[ui.mode].entry;
+  if (kind == "bullets")
+    {
+      ui.last_prompt = ui.prompt;
+      ui.bullets = 0;
+      enter_mode("verifying");
+    }
+  else if (kind == "text")
+    {
+      ui.entry = "";
+      enter_mode(base_mode());
+    }
+  render_ui();
+}
+
+fun on_root_mounted()
+{
+  enter_mode("linked");
+  render_ui();
+}
+
+fun on_progress(duration, progress)
+{
+  fx.progress_target = progress;
+}
+
+
+fun sx(x) { return view.ox + x * view.s; }
+fun sy(y) { return view.oy + y * view.s; }
+fun sb(d) { return view.bottom - d * view.s; }
+
+fun scaled(name)
+{
+  src = img.src[name];
+  if (view.s == 1)
+    return src;
+  return src.Scale(Math.Max(1, Math.Int(src.GetWidth() * view.s + 0.5)),
+                   Math.Max(1, Math.Int(src.GetHeight() * view.s + 0.5)));
+}
+
+IMAGE_NAMES = ["mesh", "implant", "ring", "halo", "markglow", "wordmark", "dot", "comet", "pulse", "flash", "bullet",
+               "caret", "tick", "cursor", "seg", "head", "raster"];
+
+fun load_images()
+{
+  for (i = 0; IMAGE_NAMES[i]; i++)
+    img.src[IMAGE_NAMES[i]] = Image(IMAGE_NAMES[i] + ".png");
+}
+
+fun pool(n, z)
+{
+  for (i = 0; i < n; i++)
+    {
+      p[i].sprite = Sprite();
+      p[i].sprite.SetOpacity(0);
+      p[i].sprite.SetZ(z);
+    }
+  return p;
+}
+
+fun set_pool_image(p, n, image)
+{
+  for (i = 0; i < n; i++)
+    p[i].sprite.SetImage(image);
+}
+
+fun text_slot(x, y, bottom, align, pt, red, green, blue, alpha)
+{
+  slot.x = x;
+  slot.y = y;
+  slot.bottom = bottom;
+  slot.align = align;
+  slot.pt = pt;
+  slot.red = red;
+  slot.green = green;
+  slot.blue = blue;
+  slot.alpha = alpha;
+  slot.text = "";
+  slot.fade = 1;
+  slot.sprite = Sprite();
+  slot.sprite.SetOpacity(0);
+  slot.sprite.SetZ(Z_HUD_TOP);
+  return slot;
+}
+
+fun build()
+{
+  load_images();
+  spr.mesh = Sprite();
+  spr.mesh.SetZ(Z_MESH);
+  spr.implant = Sprite();
+  spr.implant.SetZ(Z_IMPLANT);
+  spr.ring = Sprite();
+  spr.ring.SetZ(Z_RING);
+  spr.halo = Sprite();
+  spr.halo.SetZ(Z_HALO);
+  spr.mark = Sprite();
+  spr.mark.SetZ(Z_MARK);
+  spr.mark.SetOpacity(0);
+  spr.wordmark = Sprite();
+  spr.wordmark.SetZ(Z_HUD);
+  spr.raster = Sprite();
+  spr.raster.SetZ(Z_HUD);
+  spr.cursor = Sprite();
+  spr.cursor.SetZ(Z_HUD_TOP);
+  spr.head = Sprite();
+  spr.head.SetZ(Z_HUD_TOP);
+  spr.caret = Sprite();
+  spr.caret.SetZ(Z_HUD_TOP);
+  spr.caret.SetOpacity(0);
+
+  global.comet = pool(N_COMET, Z_COMET);
+  global.leds = pool(N_LED, Z_COMET);
+  global.pulses = pool(N_PULSE, Z_PULSE);
+  for (i = 0; i < N_PULSE; i++)
+    {
+      pulses[i].trail = Sprite();
+      pulses[i].trail.SetOpacity(0);
+      pulses[i].trail.SetZ(Z_PULSE);
+      pulses[i].on = 0;
+    }
+  global.flashes = pool(N_FLASH, Z_FLASH);
+  for (i = 0; i < N_FLASH; i++)
+    flashes[i].life = 0;
+  global.pings = pool(N_PING * N_RING, Z_PING);
+  global.ticks = pool(N_TICK, Z_HUD_TOP);
+  global.segs = pool(L.progress_segments, Z_HUD_TOP);
+  global.bullets = pool(N_BULLET, Z_HUD_TOP);
+
+  ice_r = 0.62;
+  ice_g = 0.88;
+  ice_b = 1.0;
+  label_l = L.cx - L.raster_w / 2;
+  label_r = L.cx + L.raster_w / 2;
+  label_d = L.raster_bottom + L.label_gap;
+  slots.status    = text_slot(L.cx, L.status_y, 0, "center", 13, ice_r, ice_g, ice_b, 0.85);
+  slots.secondary = text_slot(L.cx, L.secondary_y, 0, "center", 14, 1, 1, 1, 0.45);
+  slots.primary   = text_slot(L.cx, L.primary_y, 0, "center", 20, 1, 1, 1, 0.95);
+  slots.entry     = text_slot(L.cx, L.entry_y, 0, "center", 20, 1, 1, 1, 0.95);
+  slots.caps      = text_slot(L.cx, L.caps_y, 0, "center", 12, ice_r, ice_g, ice_b, 0.9);
+  slots.chan      = text_slot(label_l, label_d, 1, "left", 10, ice_r, ice_g, ice_b, 0.5);
+  slots.rate      = text_slot(label_r, label_d, 1, "right", 10, ice_r, ice_g, ice_b, 0.5);
+  global.slot_names = ["status", "secondary", "primary", "entry", "caps", "chan", "rate"];
+
+  for (i = 0; i < N_TICK; i++)
+    {
+      ticks[i].sweep = 0;
+      ticks[i].x = 0;
+    }
+  rs.head = 0;
+  rs.tail = 0;
+  rs.count = 0;
+  rs.sweep = 0;
+  rs.cursor = 0;
+}
+
+fun put(sprite, image, x, y)
+{
+  sprite.SetImage(image);
+  sprite.SetX(Math.Int(x - image.GetWidth() / 2));
+  sprite.SetY(Math.Int(y - image.GetHeight() / 2));
+}
+
+# Cover-fit the reference canvas; HUD rows anchor to the visible bottom edge.
+fun layout()
+{
+  w = Window.GetWidth();
+  h = Window.GetHeight();
+  if (w < 1 || h < 1)
+    return;
+  view.w = w;
+  view.h = h;
+  view.s = Math.Max(w / L.ref_w, h / L.ref_h);
+  view.ox = Window.GetX() + (w - L.ref_w * view.s) / 2;
+  view.oy = Window.GetY() + (h - L.ref_h * view.s) / 2;
+  view.bottom = Window.GetY() + h;
+  view.cx = sx(L.cx);
+  view.cy = sy(L.cy);
+  view.r = L.r * view.s;
+
+  for (i = 0; IMAGE_NAMES[i]; i++)
+    img[IMAGE_NAMES[i]] = scaled(IMAGE_NAMES[i]);
+
+  spr.mesh.SetImage(img.mesh);
+  spr.mesh.SetX(Math.Int(sx(L.mesh_x)));
+  spr.mesh.SetY(Math.Int(sy(L.mesh_y)));
+  put(spr.implant, img.implant, view.cx, view.cy);
+  put(spr.ring, img.ring, view.cx, view.cy);
+  put(spr.halo, img.halo, view.cx, view.cy);
+  put(spr.mark, img.markglow, view.cx, view.cy);
+  put(spr.wordmark, img.wordmark, view.cx, sy(L.wordmark_y));
+
+  for (t = 0; t < D.threads; t++)
+    for (j = 0; j < D.points; j++)
+      {
+        view.tx[t][j] = sx(D.tx[t][j]);
+        view.ty[t][j] = sy(D.ty[t][j]);
+      }
+
+  img.dot_half = img.dot.GetWidth() / 2;
+  img.pulse_half = img.pulse.GetWidth() / 2;
+  img.flash_half = img.flash.GetWidth() / 2;
+  ring = L.ring_r * view.s;
+  half = img.comet.GetWidth() / 2;
+  set_pool_image(comet, N_COMET, img.comet);
+  for (i = 0; i < N_COMET; i++)
+    {
+      a = Math.Pi / 2 + L.gap + (TAU - 2 * L.gap) * (i + 0.5) / N_COMET;
+      comet[i].a = a;
+      comet[i].shown = -1;
+      comet[i].sprite.SetX(Math.Int(view.cx + Math.Cos(a) * ring - half));
+      comet[i].sprite.SetY(Math.Int(view.cy + Math.Sin(a) * ring - half));
+    }
+  set_pool_image(leds, N_LED, img.dot);
+  for (i = 0; i < N_LED; i++)
+    {
+      a = Math.Pi / 2 + (2 * i - 1) * L.led_a;
+      leds[i].sprite.SetX(Math.Int(view.cx + Math.Cos(a) * ring - img.dot_half));
+      leds[i].sprite.SetY(Math.Int(view.cy + Math.Sin(a) * ring - img.dot_half));
+    }
+  set_pool_image(pings, N_PING * N_RING, img.dot);
+  for (i = 0; i < N_PING * N_RING; i++)
+    {
+      a = TAU * (i % N_PING + 0.5 * Math.Int(i / N_PING)) / N_PING;
+      pings[i].c = Math.Cos(a);
+      pings[i].sn = Math.Sin(a);
+    }
+  set_pool_image(pulses, N_PULSE, img.pulse);
+  for (i = 0; i < N_PULSE; i++)
+    pulses[i].trail.SetImage(img.dot);
+  set_pool_image(flashes, N_FLASH, img.flash);
+  set_pool_image(bullets, N_BULLET, img.bullet);
+  spr.caret.SetImage(img.caret);
+
+  rs.gap = L.raster_gap * view.s;
+  rs.x0 = view.cx - L.raster_w * view.s / 2;
+  rs.x1 = rs.x0 + L.raster_w * view.s;
+  rs.y0 = sb(L.raster_bottom) - L.raster_h * view.s;
+  rs.cursor = rs.x0;
+  rs.tick_w = img.tick.GetWidth() / 2;
+  rs.tick_h = img.tick.GetHeight() / 2;
+  spr.raster.SetImage(img.raster);
+  spr.raster.SetX(Math.Int(rs.x0 - L.raster_margin * view.s));
+  spr.raster.SetY(Math.Int(rs.y0 - L.raster_margin * view.s));
+  spr.cursor.SetImage(img.cursor);
+  spr.cursor.SetY(Math.Int(rs.y0 + L.raster_h * view.s / 2 - img.cursor.GetHeight() / 2));
+  set_pool_image(ticks, N_TICK, img.tick);
+  for (i = 0; i < N_TICK; i++)
+    ticks[i].sprite.SetOpacity(0);
+  rs.head = 0;
+  rs.tail = 0;
+  rs.count = 0;
+
+  pg.x0 = rs.x0;
+  pg.step = L.raster_w * view.s / L.progress_segments;
+  pg.y = sb(L.progress_bottom);
+  set_pool_image(segs, L.progress_segments, img.seg);
+  for (i = 0; i < L.progress_segments; i++)
+    {
+      segs[i].sprite.SetX(Math.Int(pg.x0 + i * pg.step + (pg.step - img.seg.GetWidth()) / 2));
+      segs[i].sprite.SetY(Math.Int(pg.y - img.seg.GetHeight() / 2));
+    }
+  spr.head.SetImage(img.head);
+  fx.seg_lit = -1;
+  fx.mesh_shown = -1;
+  fx.ring_shown = -1;
+  fx.caps = -1;
+
+  for (i = 0; slot_names[i]; i++)
+    slots[slot_names[i]].text = "#stale";
+  show_text(slots.chan, "N1   1024 CH");
+  render_ui();
+}
+
+
+fun spaced(text)
+{
+  s = String(text);
+  n = s.Length();
+  out = "";
+  for (i = 0; i < n; i++)
+    {
+      if (i > 0)
+        out = out + " ";
+      out = out + s.CharAt(i);
+    }
+  return out;
+}
+
+fun show_text(slot, text)
+{
+  if (text == slot.text)
+    return;
+  slot.text = text;
+  if (text == "")
+    {
+      slot.sprite.SetOpacity(0);
+      slot.fade = 1;
+      return;
+    }
+  size = Math.Max(6, Math.Int(slot.pt * view.s + 0.5));
+  image = Image.Text(text, slot.red, slot.green, slot.blue, 1, FONT + size, slot.align);
+  x = sx(slot.x);
+  if (slot.align == "center")
+    x = x - image.GetWidth() / 2;
+  if (slot.align == "right")
+    x = x - image.GetWidth();
+  y = sy(slot.y);
+  if (slot.bottom)
+    y = sb(slot.y);
+  slot.sprite.SetImage(image);
+  slot.sprite.SetX(Math.Int(x));
+  slot.sprite.SetY(Math.Int(y - image.GetHeight() / 2));
+  slot.sprite.SetOpacity(0);
+  slot.fade = 0;
+}
+
+fun render_ui()
+{
+  row = MODES[ui.mode];
+  status = row.status;
+  if (status == "")
+    status = phase_word();
+  last = "";
+  if (ui.nmsgs > 0)
+    last = ui.msgs[ui.nmsgs - 1];
+  primary = last;
+  secondary = "";
+  if (row.entry != "")
+    {
+      primary = ui.prompt;
+      secondary = last;
+    }
+  typed = "";
+  if (row.entry == "text")
+    typed = ui.entry;
+  show_text(slots.status, spaced(status));
+  show_text(slots.primary, primary);
+  show_text(slots.secondary, secondary);
+  show_text(slots.entry, typed);
+  show_bullets(row.entry == "bullets");
+}
+
+fun phase_word()
+{
+  word = PHASE[Plymouth.GetMode()];
+  if (word)
+    return word;
+  return "";
+}
+
+# Past N_BULLET characters the leading dots fade to show the row is truncated.
+fun show_bullets(active)
+{
+  n = 0;
+  if (active)
+    n = ui.bullets;
+  vis = Math.Min(n, N_BULLET);
+  gap = L.bullet_gap * view.s;
+  x0 = view.cx - (vis - 1) * gap / 2;
+  y = sy(L.entry_y);
+  half_w = img.bullet.GetWidth() / 2;
+  half_h = img.bullet.GetHeight() / 2;
+  for (i = 0; i < N_BULLET; i++)
+    {
+      b = bullets[i].sprite;
+      if (i < vis)
+        {
+          op = 1;
+          if (n > N_BULLET && i < 4)
+            op = (i + 1) / 5;
+          b.SetX(Math.Int(x0 + i * gap - half_w));
+          b.SetY(Math.Int(y - half_h));
+          b.SetOpacity(op);
+        }
+      else
+        b.SetOpacity(0);
+    }
+  ui.caret_x = x0 + vis * gap;
+  if (vis == 0)
+    ui.caret_x = view.cx;
+  ui.caret_on = active;
+  spr.caret.SetX(Math.Int(ui.caret_x - img.caret.GetWidth() / 2));
+  spr.caret.SetY(Math.Int(y - img.caret.GetHeight() / 2));
+  if (!active)
+    spr.caret.SetOpacity(0);
+  if (vis > 0 && ui.bullets_shown < n)
+    spark(x0 + (vis - 1) * gap, y, 0.55);
+  ui.bullets_shown = n;
+}
+
+fun keystroke(count)
+{
+  for (i = 0; i < Math.Min(count, 3); i++)
+    launch(Math.Int(Math.Random() * D.threads), i * 4 + Math.Int(Math.Random() * 3));
+}
+
+
+fun launch(th, delay)
+{
+  for (tries = 0; tries < N_PULSE; tries++)
+    {
+      k = fx.pulse_rr;
+      fx.pulse_rr = (fx.pulse_rr + 1) % N_PULSE;
+      if (!pulses[k].on)
+        {
+          p = pulses[k];
+          p.on = 1;
+          p.th = th;
+          p.du = PULSE_SPEED / D.len[th] / FPS;
+          p.u = -delay * p.du;
+          p.lag = 26 / D.len[th];
+          return;
+        }
+    }
+}
+
+# Pulses start staggered by thread length so the wave reaches the implant together.
+fun launch_volley(count)
+{
+  if (count < 1)
+    return;
+  longest = 0;
+  for (th = 0; th < D.threads; th++)
+    longest = Math.Max(longest, D.len[th]);
+  arrive = longest / PULSE_SPEED * FPS;
+  start = Math.Int(Math.Random() * D.threads);
+  for (i = 0; i < Math.Min(count, D.threads); i++)
+    {
+      th = (start + Math.Int(i * D.threads / Math.Min(count, D.threads))) % D.threads;
+      travel = D.len[th] / PULSE_SPEED * FPS;
+      launch(th, arrive - travel + Math.Random() * 4);
+    }
+  fx.shock_at = fx.t + arrive / FPS;
+  fx.shock_gain = Math.Min(1, count / 20);
+}
+
+fun spark(x, y, life)
+{
+  f = flashes[fx.flash_rr];
+  fx.flash_rr = (fx.flash_rr + 1) % N_FLASH;
+  f.life = life;
+  f.sprite.SetX(Math.Int(x - img.flash_half));
+  f.sprite.SetY(Math.Int(y - img.flash_half));
+  f.sprite.SetOpacity(life);
+}
+
+fun spike(channel, strength)
+{
+  if (rs.count == N_TICK)
+    {
+      ticks[rs.tail].sprite.SetOpacity(0);
+      rs.tail = (rs.tail + 1) % N_TICK;
+      rs.count = rs.count - 1;
+    }
+  tk = ticks[rs.head];
+  tk.sweep = rs.sweep;
+  tk.x = rs.cursor;
+  tk.sprite.SetX(Math.Int(rs.cursor - rs.tick_w));
+  tk.sprite.SetY(Math.Int(rs.y0 + (channel + 0.5) * rs.gap - rs.tick_h));
+  tk.sprite.SetOpacity(strength);
+  rs.head = (rs.head + 1) % N_TICK;
+  rs.count = rs.count + 1;
+  fx.spikes = fx.spikes + 1;
+}
+
+fun place(sprite, th, u, half)
+{
+  f = u * (D.points - 1);
+  j = Math.Min(Math.Int(f), D.points - 2);
+  fr = f - j;
+  xs = view.tx[th];
+  ys = view.ty[th];
+  sprite.SetX(Math.Int(xs[j] + (xs[j + 1] - xs[j]) * fr - half));
+  sprite.SetY(Math.Int(ys[j] + (ys[j + 1] - ys[j]) * fr - half));
+}
+
+fun step_firing(row)
+{
+  fx.fire_acc = fx.fire_acc + row.rate * DT;
+  while (fx.fire_acc >= 1)
+    {
+      fx.fire_acc = fx.fire_acc - 1;
+      launch(Math.Int(Math.Random() * D.threads), Math.Int(Math.Random() * 6));
+    }
+  fx.noise_acc = fx.noise_acc + row.noise * DT;
+  while (fx.noise_acc >= 1)
+    {
+      fx.noise_acc = fx.noise_acc - 1;
+      spike(Math.Int(Math.Random() * L.raster_rows), 0.25 + Math.Random() * 0.35);
+    }
+}
+
+fun step_pulses()
+{
+  for (k = 0; k < N_PULSE; k++)
+    {
+      p = pulses[k];
+      if (!p.on)
+        continue;
+      was = p.u;
+      p.u = p.u + p.du;
+      if (was < 0 && p.u >= 0)
+        {
+          spark(view.tx[p.th][0], view.ty[p.th][0], 0.9);
+          spike(p.th % L.raster_rows, 0.95);
+        }
+      if (p.u >= 1)
+        {
+          p.on = 0;
+          p.sprite.SetOpacity(0);
+          p.trail.SetOpacity(0);
+          fx.rim = Math.Min(1, fx.rim + 0.12);
+          continue;
+        }
+      if (p.u < 0)
+        continue;
+      place(p.sprite, p.th, p.u, img.pulse_half);
+      p.sprite.SetOpacity(Math.Min(1, 0.55 + p.u));
+      if (p.u > p.lag)
+        {
+          place(p.trail, p.th, p.u - p.lag, img.dot_half);
+          p.trail.SetOpacity(0.5);
+        }
+    }
+}
+
+fun step_flashes()
+{
+  for (k = 0; k < N_FLASH; k++)
+    {
+      f = flashes[k];
+      if (f.life <= 0)
+        continue;
+      f.life = f.life - 0.045;
+      if (f.life < 0.02)
+        f.life = 0;
+      f.sprite.SetOpacity(f.life * f.life);
+    }
+}
+
+fun step_comet(row)
+{
+  fx.spin = fx.spin + row.spin * TAU * DT;
+  if (fx.spin >= TAU)
+    fx.spin = fx.spin - TAU;
+  gain = 1 - row.breathe * 0.12 * (1 + Math.Sin(fx.t * TAU * 0.8));
+  tail = 0.42 * TAU;
+  for (k = 0; k < N_COMET; k++)
+    {
+      d = fx.spin - comet[k].a;
+      while (d < 0)
+        d = d + TAU;
+      while (d >= TAU)
+        d = d - TAU;
+      v = 0;
+      if (d < tail)
+        {
+          v = 1 - d / tail;
+          v = 0.4 * v + 0.6 * v * v;
+        }
+      v = Math.Int(v * gain * 64) / 64;
+      if (v != comet[k].shown)
+        {
+          comet[k].sprite.SetOpacity(v);
+          comet[k].shown = v;
+        }
+    }
+}
+
+# Two rings ping outward while searching; the third is a one-shot shockwave on volley arrival.
+fun step_pings(row)
+{
+  fx.ping_gain = fx.ping_gain + (row.breathe - fx.ping_gain) * 0.05;
+  since = fx.t - fx.shock_at;
+  for (ring = 0; ring < N_RING; ring++)
+    {
+      op = 0;
+      if (ring < 2 && fx.ping_gain > 0.02)
+        {
+          ph = fx.t * 0.55 + ring * 0.5;
+          ph = ph - Math.Int(ph);
+          radius = view.r + (14 + ph * 330) * view.s;
+          op = fx.ping_gain * 0.6 * (1 - ph) * (1 - ph);
+        }
+      if (ring == 2 && since >= 0 && since < 1.4)
+        {
+          ph = since / 1.4;
+          radius = view.r + (6 + ph * 900) * view.s;
+          op = 0.9 * (1 - ph) * (1 - ph);
+        }
+      for (k = ring * N_PING; k < (ring + 1) * N_PING; k++)
+        {
+          pg_dot = pings[k];
+          if (op < 0.012)
+            {
+              if (pg_dot.shown)
+                {
+                  pg_dot.sprite.SetOpacity(0);
+                  pg_dot.shown = 0;
+                }
+              continue;
+            }
+          pg_dot.sprite.SetX(Math.Int(view.cx + pg_dot.c * radius - img.dot_half));
+          pg_dot.sprite.SetY(Math.Int(view.cy + pg_dot.sn * radius - img.dot_half));
+          pg_dot.sprite.SetOpacity(op);
+          pg_dot.shown = 1;
+        }
+    }
+}
+
+# The ring and the logomark light up as pulses arrive; a volley lands as one surge.
+fun step_halo(row)
+{
+  fx.rim = fx.rim * 0.93;
+  breath = 0;
+  if (row.entry != "")
+    breath = 0.07 * Math.Sin(fx.t * TAU * 0.45);
+  since = fx.t - fx.shock_at;
+  surge = 0;
+  if (since >= 0 && since < 1.6)
+    surge = fx.shock_gain * (1 - since / 1.6) * (1 - since / 1.6);
+  spr.halo.SetOpacity(Math.Clamp(row.glow + breath + fx.rim * 0.85 + surge, 0, 1));
+  spr.mark.SetOpacity(Math.Clamp(row.glow * 0.5 + fx.rim * 0.9 + surge, 0, 1));
+
+  fx.ring = fx.ring + (row.ring - fx.ring) * 0.06;
+  q = Math.Int(fx.ring * 32 + 0.5) / 32;
+  if (q != fx.ring_shown)
+    {
+      spr.ring.SetOpacity(q);
+      fx.ring_shown = q;
+    }
+}
+
+fun step_leds(row)
+{
+  for (k = 0; k < N_LED; k++)
+    {
+      v = 1;
+      if (row.led == "blink")
+        v = 0.08 + 0.92 * (Math.Int(fx.t * row.led_hz * 2 + k) % 2);
+      if (row.led == "breathe")
+        v = 0.15 + 0.85 * (0.5 + 0.5 * Math.Sin(fx.t * TAU * row.led_hz));
+      leds[k].sprite.SetOpacity(v);
+    }
+}
+
+# Quantized so the full-screen mesh is recomposited only on visible steps.
+fun step_mesh(row)
+{
+  fx.mesh = fx.mesh + (row.mesh - fx.mesh) * 0.08;
+  q = Math.Int(fx.mesh * 20 + 0.5) / 20;
+  if (q != fx.mesh_shown)
+    {
+      spr.mesh.SetOpacity(q);
+      fx.mesh_shown = q;
+    }
+}
+
+fun step_raster()
+{
+  rs.cursor = rs.cursor + SWEEP_SPEED * view.s * DT;
+  if (rs.cursor > rs.x1)
+    {
+      rs.cursor = rs.x0;
+      rs.sweep = rs.sweep + 1;
+    }
+  ahead = rs.cursor + 40 * view.s;
+  while (rs.count > 0)
+    {
+      tk = ticks[rs.tail];
+      if (tk.sweep >= rs.sweep || tk.x > ahead)
+        break;
+      tk.sprite.SetOpacity(0);
+      rs.tail = (rs.tail + 1) % N_TICK;
+      rs.count = rs.count - 1;
+    }
+  spr.cursor.SetX(Math.Int(rs.cursor - img.cursor.GetWidth() / 2));
+
+  if (fx.t - fx.spikes_since >= 1)
+    {
+      rate = Math.Int(fx.spikes / (fx.t - fx.spikes_since) + 0.5);
+      digits = "" + rate;
+      if (rate < 100)
+        digits = "0" + digits;
+      if (rate < 10)
+        digits = "0" + digits;
+      show_text(slots.rate, "SPK/S " + digits);
+      fx.spikes = 0;
+      fx.spikes_since = fx.t;
+    }
+}
+
+fun step_progress()
+{
+  fx.progress = fx.progress + (fx.progress_target - fx.progress) * 0.04;
+  n = L.progress_segments;
+  f = Math.Clamp(fx.progress, 0, 1) * n;
+  lit = Math.Int(f);
+  lo = 0;
+  hi = n - 1;
+  if (fx.seg_lit >= 0)
+    {
+      lo = Math.Max(0, Math.Min(lit, fx.seg_lit) - 1);
+      hi = Math.Min(n - 1, Math.Max(lit, fx.seg_lit) + 1);
+    }
+  for (k = lo; k <= hi; k++)
+    {
+      op = 0.1;
+      if (k < lit)
+        op = 0.8;
+      if (k == lit)
+        op = 0.1 + 0.7 * (f - lit);
+      segs[k].sprite.SetOpacity(op);
+    }
+  fx.seg_lit = lit;
+  spr.head.SetX(Math.Int(pg.x0 + f * pg.step - img.head.GetWidth() / 2));
+  spr.head.SetY(Math.Int(pg.y - img.head.GetHeight() / 2));
+  spr.head.SetOpacity(Math.Clamp(f * 2, 0, 0.9));
+}
+
+fun step_text(row)
+{
+  for (i = 0; slot_names[i]; i++)
+    {
+      slot = slots[slot_names[i]];
+      if (slot.fade >= 1)
+        continue;
+      slot.fade = Math.Min(1, slot.fade + 0.08);
+      slot.sprite.SetOpacity(slot.alpha * slot.fade);
+    }
+  if (ui.caret_on)
+    spr.caret.SetOpacity(0.25 + 0.55 * (0.5 + 0.5 * Math.Cos(fx.t * TAU * 1.1)));
+
+  caps = 0;
+  if (row.entry != "")
+    caps = Plymouth.GetCapslockState();
+  if (caps != fx.caps)
+    {
+      fx.caps = caps;
+      if (caps)
+        show_text(slots.caps, spaced("CAPS LOCK"));
+      else
+        show_text(slots.caps, "");
+    }
+}
+
+fun on_refresh()
+{
+  if (Window.GetWidth() != view.w || Window.GetHeight() != view.h)
+    layout();
+  if (!view.s)
+    return;
+  fx.t = fx.t + DT;
+  row = MODES[ui.mode];
+  if (row.hold > 0 && fx.t - ui.since > row.hold)
+    {
+      enter_mode(base_mode());
+      render_ui();
+      row = MODES[ui.mode];
+    }
+  step_mesh(row);
+  step_firing(row);
+  step_pulses();
+  step_flashes();
+  step_comet(row);
+  step_pings(row);
+  step_halo(row);
+  step_leds(row);
+  step_raster();
+  step_progress();
+  step_text(row);
+}
+
+build();
+layout();
+
+Plymouth.SetRefreshFunction(on_refresh);
+Plymouth.SetBootProgressFunction(on_progress);
+Plymouth.SetRootMountedFunction(on_root_mounted);
+Plymouth.SetDisplayNormalFunction(on_normal);
+Plymouth.SetDisplayPasswordFunction(on_password);
+Plymouth.SetDisplayQuestionFunction(on_question);
+Plymouth.SetDisplayMessageFunction(on_message);
+Plymouth.SetHideMessageFunction(on_hide_message);

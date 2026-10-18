@@ -12,6 +12,7 @@
   ];
 
   boot.kernelModules = ["kvm-intel"];
+  dreaming.core.boot.aspect = "16x9";
 
   fileSystems."/" = {
     device = "/dev/disk/by-uuid/059dc105-5a7a-4c4c-967c-af7bc6c7dd1a";
