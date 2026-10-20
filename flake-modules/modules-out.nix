@@ -9,8 +9,6 @@
     loader = inputs.haumea.lib.loaders.path;
   };
   allModulePaths = lib.collect builtins.isPath moduleTree;
-
-  isUnder = dir: p: lib.hasPrefix (toString (../modules + "/${dir}")) (toString p);
   isHmModule = p: lib.hasSuffix "/nix-file-overlay/hm-module.nix" (toString p);
 
   # Derive a flat export name from a module path, e.g.
@@ -32,11 +30,9 @@
 
   toModuleSet = paths: lib.listToAttrs (map (p: lib.nameValuePair (exportName p) p) paths);
 
-  nixosModulePaths = builtins.filter (p: !(isUnder "darwin" p) && !(isHmModule p)) allModulePaths;
-  darwinModulePaths = builtins.filter (isUnder "darwin") allModulePaths;
+  nixosModulePaths = builtins.filter (p: !(isHmModule p)) allModulePaths;
   hmModulePaths = builtins.filter isHmModule allModulePaths;
 in {
   flake.nixosModules = toModuleSet nixosModulePaths;
-  flake.darwinModules = toModuleSet darwinModulePaths;
   flake.hmModules = toModuleSet hmModulePaths;
 }
