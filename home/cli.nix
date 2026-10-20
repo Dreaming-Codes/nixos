@@ -104,9 +104,9 @@
       exitShellOnExit = true;
     };
 
-    # Shared git config across Linux and Darwin. Platform-specific bits (e.g.
-    # the Linux libsecret credential helper) are merged in from the per-host
-    # home configs via additional `programs.git.settings` blocks.
+    # Shared git config. Host-specific bits (e.g. the libsecret credential
+    # helper) are merged in from the per-host home configs via additional
+    # `programs.git.settings` blocks.
     git = {
       enable = true;
       package = pkgs.gitFull;
@@ -211,14 +211,10 @@
         end
         abbr -a dockertui oxker
       '';
-      shellAliases =
-        {
-          htop = "btop";
-        }
-        # `shutdown` via systemctl is Linux-only.
-        // lib.optionalAttrs pkgs.stdenv.isLinux {
-          shutdown = "systemctl poweroff";
-        };
+      shellAliases = {
+        htop = "btop";
+        shutdown = "systemctl poweroff";
+      };
       functions = {
         binds = ''
           echo "╔═══════════════════════════════════════════════════════════════╗"

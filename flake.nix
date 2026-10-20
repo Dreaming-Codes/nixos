@@ -2,8 +2,7 @@
   description = "NixOS system flake";
 
   # Public caches only. The n7k artifact-s3-gateway lives in modules/work
-  # (and darwin common for the NeuraBook) so personal hosts never see it via
-  # flake nixConfig / --accept-flake-config.
+  # so personal hosts never see it via flake nixConfig / --accept-flake-config.
   nixConfig = {
     substituters = [
       "https://install.determinate.systems?priority=20"
@@ -45,10 +44,6 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nix-darwin = {
-      url = "github:nix-darwin/nix-darwin";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     razer-laptop-controller = {
       url = "github:JosuGZ/razer-laptop-control-no-dkms";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -59,10 +54,6 @@
     };
     sops-nix = {
       url = "github:Mic92/sops-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    paneru = {
-      url = "github:karinushka/paneru";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -91,7 +82,6 @@
       systems = [
         "x86_64-linux"
         "aarch64-linux"
-        "aarch64-darwin"
       ];
       imports =
         [

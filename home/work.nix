@@ -45,11 +45,11 @@ in {
     };
   };
 
-  # Stock zed (system on Linux, HM default on Darwin). Reads NLK_GATEWAY_API_KEY
+  # Stock zed from the system profile. Reads NLK_GATEWAY_API_KEY
   # from the user environment after `nlk-llm-proxy login` / shell hook / auth.
   programs.zed-editor = {
     enable = true;
-    package = lib.mkIf pkgs.stdenv.isLinux null;
+    package = null;
     # Helix theme = "transparent" inherits material_darker syntax but clears
     # ui.background, so the real bg is Rio (#141218 / #e6e0e9) — not #212121.
     # nix extension so alejandra can format Nix buffers (helix languages.toml).
@@ -313,7 +313,7 @@ in {
 
   # At graphical login, install token into environment.d / systemd --user so
   # stock zeditor (desktop) sees NLK_GATEWAY_API_KEY without a wrapper.
-  systemd.user.services.nlk-gateway-env = lib.mkIf pkgs.stdenv.isLinux {
+  systemd.user.services.nlk-gateway-env = {
     Unit = {
       Description = "Neuralink AI gateway token →  user environment";
       After = ["graphical-session-pre.target" "sops-nix.service"];
@@ -331,7 +331,7 @@ in {
   };
 
   # Refresh before typical id_token expiry (~1h).
-  systemd.user.timers.nlk-gateway-env = lib.mkIf pkgs.stdenv.isLinux {
+  systemd.user.timers.nlk-gateway-env = {
     Unit.Description = "Refresh Neuralink AI gateway token";
     Timer = {
       OnStartupSec = "30s";
