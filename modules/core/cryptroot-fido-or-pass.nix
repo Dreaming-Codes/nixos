@@ -45,7 +45,7 @@ in {
       extraBin = {
         systemd-ask-password = "${pkgs.systemd}/bin/systemd-ask-password";
         # Wait UI uses display-message / hide-message / watch-keystroke.
-        plymouth = "${pkgs.plymouth}/bin/plymouth";
+        plymouth = lib.mkDefault "${config.boot.plymouth.package}/bin/plymouth";
       }
       // lib.optionalAttrs cfg.numlock {
         setleds = "${pkgs.kbd}/bin/setleds";
