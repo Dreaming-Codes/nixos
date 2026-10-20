@@ -9,9 +9,6 @@
   modules = config.boot.kernelPackages.callPackage (self + "/packages/galaxybook6-camera") {};
   userspace = pkgs.callPackage (self + "/packages/galaxybook6-camera/userspace.nix") {};
   ipaConfigPath = "${userspace}/share/libcamera/ipa";
-
-  # NixOS wireplumber already sets this; we re-apply after UnsetEnvironment.
-  wpDataDirs = config.systemd.user.services.wireplumber.environment.XDG_DATA_DIRS or "";
 in {
   options.dreaming.hardware.galaxybook6-camera = {
     enable = lib.mkEnableOption ''
@@ -27,10 +24,6 @@ in {
         assertion = config.services.pipewire.wireplumber.enable;
         message = "dreaming.hardware.galaxybook6-camera requires services.pipewire.wireplumber.enable";
       }
-      {
-        assertion = wpDataDirs != "";
-        message = "dreaming.hardware.galaxybook6-camera: wireplumber XDG_DATA_DIRS is empty";
-      }
     ];
 
     boot.extraModulePackages = [modules];
@@ -42,30 +35,21 @@ in {
     ];
     environment.sessionVariables.LIBCAMERA_IPA_CONFIG_PATH = ipaConfigPath;
 
-    # PipeWire libcamera path for browsers:
-    # 1) Stock wireplumber.service sets MemoryDenyWriteExecute=yes, which
-    #    prevents spa-libcamera from creating Video/Source nodes.
-    # 2) The user manager's long XDG_DATA_DIRS must be cleared and replaced
-    #    with the unit value, or libcamera monitor ends up with no sources
-    #    even when cam(1) works.
+    # Stock wireplumber.service sets MemoryDenyWriteExecute=yes, which
+    # prevents spa-libcamera from creating Video/Source nodes.
     systemd.user.services.wireplumber = {
-      serviceConfig = {
-        MemoryDenyWriteExecute = lib.mkForce "no";
-        UnsetEnvironment = ["XDG_DATA_DIRS"];
-        Environment = lib.mkAfter [
-          "XDG_DATA_DIRS=${wpDataDirs}"
-          "LIBCAMERA_IPA_CONFIG_PATH=${ipaConfigPath}"
-        ];
-      };
+      environment.LIBCAMERA_IPA_CONFIG_PATH = ipaConfigPath;
+      serviceConfig.MemoryDenyWriteExecute = lib.mkForce "no";
     };
 
     # Hide raw IPU7 ISYS Bayer nodes from the V4L2 monitor. Capture is the
-    # libcamera "Built-in Front Camera" source.
+    # libcamera "Built-in Front Camera" source. api.v4l2.cap.* is not yet
+    # populated when device rules run, so match the PCI path.
     services.pipewire.wireplumber.extraConfig."50-ipu7-hide-v4l2" = {
       "monitor.v4l2.rules" = [
         {
           matches = [
-            {"api.v4l2.cap.driver" = "isys";}
+            {"device.name" = "~v4l2_device.pci-0000_00_05.0*";}
           ];
           actions = {
             update-props = {
