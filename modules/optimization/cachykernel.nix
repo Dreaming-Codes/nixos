@@ -68,6 +68,17 @@ in {
       '';
     };
 
+    binaryCache = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Substitute the kernel from cache.xinux.uz instead of building it. Off by
+        default: the kernel builds on the Nix Build Heaven builder whenever it
+        changes. The pinned overlay keeps derivations identical to the cache's,
+        so turning this on still hits.
+      '';
+    };
+
     cpuArch = lib.mkOption {
       type = lib.types.nullOr (
         lib.types.enum [
@@ -94,6 +105,11 @@ in {
   config = lib.mkIf cfg.enable {
     nixpkgs.overlays = [inputs.nix-cachyos-kernel.overlays.default];
     boot.kernelPackages = pkgs.cachyosKernels.${kernelAttr};
+
+    nix.settings = lib.mkIf cfg.binaryCache {
+      extra-substituters = ["https://cache.xinux.uz?priority=44"];
+      extra-trusted-public-keys = ["cache.xinux.uz:BXCrtqejFjWzWEB9YuGB7X2MV4ttBur1N8BkwQRdH+0="];
+    };
 
     warnings = lib.optional (!hasFacter) ''
       dreaming.optimization.cachykernel: nixos-facter report not available.
