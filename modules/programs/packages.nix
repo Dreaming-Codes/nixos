@@ -247,8 +247,7 @@ in {
         # Secrets management
         sops
       ]
-      # x86_64-only apps with no native aarch64 build. See docs/asahi-x86-emulation.md
-      # for the FEX/muvm plan to run these on Asahi.
+      # x86_64-only apps with no native aarch64 build.
       ++ lib.optionals isX86 [
         onlyoffice-desktopeditors
         zoom-us

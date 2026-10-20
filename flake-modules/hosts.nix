@@ -45,9 +45,7 @@ in {
         ++ nixosFeatureModules;
     };
 
-    # x86_64 Linux hosts get the x86-only base (wifi + games toggles). aarch64
-    # (Asahi) hosts manage boot/graphics themselves and disable those feature
-    # modules in their own host file.
+    # x86_64 Linux hosts get the x86-only base (wifi + games toggles).
     perArch = arch: {
       modules = lib.optionals (arch == "x86_64") [
         ../hosts/common-x86.nix
@@ -67,13 +65,6 @@ in {
         {facter.reportPath = ../hosts/x86_64-nixos/DreamingBlade/facter.json;}
         inputs.razer-laptop-controller.nixosModules.default
         ../hosts/common-laptop.nix
-      ];
-
-      DreamingWork.modules = [
-        inputs.apple-silicon.nixosModules.apple-silicon-support
-        ../hosts/common-laptop.nix
-        {dreaming.programs.pwaApps.enable = true;}
-        {dreaming.work.enable = true;}
       ];
 
       # The Dell is provisioned fresh via disko (declarative disk layout in its

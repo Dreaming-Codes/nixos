@@ -1,8 +1,4 @@
-{
-  config,
-  lib,
-  ...
-}: {
+{...}: {
   # All feature modules are imported for every nixos host via easy-hosts
   # (flake-modules/hosts.nix, perClass "nixos"). This file only selects features
   # via dreaming.* toggles and sets the few unconditional shared settings.
@@ -35,9 +31,7 @@
   };
 
   # Ensure geoclue starts after wpa_supplicant to reduce WiFi scan race condition.
-  # Only applies when wpa_supplicant is the NetworkManager backend (iwd-based hosts
-  # like the Asahi work laptop have no such unit).
-  systemd.services.geoclue = lib.mkIf (config.networking.networkmanager.wifi.backend != "iwd") {
+  systemd.services.geoclue = {
     after = ["wpa_supplicant.service"];
     wants = ["wpa_supplicant.service"];
   };
