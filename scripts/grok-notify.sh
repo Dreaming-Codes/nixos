@@ -106,10 +106,3 @@ if command -v notify-send >/dev/null 2>&1; then
   fi
   exit 0
 fi
-
-if command -v osascript >/dev/null 2>&1; then
-  escape() {
-    printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
-  }
-  osascript -e "display notification \"$(escape "$body")\" with title \"$(escape "$title")\"" || true
-fi

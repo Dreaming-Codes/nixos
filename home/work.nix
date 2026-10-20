@@ -402,10 +402,5 @@ in {
     if command -v dms >/dev/null 2>&1; then
       dms ipc call wallpaper set "$wallpaper" >/dev/null 2>&1 || true
     fi
-
-    # DreamingNeuraBook (darwin) has no DMS; set the desktop picture directly.
-    if [ "$(uname -s)" = "Darwin" ] && command -v osascript >/dev/null 2>&1; then
-      osascript -e "tell application \"System Events\" to tell every desktop to set picture to \"$wallpaper\"" >/dev/null 2>&1 || true
-    fi
   '';
 }
