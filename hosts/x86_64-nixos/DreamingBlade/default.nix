@@ -98,6 +98,7 @@ in {
     enable = true;
     nvidiaBusId = "PCI:1:0:0";
     amdgpuBusId = "PCI:4:0:0";
+    cudaCapabilities = ["8.6"];
   };
 
   hardware.keyboard.qmk.enable = true;
@@ -112,6 +113,4 @@ in {
     SUBSYSTEM=="usb", ATTR{idVendor}=="0925", ATTR{idProduct}=="3881", MODE="0666"
     SUBSYSTEM=="usb", ATTR{idVendor}=="21a9", MODE="0666"
   '';
-
-  dreaming.services.nbh.enable = true;
 }

@@ -23,6 +23,8 @@
   };
 
   dreaming.optimization.enable = true;
+  dreaming.services.nbh.enable = true;
+  dreaming.services.nbhCache.enable = true;
 
   dreaming.nixFileOverlay = {
     enable = true;

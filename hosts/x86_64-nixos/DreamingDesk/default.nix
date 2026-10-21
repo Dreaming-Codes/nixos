@@ -109,6 +109,4 @@
     "amdgpu.ppfeaturemask=0xFFF7FFFF"
     ''vfio-pci.ids="10de:1b81,10de:10f0"''
   ];
-
-  dreaming.services.nbh.enable = true;
 }
