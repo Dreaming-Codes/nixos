@@ -19,6 +19,11 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
     nix-cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/release";
+    nix-build-heaven = {
+      url = "git+ssh://git@github.com/Dreaming-Codes/nix-build-heaven";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.determinate.follows = "determinate";
+    };
     nur = {
       url = "github:nix-community/NUR";
       inputs.nixpkgs.follows = "nixpkgs";
