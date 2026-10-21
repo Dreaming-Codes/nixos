@@ -30,13 +30,12 @@ in
     dontStrip = true;
     dontPatchELF = true;
 
-    # updates/ overrides the in-tree ipu_bridge; extra/ holds sc200pc.
+    # modules_install signs each module (writing the .ko.cer the module
+    # aggregator needs); updates/ overrides the in-tree ipu_bridge.
     installPhase = ''
       runHook preInstall
-      install -Dm644 sc200pc.ko \
-        "$out/lib/modules/${kernel.modDirVersion}/extra/sc200pc.ko"
-      install -Dm644 ipu-bridge.ko \
-        "$out/lib/modules/${kernel.modDirVersion}/updates/ipu-bridge.ko"
+      make -C ${kdir} M="$PWD" $makeFlags \
+        INSTALL_MOD_PATH="$out" INSTALL_MOD_DIR=updates modules_install
       runHook postInstall
     '';
 
