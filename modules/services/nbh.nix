@@ -33,7 +33,7 @@ in {
       enable = lib.mkOption {
         type = lib.types.bool;
         default = true;
-        description = "Substitute from the Nix Build Heaven S3 cache and keep this host's roots in it.";
+        description = "Substitute from the Nix Build Heaven S3 cache and keep the running system's closure rooted in it.";
       };
       bucket = lib.mkOption {
         type = lib.types.str;
@@ -66,8 +66,6 @@ in {
             credentialsFile = config.sops.secrets.nbh_gate_credentials.path;
           };
           extraArgs = [
-            # Each gate adopts and terminates only builders tagged with its own owner.
-            "--owner" config.networking.hostName
             "--instance-types" "c7i.24xlarge,c7a.24xlarge,m7a.24xlarge"
             "--max-price" "0.80"
           ];
