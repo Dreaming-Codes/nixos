@@ -444,11 +444,11 @@
         "terranix": "terranix"
       },
       "locked": {
-        "lastModified": 1792553698,
-        "narHash": "sha256-QLOFn6dGWzcscMLIzIwiJS3aiDSg3XusSIUxrCjquis=",
+        "lastModified": 1792558216,
+        "narHash": "sha256-kj3vl23pM4o0bABTDjxLdHDmfBPrkGBSbYnvIFsh/PE=",
         "ref": "refs/heads/main",
-        "rev": "80f5ae1ebcca8c7f9430dd8f6fe0f2f1a0b058d7",
-        "revCount": 92,
+        "rev": "a941eb451ac846d50081e593ce758edeb8e35215",
+        "revCount": 98,
         "type": "git",
         "url": "ssh://git@github.com/Dreaming-Codes/nix-build-heaven"
       },
