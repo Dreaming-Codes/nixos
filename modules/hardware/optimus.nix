@@ -41,6 +41,17 @@ in {
       description = "Enable nixpkgs cudaSupport for packages that opt into CUDA.";
     };
 
+    cudaCapabilities = lib.mkOption {
+      type = lib.types.nullOr (lib.types.listOf lib.types.str);
+      default = null;
+      example = ["8.6"];
+      description = ''
+        CUDA compute capabilities to compile device code for, usually just the
+        dGPU's. Also turns off PTX for newer GPUs. null keeps the nixpkgs
+        default of every capability the CUDA release supports.
+      '';
+    };
+
     containerToolkit = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -71,6 +82,8 @@ in {
       # CUDA for the dGPU. Avoid global rocmSupport — no binary cache covers
       # rocm-tainted closures broadly, which forces local rebuilds of vtk/etc.
       nixpkgs.config.cudaSupport = lib.mkIf cfg.cudaSupport true;
+      nixpkgs.config.cudaCapabilities = lib.mkIf (cfg.cudaSupport && cfg.cudaCapabilities != null) cfg.cudaCapabilities;
+      nixpkgs.config.cudaForwardCompat = lib.mkIf (cfg.cudaSupport && cfg.cudaCapabilities != null) false;
 
       boot.kernelParams = ["nvidia.NVreg_PreserveVideoMemoryAllocations=1"];
 
