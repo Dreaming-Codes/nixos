@@ -98,6 +98,7 @@ in {
     enable = true;
     nvidiaBusId = "PCI:1:0:0";
     amdgpuBusId = "PCI:4:0:0";
+    cudaCapabilities = ["8.6"];
   };
 
   hardware.keyboard.qmk.enable = true;

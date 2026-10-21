@@ -23,6 +23,17 @@
   };
 
   dreaming.optimization.enable = true;
+  dreaming.services.nbh = {
+    enable = true;
+    aws = {
+      account = "845087560967";
+      region = "eu-north-1";
+    };
+    cache = {
+      bucket = "nbh-cache-845087560967";
+      publicKey = "nbh-cache-845087560967-1:ncBMB14sruhdtGhlkrHt3tLw8xGBwq33QiQUM/760Rc=";
+    };
+  };
 
   dreaming.nixFileOverlay = {
     enable = true;

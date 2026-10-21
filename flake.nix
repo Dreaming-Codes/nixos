@@ -7,17 +7,10 @@
     substituters = [
       "https://install.determinate.systems?priority=20"
       "https://cache.nixos.org?priority=40"
-      "https://nix-community.cachix.org?priority=41"
-      "https://numtide.cachix.org?priority=43"
-      "https://cache.xinux.uz?priority=44"
-      "https://cache.nixos-cuda.org?priority=45"
     ];
     extra-trusted-public-keys = [
       "cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM="
-      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-      "numtide.cachix.org-1:2ps1kLBUWjxIneOy1Ik6cQjb41X0iXVXeHigGmycPPE="
-      "cache.xinux.uz:BXCrtqejFjWzWEB9YuGB7X2MV4ttBur1N8BkwQRdH+0="
-      "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M="
+      "cache.flakehub.com-4:Asi8qIv291s0aYLyH6IOnr5Kf6+OF14WVjkE6t3xMio="
     ];
   };
 
@@ -25,6 +18,11 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
     nix-cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/release";
+    nix-build-heaven = {
+      url = "github:Dreaming-Codes/nix-build-heaven";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.determinate.follows = "determinate";
+    };
     nur = {
       url = "github:nix-community/NUR";
       inputs.nixpkgs.follows = "nixpkgs";
