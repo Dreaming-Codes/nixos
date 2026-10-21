@@ -446,15 +446,15 @@
       "locked": {
         "lastModified": 1792558216,
         "narHash": "sha256-kj3vl23pM4o0bABTDjxLdHDmfBPrkGBSbYnvIFsh/PE=",
-        "ref": "refs/heads/main",
+        "owner": "Dreaming-Codes",
+        "repo": "nix-build-heaven",
         "rev": "a941eb451ac846d50081e593ce758edeb8e35215",
-        "revCount": 98,
-        "type": "git",
-        "url": "ssh://git@github.com/Dreaming-Codes/nix-build-heaven"
+        "type": "github"
       },
       "original": {
-        "type": "git",
-        "url": "ssh://git@github.com/Dreaming-Codes/nix-build-heaven"
+        "owner": "Dreaming-Codes",
+        "repo": "nix-build-heaven",
+        "type": "github"
       }
     },
     "nix-cachyos-kernel": {
