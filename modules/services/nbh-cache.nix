@@ -6,7 +6,6 @@
 }: let
   cfg = config.dreaming.services.nbhCache;
 in {
-  # Merging nbh-ssh-ng-client means importing the client module once, from one file.
   imports = [inputs.nix-build-heaven.nixosModules.client];
 
   options.dreaming.services.nbhCache.enable =

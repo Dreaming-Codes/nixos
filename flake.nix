@@ -8,7 +8,6 @@
       "https://install.determinate.systems?priority=20"
       "https://cache.nixos.org?priority=40"
     ];
-    # install.determinate.systems signs with both; -4 keeps paths trusted if -3 is retired.
     extra-trusted-public-keys = [
       "cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM="
       "cache.flakehub.com-4:Asi8qIv291s0aYLyH6IOnr5Kf6+OF14WVjkE6t3xMio="
