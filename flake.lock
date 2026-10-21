@@ -444,11 +444,11 @@
         "terranix": "terranix"
       },
       "locked": {
-        "lastModified": 1792594437,
+        "lastModified": 1792607153,
         "narHash": "sha256-Qar7wswZQu8M2ijYXSqD0nCbnBS6kTLfbGf0q1q9+qM=",
         "owner": "Dreaming-Codes",
         "repo": "nix-build-heaven",
-        "rev": "204d75276dd91052fb847e94ee26bf64924842d6",
+        "rev": "8b6c1e1b108f0a9ad85e9530bf6ed48c70a1aa70",
         "type": "github"
       },
       "original": {
