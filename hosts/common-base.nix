@@ -23,7 +23,6 @@
   };
 
   dreaming.optimization.enable = true;
-  # The cache turns on per host once secrets/nbh-cache-<host>.yaml exists.
   dreaming.services.nbh = {
     enable = true;
     aws = {

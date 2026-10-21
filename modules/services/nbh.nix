@@ -5,7 +5,6 @@
   ...
 }: let
   cfg = config.dreaming.services.nbh;
-  cacheSecrets = ../../secrets + "/nbh-cache-${config.networking.hostName}.yaml";
   secret = key: {
     sopsFile = ../../secrets/nbh-gate.yaml;
     inherit key;
@@ -33,8 +32,7 @@ in {
     cache = {
       enable = lib.mkOption {
         type = lib.types.bool;
-        default = builtins.pathExists cacheSecrets;
-        defaultText = lib.literalMD "whether `secrets/nbh-cache-<hostName>.yaml` exists";
+        default = true;
         description = "Substitute from the Nix Build Heaven S3 cache and keep this host's roots in it.";
       };
       bucket = lib.mkOption {
@@ -78,7 +76,7 @@ in {
     }
     (lib.mkIf cfg.cache.enable {
       sops.secrets.nbh_cache_credentials = {
-        sopsFile = cacheSecrets;
+        sopsFile = ../../secrets/nbh-cache.yaml;
         mode = "0400";
       };
       services.nbh.cache = {
