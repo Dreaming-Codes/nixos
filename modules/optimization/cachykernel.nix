@@ -92,7 +92,7 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
-    nixpkgs.overlays = [inputs.nix-cachyos-kernel.overlays.pinned];
+    nixpkgs.overlays = [inputs.nix-cachyos-kernel.overlays.default];
     boot.kernelPackages = pkgs.cachyosKernels.${kernelAttr};
 
     warnings = lib.optional (!hasFacter) ''
