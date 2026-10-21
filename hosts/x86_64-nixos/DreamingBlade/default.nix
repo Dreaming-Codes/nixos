@@ -98,6 +98,8 @@ in {
     enable = true;
     nvidiaBusId = "PCI:1:0:0";
     amdgpuBusId = "PCI:4:0:0";
+    # RTX 3060 Laptop (GA106M, PCI 10de:2520 in facter.json).
+    cudaCapabilities = ["8.6"];
   };
 
   hardware.keyboard.qmk.enable = true;
