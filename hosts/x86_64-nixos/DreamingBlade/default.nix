@@ -114,4 +114,6 @@ in {
     SUBSYSTEM=="usb", ATTR{idVendor}=="0925", ATTR{idProduct}=="3881", MODE="0666"
     SUBSYSTEM=="usb", ATTR{idVendor}=="21a9", MODE="0666"
   '';
+
+  dreaming.services.nbhCache.enable = true;
 }
