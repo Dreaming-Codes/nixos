@@ -256,6 +256,7 @@ in {
           withEquicord = true;
         })
         spotify
+        zapfast
         mullvad-browser
         tor-browser
         saleae-logic-2
