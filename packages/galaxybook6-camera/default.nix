@@ -20,7 +20,16 @@ in
       install -m644 ${kernel.src}/drivers/media/pci/intel/ipu-bridge.c "$sourceRoot/"
     '';
 
-    patches = [./ipu-bridge-sslc2000.patch ./sc200pc-ctrl-lock.patch];
+    patches = [./sc200pc-ctrl-lock.patch];
+
+    # SmartSens SC200PC lists no link frequencies, so ISYS takes the rate from the
+    # sensor driver's V4L2_CID_LINK_FREQ control.
+    postPatch = ''
+      substituteInPlace ipu-bridge.c --replace-fail \
+        'static const struct ipu_sensor_config ipu_supported_sensors[] = {' \
+        'static const struct ipu_sensor_config ipu_supported_sensors[] = {
+      	IPU_SENSOR_CONFIG("SSLC2000", 0),'
+    '';
 
     nativeBuildInputs = kernel.moduleBuildDependencies;
 
