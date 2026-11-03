@@ -34,7 +34,6 @@ in {
     perClass = _class: {
       modules =
         [
-          inputs.nur.modules.nixos.default
           inputs.home-manager.nixosModules.home-manager
           inputs.dms-plugin-registry.nixosModules.default
           inputs.determinate.nixosModules.default

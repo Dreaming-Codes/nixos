@@ -50,7 +50,6 @@
   # State version
   system.stateVersion = "26.05";
 
-  # Disable NixOS options documentation to avoid builtins.toFile warnings from NUR
   documentation.nixos.enable = false;
   documentation.doc.enable = false;
 }

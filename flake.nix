@@ -23,10 +23,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.determinate.follows = "determinate";
     };
-    nur = {
-      url = "github:nix-community/NUR";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     nixpkgs-davinci.url = "github:nixos/nixpkgs/d457818da697aa7711ff3599be23ab8850573a46";
     dms-plugin-registry = {
       url = "github:AvengeMedia/dms-plugin-registry";

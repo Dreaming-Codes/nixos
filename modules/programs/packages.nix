@@ -140,7 +140,6 @@ in {
 
         rustscan
 
-        nur.repos.forkprince.helium-nightly
         brave
 
         playerctl
