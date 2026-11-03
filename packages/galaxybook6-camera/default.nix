@@ -3,14 +3,24 @@
   stdenv,
   kernel,
   kernelModuleMakeFlags,
+  fetchFromGitHub,
 }: let
   kdir = "${kernel.dev}/lib/modules/${kernel.modDirVersion}/build";
+  upstream = import ./upstream.nix {inherit fetchFromGitHub;};
 in
   stdenv.mkDerivation {
     pname = "galaxybook6-camera";
     version = "0.9.0";
 
     src = ./src;
+
+    # ipu-bridge is the running kernel's own copy plus the SSLC2000 entry.
+    postUnpack = ''
+      cp ${upstream}/dkms/sc200pc-0.9.0/sc200pc.c "$sourceRoot/"
+      install -m644 ${kernel.src}/drivers/media/pci/intel/ipu-bridge.c "$sourceRoot/"
+    '';
+
+    patches = [./ipu-bridge-sslc2000.patch ./sc200pc-ctrl-lock.patch];
 
     nativeBuildInputs = kernel.moduleBuildDependencies;
 

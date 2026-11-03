@@ -1,0 +1,33 @@
+--- a/ipu7-hal/convert-100002.cpp
++++ b/ipu7-hal/convert-100002.cpp
+@@ -31,10 +31,6 @@
+ // Sensor line as the in-tree ISYS delivers it: unpacked 16-bit, 64-byte aligned.
+ static constexpr uint32_t kIsysStride = ((1928 * 2) + 63) / 64 * 64;
+ static constexpr uint32_t kIsysHeight = 1088;
+-#ifndef TUNING_MODE
+-#define TUNING_MODE 4
+-#endif
+-static constexpr uint8_t kTuningMode = TUNING_MODE;
+ 
+ template <class M> static int rcbIndex(uint32_t i) {
+     if (!((M::rcb >> i) & 1))
+@@ -141,7 +137,8 @@
+  *   Linux graph has them clear.
+  * - The BBPS input/output records (25579, 20865) carry 0x2 in the third byte
+  *   of word 34 on Linux.
+- * - Node stream ids 60014 (DOL) become 60001, tuning mode 1 becomes 4.
++ * - Node stream ids 60014 (DOL) become 60001. Each setting keeps its Windows ISP tuning mode
++ *   (0 at 1080p, 1 at 720p, 2 below).
+  * - The ISYS -> LBFF link carries unpacked frames, and the BBPS 13 -> 5
+  *   self link streams as in Intel's graphs.
+  */
+@@ -173,9 +170,6 @@
+     d.isysOuterNodeConfiguration.streamId = 60001;
+     lb.streamId = 60001;
+     bb.streamId = 60001;
+-    d.isysOuterNodeConfiguration.tuningMode = kTuningMode;
+-    lb.tuningMode = kTuningMode;
+-    bb.tuningMode = kTuningMode;
+ 
+     d.linkConfigurations[2].bufferSize = kIsysStride * kIsysHeight;
+     // Intel's Linux 100002 graphs stream the BBPS 13 -> 5 self link as well.

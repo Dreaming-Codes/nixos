@@ -1,0 +1,16 @@
+--- a/src/core/processingUnit/CBStage.cpp
++++ b/src/core/processingUnit/CBStage.cpp
+@@ -731,8 +731,13 @@
+     (void)getKernelOffsetFromTerminalDesc(offsets, &offsetPtr, terminalConfig);
+ 
+     offset.cb_kernel_offset[0] = offsets;
++    // AIC finds the loaded LISP block's tuning only at operation mode 0. The Windows MFT also
++    // passes 0 and restores the graph value after configAIC.
++    const uint32_t graphMode = aicConfig.cb_config[0].kernel_group->operationMode;
++    aicConfig.cb_config[0].kernel_group->operationMode = 0;
+     int ret = mPacAdapt->pacConfig(mStreamId, aicConfig, offset, mKernelOffsetBuf, &pacConfig,
+                                    CBLayoutUtils::getStatsBufToTermIds());
++    aicConfig.cb_config[0].kernel_group->operationMode = graphMode;
+     CheckAndLogError(ret != OK, ret, "Failed to config PAC");
+ 
+     ret = allocPayloadBuffer(pacConfig, terminalConfig);

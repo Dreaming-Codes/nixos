@@ -1,0 +1,60 @@
+--- a/sc200pc.c
++++ b/sc200pc.c
+@@ -712,8 +712,6 @@
+ 	struct sc200pc *sensor = ctrl_to_sc200pc(ctrl);
+ 	int ret = 0;
+ 
+-	mutex_lock(&sensor->lock);
+-
+ 	/*
+ 	 * While streaming, hold the register group so a multi-register update
+ 	 * (frame length with exposure, analogue with digital gain) lands on a
+@@ -724,7 +722,7 @@
+ 		ret = sc200pc_write_reg(sensor, SC200PC_REG_GROUP_HOLD,
+ 					SC200PC_GROUP_HOLD_START);
+ 		if (ret)
+-			goto out_unlock;
++			return ret;
+ 	}
+ 
+ 	/*
+@@ -748,7 +746,7 @@
+ 	}
+ 
+ 	if (!sensor->streaming)
+-		goto out_unlock;
++		return ret;
+ 
+ 	switch (ret ? 0 : ctrl->id) {
+ 	case V4L2_CID_EXPOSURE:
+@@ -783,8 +781,6 @@
+ 			ret = end;
+ 	}
+ 
+-out_unlock:
+-	mutex_unlock(&sensor->lock);
+ 	return ret;
+ }
+ 
+@@ -1221,6 +1217,11 @@
+ 	ret = v4l2_ctrl_handler_init(&sensor->ctrls, 11);
+ 	if (ret)
+ 		goto err_entity_cleanup;
++	/*
++	 * s_ctrl runs under the handler lock and can recurse into itself when
++	 * a VBLANK change clamps the exposure, so the two must share a lock.
++	 */
++	sensor->ctrls.lock = &sensor->lock;
+ 
+ 	sensor->link_freq = v4l2_ctrl_new_int_menu(&sensor->ctrls, NULL,
+ 						   V4L2_CID_LINK_FREQ,
+@@ -1284,7 +1285,9 @@
+ 						 SC200PC_DIGITAL_GAIN_MAX,
+ 						 1, SC200PC_DIGITAL_GAIN_DEFAULT);
+ 
++	mutex_lock(&sensor->lock);
+ 	sc200pc_update_exposure_range(sensor);
++	mutex_unlock(&sensor->lock);
+ 
+ 	sensor->test_pattern =
+ 		v4l2_ctrl_new_std_menu_items(&sensor->ctrls, &sc200pc_ctrl_ops,

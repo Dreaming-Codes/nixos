@@ -1,0 +1,15 @@
+--- a/ipu-bridge.c
++++ b/ipu-bridge.c
+@@ -97,6 +97,12 @@
+ 	IPU_SENSOR_CONFIG("OVTI8856", 3, 180000000, 360000000, 720000000),
+ 	/* Sony IMX471 */
+ 	IPU_SENSOR_CONFIG("SONY471A", 1, 200000000),
++	/*
++	 * Samsung/SmartSens SC200PC. No link frequencies listed, so the
++	 * fwnode property is omitted and ISYS takes the rate from the
++	 * sensor driver's V4L2_CID_LINK_FREQ control.
++	 */
++	IPU_SENSOR_CONFIG("SSLC2000", 0),
+ 	/* Toshiba T4KA3 */
+ 	IPU_SENSOR_CONFIG("XMCC0003", 1, 321468000),
+ };

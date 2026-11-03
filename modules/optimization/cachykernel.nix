@@ -93,7 +93,13 @@ in {
 
   config = lib.mkIf cfg.enable {
     nixpkgs.overlays = [inputs.nix-cachyos-kernel.overlays.default];
-    boot.kernelPackages = pkgs.cachyosKernels.${kernelAttr};
+    boot.kernelPackages = pkgs.cachyosKernels.${kernelAttr}.extend (_: prev: {
+      # Kbuild's modules_install runs depmod when kmod is on PATH, and the
+      # shipped modules.dep* collide in the kernel module aggregator.
+      v4l2loopback = prev.v4l2loopback.overrideAttrs (old: {
+        makeFlags = old.makeFlags ++ ["DEPMOD=true"];
+      });
+    });
 
     warnings = lib.optional (!hasFacter) ''
       dreaming.optimization.cachykernel: nixos-facter report not available.
