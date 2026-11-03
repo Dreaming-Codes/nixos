@@ -13,7 +13,7 @@ in {
     enable = lib.mkEnableOption ''
       Initrd FIDO2 unlock before passphrase cryptsetup: wait for a YubiKey
       (udev) or Enter for LUKS passphrase, then PIN (empty Enter defers).
-      Requires boot.initrd.systemd and a LUKS device named like cfg.device
+      Requires a LUKS device named like cfg.device
       with a FIDO2 token enrolled and a passphrase slot. The helper binary
       currently targets mapper name "cryptroot" and
       /dev/disk/by-partlabel/disk-main-root.
@@ -33,13 +33,6 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
-    assertions = [
-      {
-        assertion = config.boot.initrd.systemd.enable;
-        message = "dreaming.core.cryptroot-fido-or-pass requires boot.initrd.systemd.enable.";
-      }
-    ];
-
     boot.initrd.systemd = {
       fido2.enable = true;
       extraBin = {

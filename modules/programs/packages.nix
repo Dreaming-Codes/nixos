@@ -248,7 +248,6 @@ in {
       ]
       # x86_64-only apps with no native aarch64 build.
       ++ lib.optionals isX86 [
-        onlyoffice-desktopeditors
         zoom-us
         slack
         (discord.override {

@@ -49,7 +49,6 @@ in {
         };
       };
       loader.efi.canTouchEfiVariables = true;
-      initrd.systemd.enable = true;
       kernelParams = [
         "acpi_call"
       ];
