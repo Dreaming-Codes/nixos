@@ -58,14 +58,10 @@ in {
       plugins =
         {
           dankBitwarden.enable = true;
-          dankSpotify.enable = true;
           dankTranslate.enable = true;
-          canvasGrades.enable = true;
           dmsScreenshot.enable = true;
           dockerManager.enable = true;
           easyEffects.enable = true;
-          githubNotifier.enable = true;
-          nixPackageRunner.enable = true;
           volumeMixer.enable = true;
         }
         // lib.optionalAttrs (config.networking.hostName == "DreamingBlade") {
