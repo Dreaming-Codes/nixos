@@ -33,6 +33,7 @@ in {
       plasma-workspace-wallpapers
       qrca
     ];
+    programs.kde-pim.merkuro = false;
 
     # Set the menu prefix so kbuildsycoca6 knows to look for plasma-applications.menu
     environment.sessionVariables = {
