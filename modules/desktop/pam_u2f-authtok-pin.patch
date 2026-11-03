@@ -1,0 +1,73 @@
+--- a/cfg.c
++++ b/cfg.c
+@@ -31,6 +31,8 @@
+     cfg->manual = 1;
+   } else if (strcmp(arg, "nouserok") == 0) {
+     cfg->nouserok = 1;
++  } else if (strcmp(arg, "authtok_pin") == 0) {
++    cfg->authtok_pin = 1;
+   } else if (strcmp(arg, "openasuser") == 0) {
+     cfg->openasuser = 1;
+   } else if (strcmp(arg, "alwaysok") == 0) {
+@@ -284,6 +286,7 @@
+     debug_dbg(cfg, "pinverification=%d", cfg->pinverification);
+     debug_dbg(cfg, "manual=%d", cfg->manual);
+     debug_dbg(cfg, "nouserok=%d", cfg->nouserok);
++    debug_dbg(cfg, "authtok_pin=%d", cfg->authtok_pin);
+     debug_dbg(cfg, "openasuser=%d", cfg->openasuser);
+     debug_dbg(cfg, "alwaysok=%d", cfg->alwaysok);
+     debug_dbg(cfg, "sshformat=%d", cfg->sshformat);
+--- a/cfg.h
++++ b/cfg.h
+@@ -15,6 +15,7 @@
+   int manual;
+   int debug;
+   int nouserok;
++  int authtok_pin;
+   int openasuser;
+   int alwaysok;
+   int interactive;
+--- a/util.c
++++ b/util.c
+@@ -1157,6 +1157,22 @@
+   return ok;
+ }
+ 
++/* PAM_AUTHTOK from an earlier module, used once. CTAP2 PINs are 4-63 bytes. */
++static char *authtok_pin(const cfg_t *cfg, pam_handle_t *pamh, int *tried) {
++  const void *item = NULL;
++  size_t len;
++
++  if (!cfg->authtok_pin || *tried)
++    return NULL;
++  *tried = 1;
++  if (pam_get_item(pamh, PAM_AUTHTOK, &item) != PAM_SUCCESS || item == NULL)
++    return NULL;
++  len = strlen(item);
++  if (len < 4 || len > 63)
++    return NULL;
++  return strdup(item);
++}
++
+ int do_authentication(const cfg_t *cfg, const device_t *devices,
+                       const unsigned n_devs, pam_handle_t *pamh) {
+   fido_assert_t *assert = NULL;
+@@ -1171,6 +1187,7 @@
+   struct opts opts;
+   struct pk pk;
+   char *pin = NULL;
++  int authtok_tried = 0;
+ 
+   init_opts(&opts);
+ #ifndef WITH_FUZZING
+@@ -1248,7 +1265,9 @@
+         }
+ 
+         if (opts.pin == FIDO_OPT_TRUE) {
+-          pin = converse(pamh, PAM_PROMPT_ECHO_OFF, "Please enter the PIN: ");
++          pin = authtok_pin(cfg, pamh, &authtok_tried);
++          if (pin == NULL)
++            pin = converse(pamh, PAM_PROMPT_ECHO_OFF, "Please enter the PIN: ");
+           if (pin == NULL) {
+             debug_dbg(cfg, "converse() returned NULL");
+             goto out;

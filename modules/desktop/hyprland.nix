@@ -83,6 +83,16 @@ in {
       DMS_DEFAULT_LAUNCH_PREFIX = "systemd-run --user --scope --collect --same-dir";
     };
 
+    # authtok_pin: pam_u2f takes the PIN from the password pam_unix rejected,
+    # so the lock screen field accepts either with one entry.
+    nixpkgs.overlays = [
+      (final: prev: {
+        pam_u2f = prev.pam_u2f.overrideAttrs (old: {
+          patches = (old.patches or []) ++ [./pam_u2f-authtok-pin.patch];
+        });
+      })
+    ];
+
     # Security key goes in the primary lock stack because DMS answers its PIN
     # prompt from the password field there. DMS runs fingerprint separately.
     # Shared origin so one root-owned key file works on every host.
@@ -90,6 +100,7 @@ in {
       authfile = "${../../config/u2f_keys}";
       origin = "pam://dreaming";
       appid = "pam://dreaming";
+      authtok_pin = true;
       cue = true;
       pinverification = 1;
     };
