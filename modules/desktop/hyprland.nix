@@ -83,9 +83,27 @@ in {
       DMS_DEFAULT_LAUNCH_PREFIX = "systemd-run --user --scope --collect --same-dir";
     };
 
+    # Security key goes in the primary lock stack because DMS answers its PIN
+    # prompt from the password field there. DMS runs fingerprint separately.
+    # Shared origin so one root-owned key file works on every host.
+    security.pam.u2f.settings = {
+      authfile = "${../../config/u2f_keys}";
+      origin = "pam://dreaming";
+      appid = "pam://dreaming";
+      cue = true;
+      pinverification = 1;
+    };
+    # Key after password: a typed password sent as the PIN costs a key PIN retry.
+    security.pam.services.dankshell = {
+      u2f.enable = true;
+      fprintAuth = false;
+      rules.auth.u2f.order = config.security.pam.services.dankshell.rules.auth.unix.order + 10;
+    };
+
     environment.systemPackages = with pkgs; [
       jq
       ncspot
+      pam_u2f
       qt6.qt5compat
       rbw
       translate-shell
