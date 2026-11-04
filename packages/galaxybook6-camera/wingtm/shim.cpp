@@ -1,4 +1,4 @@
-// libwingtm.so: LD_PRELOAD for the camera HAL process. Mirrors the first IntelCCA's init,
+// libwingtm.so: LD_PRELOAD for the camera HAL process. Mirrors the live IntelCCA's init,
 // statistics, AEC and AIQ calls to wingtm.exe (Windows CCA under Wine) and hands the Windows
 // GBCE tone map to AIC through cca_pal_input_params.manual_gbce_setting, the HAL's own manual
 // tonemap path. Everything else stays with the Linux CCA.
@@ -31,6 +31,7 @@ static_assert(offsetof(cca::cca_aiq_params, pa_input) == wingtm::kLinuxAiqPaInpu
 namespace {
 
 using InitFn = ia_err (*)(void*, const cca::cca_init_params*);
+using DeinitFn = ia_err (*)(void*);
 using StatsFn = ia_err (*)(void*, const cca::cca_stats_params*);
 using AecFn = ia_err (*)(void*, uint64_t, const cca::cca_ae_input_params*, cca::cca_ae_results*);
 using AiqFn = ia_err (*)(void*, uint64_t, const cca::cca_aiq_params*, cca::cca_aiq_results*);
@@ -199,6 +200,21 @@ ia_err _ZN3cca12IntelCCABase4initERKNS_15cca_init_paramsE(void* self, const cca:
     s.cca = self;
     fprintf(stderr, "wingtm: mirroring IntelCCA %p\n", self);
     return rc;
+}
+
+// The HAL tears its IntelCCA down when a camera session ends and builds a new one for the next,
+// so drop the mirror here or every later session runs on the Linux tone map.
+ia_err _ZN3cca12IntelCCABase6deinitEv(void* self) {
+    static DeinitFn fn = real<DeinitFn>("_ZN3cca12IntelCCABase6deinitEv");
+    State& s = state();
+    if (s.cca == self) {
+        s.helper.stop();
+        s.cca = nullptr;
+        std::lock_guard<std::mutex> l(s.gbceLock);
+        s.haveGbce = false;
+        fprintf(stderr, "wingtm: released IntelCCA %p\n", self);
+    }
+    return fn(self);
 }
 
 ia_err _ZN3cca12IntelCCABase14setStatsParamsERKNS_16cca_stats_paramsE(void* self, const cca::cca_stats_params* p) {
