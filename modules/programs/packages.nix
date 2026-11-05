@@ -111,7 +111,6 @@ in {
         uv
 
         zed-editor
-        code-cursor
         clang
         clang-tools
 
