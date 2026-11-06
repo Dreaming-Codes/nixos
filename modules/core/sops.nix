@@ -37,7 +37,11 @@ in {
       };
 
       # Template for nix access-tokens configuration
+      # Flake lock updates fetch as the invoking user, so the include must be user-readable
       templates."nix-access-tokens.conf" = {
+        owner = "dreamingcodes";
+        group = "users";
+        mode = "0400";
         content = ''
           access-tokens = github.com=${config.sops.placeholder.github_token}
         '';
