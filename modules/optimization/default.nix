@@ -31,7 +31,7 @@ in {
     fstrim.enable = mkEnableOption "periodic SSD TRIM";
     envfs.enable = mkEnableOption "envfs mount timeout fix";
     # Laptop-only; enabled via hosts/common-laptop.nix, not the base profile.
-    battery.enable = mkEnableOption "laptop battery optimization (powertop)";
+    battery.enable = mkEnableOption "laptop battery optimization (device runtime PM)";
   };
 
   config = mkIf cfg.enable {

@@ -1,5 +1,5 @@
 {...}: {
-  # Shared laptop power profile: powertop auto-tune + powerManagement.
+  # Shared laptop power profile: device runtime PM + powerManagement.
   # Imported by every laptop-class host (Blade, WorkDell, Work).
   dreaming.optimization.battery.enable = true;
 
