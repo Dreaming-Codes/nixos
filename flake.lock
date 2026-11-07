@@ -574,22 +574,6 @@
         "type": "github"
       }
     },
-    "nixpkgs-davinci": {
-      "locked": {
-        "lastModified": 1758410083,
-        "narHash": "sha256-f9Di87TN2FiOCrC0usE0nO/fMILJAh/7q4WRdrAFjoY=",
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "d457818da697aa7711ff3599be23ab8850573a46",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "d457818da697aa7711ff3599be23ab8850573a46",
-        "type": "github"
-      }
-    },
     "nixpkgs-lib": {
       "locked": {
         "lastModified": 1793504054,
@@ -684,18 +668,15 @@
     },
     "nixpkgs_6": {
       "locked": {
-        "lastModified": 1793726008,
-        "narHash": "sha256-jQp1wKvbwWdLBASTXkSi/VYmDJ5AbBi1WvcMt9HWJC8=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "1d060086d60cb76a40cf37109f979d88a5bd6396",
-        "type": "github"
+        "lastModified": 1793876309,
+        "narHash": "sha256-Q62pssAT9r01POiSyXW0IPXBWhntiKqMhzlsp3bsl5I=",
+        "rev": "f9a75f41be3a74eab55d3a7679d34ad6cc0da977",
+        "type": "tarball",
+        "url": "https://releases.nixos.org/nixos/unstable/nixos-26.11pre1108983.f9a75f41be3a/nixexprs.tar.xz"
       },
       "original": {
-        "owner": "NixOS",
-        "ref": "nixos-unstable",
-        "repo": "nixpkgs",
-        "type": "github"
+        "type": "tarball",
+        "url": "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz"
       }
     },
     "npm-lockfile-fix": {
@@ -807,7 +788,6 @@
         "nix-index-database": "nix-index-database_2",
         "nixos-facter-modules": "nixos-facter-modules",
         "nixpkgs": "nixpkgs_6",
-        "nixpkgs-davinci": "nixpkgs-davinci",
         "razer-laptop-controller": "razer-laptop-controller",
         "sops-nix": "sops-nix"
       }
