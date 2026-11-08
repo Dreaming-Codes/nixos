@@ -9,6 +9,10 @@
   # referencing pkgs while defining nixpkgs.overlays causes infinite recursion.
   isX86 = config.nixpkgs.hostPlatform.isx86_64;
   cfg = config.dreaming.programs.packages;
+  llmAgents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
+  t3code = llmAgents.t3code.override {
+    providerPackages = with llmAgents; [claude-code cursor-agent grok opencode2];
+  };
   signalDesktop = pkgs.symlinkJoin {
     name = "signal-desktop";
     paths = [pkgs.signal-desktop];
@@ -88,6 +92,15 @@ in {
         awscli2
         any-nix-shell
         inputs.nix-alien.packages.${stdenv.hostPlatform.system}.nix-alien
+        llmAgents.agent-browser
+        llmAgents.agent-desktop
+        llmAgents.cli-proxy-api
+        llmAgents.claude-code
+        llmAgents.cursor-agent
+        llmAgents.grok
+        llmAgents.opencode2
+        t3code
+        t3code.desktop
         rio
         adw-gtk3
         kdePackages.qt6ct

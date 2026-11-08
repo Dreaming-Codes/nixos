@@ -2,8 +2,13 @@
   pkgs,
   lib,
   config,
+  inputs,
   ...
-}: {
+}: let
+  llmAgents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
+in {
+  imports = [inputs.agent-skills.homeManagerModules.default];
+
   home.stateVersion = "26.05";
 
   home.shell.enableShellIntegration = true;
@@ -56,6 +61,23 @@
     ../config/grok/agents/conversation.md;
   home.file.".grok/hooks/notify.json".source =
     ../config/grok/hooks/notify.json;
+
+  programs.agent-skills = {
+    enable = true;
+    sources = {
+      agent-browser = {
+        path = llmAgents.agent-browser.src;
+        subdir = "skills";
+      };
+      agent-desktop = {
+        path = llmAgents.agent-desktop.src;
+        subdir = "skills";
+      };
+    };
+    skills.enable = ["agent-browser" "agent-desktop" "agent-desktop-linux"];
+    # Claude Code, Cursor, Grok Build and OpenCode all scan ~/.claude/skills.
+    targets.claude.enable = true;
+  };
 
   programs.opencode = {
     enable = true;

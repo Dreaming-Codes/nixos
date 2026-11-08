@@ -7,10 +7,12 @@
     substituters = [
       "https://install.determinate.systems?priority=20"
       "https://cache.nixos.org?priority=40"
+      "https://cache.numtide.com?priority=45"
     ];
     extra-trusted-public-keys = [
       "cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM="
       "cache.flakehub.com-4:Asi8qIv291s0aYLyH6IOnr5Kf6+OF14WVjkE6t3xMio="
+      "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
     ];
   };
 
@@ -33,6 +35,12 @@
     };
     dolphin-overlay.url = "github:rumboon/dolphin-overlay";
     nix-alien.url = "github:thiagokokada/nix-alien";
+    # No nixpkgs follows so the Numtide binary cache hits.
+    llm-agents.url = "github:numtide/llm-agents.nix";
+    agent-skills = {
+      url = "github:Kyure-A/agent-skills-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
