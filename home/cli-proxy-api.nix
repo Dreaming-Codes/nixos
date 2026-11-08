@@ -100,6 +100,66 @@
   '';
   grokFragment = pkgs.writeText "grok-cli-proxy-api.toml" (grokProviderToml + cfg.grokModels);
 
+  quote = s: ''"${lib.escape ["\\" "\""] s}"'';
+  # Root assignments stay above any [table]. Keys after a header belong to that table.
+  codexRoot = pkgs.writeText "codex-cli-proxy-api-root.toml" ''
+    # cli-proxy-api (home-manager; do not edit)
+    model_provider = "cli-proxy-api"
+    model = ${quote cfg.codexModel}
+  '';
+  codexProvider = pkgs.writeText "codex-cli-proxy-api-provider.toml" ''
+    [model_providers.cli-proxy-api]
+    name = "CLIProxyAPI"
+    base_url = "${cfg.url}/v1"
+    wire_api = "responses"
+    requires_openai_auth = false
+
+    [model_providers.cli-proxy-api.auth]
+    command = "${pkgs.coreutils}/bin/cat"
+    args = [${quote cfg.keyFile}]
+  '';
+  # Codex rewrites ~/.codex/config.toml, so only the provider and the root model are replaced.
+  codexConfigSync = pkgs.writeShellScript "codex-cli-proxy-api-config" ''
+    set -euo pipefail
+    dir="$HOME/.codex"
+    config="$dir/config.toml"
+    mkdir -p "$dir"
+    tmp="$(${pkgs.coreutils}/bin/mktemp "$dir/.config.toml.XXXXXX")"
+    preserved="$(${pkgs.coreutils}/bin/mktemp)"
+    trap 'rm -f "$tmp" "$preserved"' EXIT
+
+    [ -f "$config" ] || : > "$config"
+    ${pkgs.gawk}/bin/awk '
+      /^# cli-proxy-api \(home-manager/ { next }
+      /^\[/ {
+        section = $0
+        skip = (section ~ /^\[model_providers\.cli-proxy-api(\.[^]]+)?\][ \t]*(#.*)?$/)
+      }
+      skip { next }
+      section == "" && /^[ \t]*model_provider[ \t]*=/ { next }
+      section == "" && /^[ \t]*model[ \t]*=/ { next }
+      { lines[n++] = $0 }
+      END {
+        start = 0
+        while (start < n && lines[start] ~ /^[ \t]*$/) start++
+        while (n > start && lines[n - 1] ~ /^[ \t]*$/) n--
+        for (i = start; i < n; i++) print lines[i]
+      }
+    ' "$config" > "$preserved"
+    {
+      cat ${codexRoot}
+      if [ -s "$preserved" ]; then
+        echo
+        cat "$preserved"
+      fi
+      echo
+      cat ${codexProvider}
+      echo
+    } > "$tmp"
+    chmod 600 "$tmp"
+    mv "$tmp" "$config"
+  '';
+
   # --settings outranks ~/.claude/settings.json, so these env values win.
   claudePersonalSettings = pkgs.writeText "claude-personal-settings.json" (builtins.toJSON {
     apiKeyHelper = keyCommand;
@@ -142,10 +202,15 @@ in {
       default = "";
       description = "[model.*] tables for ~/.grok/config.toml that use the cli-proxy-api provider.";
     };
+    codexModel = lib.mkOption {
+      type = lib.types.str;
+      description = "Model id Codex requests through CLIProxyAPI.";
+    };
   };
 
   config = {
     dreaming.cliProxyApi.grokModels = personal.grokConfigModelsToml;
+    dreaming.cliProxyApi.codexModel = lib.mkDefault personal.defaultModelId;
 
     home.packages = [
       (pkgs.writeShellScriptBin "claude-personal" ''
@@ -167,6 +232,8 @@ in {
 
     home.activation.grokCliProxyApiModels =
       lib.hm.dag.entryAfter ["writeBoundary"] "run ${grokModelsSync}";
+    home.activation.codexCliProxyApi =
+      lib.hm.dag.entryAfter ["writeBoundary"] "run ${codexConfigSync}";
 
     systemd.user.services.cli-proxy-api = {
       Unit.Description = "CLIProxyAPI";

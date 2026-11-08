@@ -122,6 +122,7 @@ in {
   };
 
   dreaming.cliProxyApi.grokModels = workModels.grokConfigModelsToml;
+  dreaming.cliProxyApi.codexModel = "work/${gatewayModels.defaultModelId}";
 
   # Merge work routing into Claude Code's mutable user settings.
   home.activation.claudeCliProxyApi = lib.hm.dag.entryAfter ["writeBoundary"] ''

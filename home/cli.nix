@@ -75,8 +75,10 @@ in {
       };
     };
     skills.enable = ["agent-browser" "agent-desktop" "agent-desktop-linux"];
-    # Claude Code, Cursor, Grok Build and OpenCode all scan ~/.claude/skills.
+    # Claude Code, Cursor, Grok Build and OpenCode scan ~/.claude/skills.
+    # Codex loads $CODEX_HOME/skills.
     targets.claude.enable = true;
+    targets.codex.enable = true;
   };
 
   programs.opencode = {
