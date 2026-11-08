@@ -15,6 +15,8 @@
   lib,
   modelPrefix ? "",
   grokProvider ? "nlk-gateway",
+  # CLIProxyAPI's bundled models.json, for the thinking capability of Claude rows.
+  cpaCatalog ? null,
 }: let
   modelsFile = ../secrets/work/ai-gateway-models.json;
   infoFile = ../secrets/work/ai-gateway-model-info.json;
@@ -363,16 +365,37 @@
     "grok-4.7-extended" = "Grok 4.7 Extended (AI Gateway)";
   };
 
+  # CLIProxyAPI strips `thinking` from requests to models without a thinking
+  # capability, and gateway ids are absent from its registry.
+  cpaClaudeThinking =
+    if cpaCatalog == null
+    then {}
+    else
+      builtins.listToAttrs (map (m: {
+        name = m.id;
+        value = lib.mapAttrs' (k: lib.nameValuePair (builtins.replaceStrings ["_"] ["-"] k)) m.thinking;
+      }) (builtins.filter (m: m ? thinking) (builtins.fromJSON (builtins.readFile cpaCatalog)).claude));
+
+  # global.anthropic.claude-opus-4-6-v1 -> claude-opus-4-6
+  cpaRegistryId = id:
+    lib.foldl' (s: suffix: lib.removeSuffix suffix s)
+    (lib.last (lib.splitString "anthropic." id))
+    ["-global-fallback" "-us-fallback" "-v1:0" "-v1"];
+
   # CLIProxyAPI model entries. Clients send catalog ids, LiteLLM aliases, or
   # team keys (Grok wire ids), and the gateway accepts all of them.
   cpaModelsFor = rows:
-    lib.concatMap (r:
-      map (wire: {
-        name = wire;
-        alias = wire;
-        display-name = displayOf r;
-        max-context-length = r.max_input_tokens;
-      }) (lib.unique ([r.id] ++ r.aliases ++ lib.optional ((r.teamKey or null) != null) r.teamKey)))
+    lib.concatMap (r: let
+      thinking = cpaClaudeThinking.${cpaRegistryId r.id} or null;
+    in
+      map (wire:
+        {
+          name = wire;
+          alias = wire;
+          display-name = displayOf r;
+          max-context-length = r.max_input_tokens;
+        }
+        // lib.optionalAttrs (thinking != null) {inherit thinking;}) (lib.unique ([r.id] ++ r.aliases ++ lib.optional ((r.teamKey or null) != null) r.teamKey)))
     rows;
 
   tomlModelKey = id:

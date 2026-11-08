@@ -124,11 +124,16 @@ in {
       default = "${config.home.homeDirectory}/.cli-proxy-api/client.key";
       readOnly = true;
     };
+    registryFile = lib.mkOption {
+      type = lib.types.str;
+      default = "${llmAgents.cli-proxy-api.src}/internal/registry/models/models.json";
+      readOnly = true;
+    };
     personalModels = lib.mkOption {
       type = lib.types.attrs;
       default = import ./cpa-personal-models.nix {
         inherit lib;
-        catalog = "${llmAgents.cli-proxy-api.src}/internal/registry/models/models.json";
+        catalog = cfg.registryFile;
       };
       readOnly = true;
     };

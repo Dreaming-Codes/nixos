@@ -8,7 +8,10 @@
   wallpaperDest = "${config.home.homeDirectory}/Pictures/neuralink-4k.png";
 
   # Model lists generated from git-crypt'd gateway catalog dumps.
-  gatewayModels = import ./nlk-gateway-models.nix {inherit lib;};
+  gatewayModels = import ./nlk-gateway-models.nix {
+    inherit lib;
+    cpaCatalog = cpa.registryFile;
+  };
   # Same catalog as seen by clients through CLIProxyAPI.
   workModels = import ./nlk-gateway-models.nix {
     inherit lib;
@@ -65,7 +68,7 @@
 
     entries="$(${pkgs.coreutils}/bin/mktemp)"
     trap 'rm -f "$entries"' EXIT
-    ${pkgs.jq}/bin/jq -S --arg k "$key" 'map_values(. + {keys: [{"api-key": $k}]})' ${cpaGatewayProviders} > "$entries"
+    ${pkgs.jq}/bin/jq -S --arg k "$key" 'map_values(. + {keys: [{"api-key": $k}]}) | .claude.keys[0].cloak.mode = "never"' ${cpaGatewayProviders} > "$entries"
 
     current="$(${yq} -o=json '.api-keys | with_entries(select(.key == "openai-compatibility" or .key == "claude")) | map_values([.[] | select(.name == "nlk-gateway")][0])' "$config" | ${pkgs.jq}/bin/jq -S .)"
     [ "$current" = "$(cat "$entries")" ] && exit 0
