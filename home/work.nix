@@ -9,44 +9,129 @@
 
   # Model lists generated from git-crypt'd gateway catalog dumps.
   gatewayModels = import ./nlk-gateway-models.nix {inherit lib;};
+  # Same catalog as seen by clients through CLIProxyAPI.
+  workModels = import ./nlk-gateway-models.nix {
+    inherit lib;
+    modelPrefix = "work/";
+    grokProvider = "cli-proxy-api";
+  };
+  cpa = config.dreaming.cliProxyApi;
 
-  # PATH helper: auth/login install token into user env (no app wrappers).
+  claudeWorkSettings = pkgs.writeText "claude-work-settings.json" (builtins.toJSON {
+    apiKeyHelper = "${pkgs.coreutils}/bin/cat ${cpa.keyFile}";
+    env = {
+      ANTHROPIC_BASE_URL = cpa.url;
+      ANTHROPIC_DEFAULT_OPUS_MODEL = "work/global.anthropic.claude-opus-5-5";
+      ANTHROPIC_DEFAULT_SONNET_MODEL = "work/global.anthropic.claude-sonnet-5-5";
+      ANTHROPIC_DEFAULT_HAIKU_MODEL = "work/global.anthropic.claude-haiku-5-5";
+    };
+  });
+
   nlk-llm-proxy = pkgs.writeShellApplication {
     name = "nlk-llm-proxy";
     runtimeInputs = [
       pkgs.python3
-      pkgs.jq
       pkgs.coreutils
     ];
     text = builtins.replaceStrings ["@llm_proxy_py@"] ["${../secrets/work/llm_proxy.py}"] (
       builtins.readFile ./nlk-llm-proxy.sh
     );
   };
+
+  yq = "${pkgs.yq-go}/bin/yq";
+  cpaGatewayProviders = pkgs.writeText "cpa-nlk-gateway.json" (builtins.toJSON {
+    openai-compatibility = {
+      name = "nlk-gateway";
+      prefix = "work";
+      base-url = gatewayModels.apiUrl;
+      models = gatewayModels.cliProxyApiModels;
+    };
+    # Native Anthropic passthrough keeps thinking signatures intact.
+    claude = {
+      name = "nlk-gateway";
+      prefix = "work";
+      base-url = lib.removeSuffix "/v1" gatewayModels.apiUrl;
+      models = gatewayModels.cliProxyApiClaudeModels;
+    };
+  });
+
+  # Gateway id_tokens live ~65 min and `auth` only renews near expiry, so this
+  # runs every few minutes. CLIProxyAPI hot-reloads config.yaml on change.
+  cpaGatewaySync = pkgs.writeShellScript "cli-proxy-api-nlk-gateway-sync" ''
+    set -euo pipefail
+    umask 077
+    config="$HOME/.cli-proxy-api/config.yaml"
+    key="$(${nlk-llm-proxy}/bin/nlk-llm-proxy auth)"
+
+    entries="$(${pkgs.coreutils}/bin/mktemp)"
+    trap 'rm -f "$entries"' EXIT
+    ${pkgs.jq}/bin/jq -S --arg k "$key" 'map_values(. + {keys: [{"api-key": $k}]})' ${cpaGatewayProviders} > "$entries"
+
+    current="$(${yq} -o=json '.api-keys | with_entries(select(.key == "openai-compatibility" or .key == "claude")) | map_values([.[] | select(.name == "nlk-gateway")][0])' "$config" | ${pkgs.jq}/bin/jq -S .)"
+    [ "$current" = "$(cat "$entries")" ] && exit 0
+
+    ENTRIES="$entries" ${yq} -i '
+      load(strenv(ENTRIES)) as $e |
+      .api-keys."openai-compatibility" = ([(.api-keys."openai-compatibility" // [])[] | select(.name != "nlk-gateway")] + [$e."openai-compatibility"]) |
+      .api-keys.claude = ([(.api-keys.claude // [])[] | select(.name != "nlk-gateway")] + [$e.claude])
+    ' "$config"
+  '';
 in {
   home.packages = [
     nlk-llm-proxy
   ];
 
-  # Stock OpenCode binary (cli.nix); only provider config is work-specific.
-  # Token lands in ~/.local/share/opencode/auth.json via `nlk-llm-proxy auth`.
-  programs.opencode = {
-    settings = {
-      provider = lib.mkForce {
-        nlk-gateway = {
-          npm = "@ai-sdk/openai-compatible";
-          name = "Neuralink AI Gateway";
-          options = {
-            baseURL = gatewayModels.apiUrl;
-          };
-          models = gatewayModels.opencodeModels;
-        };
-      };
-      model = lib.mkDefault "nlk-gateway/${gatewayModels.defaultModelId}";
+  systemd.user.services.cli-proxy-api-nlk-gateway = {
+    Unit = {
+      Description = "Sync Neuralink AI gateway token into CLIProxyAPI";
+      After = ["cli-proxy-api.service"];
+      ConditionPathExists = "%h/.cli-proxy-api/config.yaml";
+    };
+    Install.WantedBy = ["cli-proxy-api.service"];
+    Service = {
+      Type = "oneshot";
+      ExecStart = "${cpaGatewaySync}";
     };
   };
 
-  # Stock zed from the system profile. Reads NLK_GATEWAY_API_KEY
-  # from the user environment after `nlk-llm-proxy login` / shell hook / auth.
+  systemd.user.timers.cli-proxy-api-nlk-gateway = {
+    Unit.Description = "Refresh Neuralink AI gateway token in CLIProxyAPI";
+    Install.WantedBy = ["timers.target"];
+    Timer = {
+      OnActiveSec = "1min";
+      OnUnitActiveSec = "4min";
+    };
+  };
+
+  # Stock OpenCode binary (cli.nix); work models go through CLIProxyAPI.
+  programs.opencode.settings = {
+    enabled_providers = ["cpa-work"];
+    provider.cpa-work = {
+      npm = "@ai-sdk/openai-compatible";
+      name = "CLIProxyAPI work";
+      options = {
+        baseURL = "${cpa.url}/v1";
+        apiKey = "{file:${cpa.keyFile}}";
+      };
+      models = workModels.opencodeModels;
+    };
+    model = lib.mkDefault "cpa-work/work/${gatewayModels.defaultModelId}";
+  };
+
+  dreaming.cliProxyApi.grokModels = workModels.grokConfigModelsToml;
+
+  # Merge work routing into Claude Code's mutable user settings.
+  home.activation.claudeCliProxyApi = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    settings="$HOME/.claude/settings.json"
+    mkdir -p "$HOME/.claude"
+    [ -s "$settings" ] || echo '{}' > "$settings"
+    tmp="$(${pkgs.coreutils}/bin/mktemp)"
+    ${pkgs.jq}/bin/jq -s '.[0] * .[1]' "$settings" ${claudeWorkSettings} > "$tmp"
+    ${pkgs.coreutils}/bin/mv "$tmp" "$settings"
+  '';
+
+  # Stock zed from the system profile. Reads CPA_WORK_API_KEY and
+  # CPA_PERSONAL_API_KEY, which cli-proxy-api writes into environment.d.
   programs.zed-editor = {
     enable = true;
     package = null;
@@ -156,18 +241,20 @@ in {
           font_style = "italic";
         };
       };
-      language_models = {
-        # Corp LiteLLM gateway (auth: NLK_GATEWAY_API_KEY via zeditor wrapper).
-        # available_models generated from secrets/work/ai-gateway-*.json.
-        openai_compatible.nlk-gateway = {
-          api_url = gatewayModels.apiUrl;
-          available_models = gatewayModels.zedAvailableModels;
+      language_models.openai_compatible = {
+        cpa-work = {
+          api_url = "${cpa.url}/v1";
+          available_models = workModels.zedAvailableModels;
+        };
+        cpa-personal = {
+          api_url = "${cpa.url}/v1";
+          available_models = cpa.personalModels.zedAvailableModels;
         };
       };
       agent.default_model = {
         # Nested key under language_models.openai_compatible.
-        provider = "nlk-gateway";
-        model = gatewayModels.defaultModelId;
+        provider = "cpa-work";
+        model = "work/${gatewayModels.defaultModelId}";
       };
       # Helix :reload reloads the buffer; Zed has no such colon cmd, so the
       # palette fuzzy-matches workspace::Reload (app restart). Alias to file reload.
@@ -297,87 +384,6 @@ in {
   };
 
   home.file."Pictures/neuralink-4k.png".source = wallpaper;
-
-  # Interactive shells: pull gateway token into this shell if missing.
-  # `nlk-llm-proxy auth` (Grok apiKeyHelper, etc.) also reinstalls user env.
-  programs.fish.interactiveShellInit = lib.mkAfter ''
-    if command -q nlk-llm-proxy; and not set -q NLK_GATEWAY_API_KEY
-      nlk-llm-proxy env 2>/dev/null | source
-    end
-  '';
-  programs.bash.initExtra = lib.mkAfter ''
-    if command -v nlk-llm-proxy >/dev/null 2>&1 && [ -z "''${NLK_GATEWAY_API_KEY:-}" ]; then
-      eval "$(nlk-llm-proxy env 2>/dev/null)" || true
-    fi
-  '';
-
-  # At graphical login, install token into environment.d / systemd --user so
-  # stock zeditor (desktop) sees NLK_GATEWAY_API_KEY without a wrapper.
-  systemd.user.services.nlk-gateway-env = {
-    Unit = {
-      Description = "Neuralink AI gateway token →  user environment";
-      After = ["graphical-session-pre.target" "sops-nix.service"];
-      PartOf = ["graphical-session.target"];
-    };
-    Service = {
-      Type = "oneshot";
-      ExecStart = "${pkgs.writeShellScript "nlk-gateway-env-start" ''
-        exec ${nlk-llm-proxy}/bin/nlk-llm-proxy auth >/dev/null
-      ''}";
-      # Don't fail the session if SSO hasn't been done yet.
-      SuccessExitStatus = "0 1";
-    };
-    Install.WantedBy = ["graphical-session.target"];
-  };
-
-  # Refresh before typical id_token expiry (~1h).
-  systemd.user.timers.nlk-gateway-env = {
-    Unit.Description = "Refresh Neuralink AI gateway token";
-    Timer = {
-      OnStartupSec = "30s";
-      OnUnitInactiveSec = "45min";
-      Persistent = true;
-    };
-    Install.WantedBy = ["timers.target"];
-  };
-
-  # Replace [model.*] in ~/.grok/config.toml with gatewayModels.grokConfigModelsToml.
-  # Other keys stay. User config wins over managed version_overrides on the same id.
-  home.activation.nlkGrokModels = let
-    modelsToml = pkgs.writeText "grok-nlk-models.toml" gatewayModels.grokConfigModelsToml;
-  in
-    lib.hm.dag.entryAfter ["writeBoundary"] ''
-      config="$HOME/.grok/config.toml"
-      fragment="${modelsToml}"
-      mkdir -p "$HOME/.grok"
-      tmp="$(${pkgs.coreutils}/bin/mktemp)"
-      if [ -f "$config" ]; then
-        ${pkgs.gawk}/bin/awk '
-          /^\[model\./ { skip = 1; next }
-          /^\[/ { skip = 0 }
-          !skip { print }
-        ' "$config" > "$tmp"
-      else
-        : > "$tmp"
-      fi
-      # Strip trailing blanks, append generated [model.*] blocks.
-      ${pkgs.gawk}/bin/awk '
-        { lines[n++] = $0 }
-        END {
-          end = n
-          while (end > 0 && lines[end - 1] ~ /^[ \t]*$/) end--
-          for (i = 0; i < end; i++) print lines[i]
-          if (end > 0) print ""
-        }
-      ' "$tmp" > "$tmp.stripped"
-      {
-        ${pkgs.coreutils}/bin/cat "$tmp.stripped"
-        ${pkgs.coreutils}/bin/printf '%s\n' '# nlk-gateway-models (home-manager activation; do not edit)'
-        ${pkgs.coreutils}/bin/cat "$fragment"
-      } > "$tmp"
-      ${pkgs.coreutils}/bin/mv "$tmp" "$config"
-      ${pkgs.coreutils}/bin/rm -f "$tmp.stripped"
-    '';
 
   # Pin wallpaper on work hosts. Runs after dmsDefaults (when present) so the
   # merge of shared session defaults cannot override the work path.

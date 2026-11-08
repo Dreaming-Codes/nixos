@@ -8,7 +8,14 @@
 # CLI pin on one gateway model).
 # work.nix writes grokConfigModelsToml as [model.*] into ~/.grok/config.toml.
 # Refresh: scripts/update-ai-gateway-models.sh
-{lib}: let
+#
+# modelPrefix and grokProvider emit client lists that route through
+# CLIProxyAPI (e.g. "work/<id>"); defaults describe the gateway itself.
+{
+  lib,
+  modelPrefix ? "",
+  grokProvider ? "nlk-gateway",
+}: let
   modelsFile = ../secrets/work/ai-gateway-models.json;
   infoFile = ../secrets/work/ai-gateway-model-info.json;
   teamFile = ../secrets/work/ai-gateway-team-overrides.json;
@@ -268,7 +275,7 @@
     useResponses = r.mode == "responses";
   in
     {
-      name = r.id;
+      name = modelPrefix + r.id;
       display_name = displayOf r;
       max_tokens = r.max_input_tokens;
       # Zed shows output limit 0 if this field is missing.
@@ -324,7 +331,7 @@
     resolved
   );
 
-  # managed_config version_overrides key -> catalog wire id.
+  # Grok picker slug -> catalog wire id.
   grokManagedSlugs = {
     "claude-sonnet-gateway" = "global.anthropic.claude-sonnet-5";
     "claude-opus-gateway" = "global.anthropic.claude-opus-5";
@@ -335,20 +342,38 @@
     "gpt-5-6-sol-gateway" = "openai.gpt-5.6-sol";
     "gpt-5-6-luna-gateway" = "openai.gpt-5.6-luna";
     "gpt-5-6-terra-gateway" = "openai.gpt-5.6-terra";
+    "gpt-6-astra-gateway" = "openai.gpt-6-astra";
+    "gpt-6-sol-gateway" = "openai.gpt-6-sol";
+    "gpt-6-luna-gateway" = "openai.gpt-6-luna";
     "grok-4.5" = "grok-4.5";
     "grok-4.6" = "grok-4.6";
     "grok-4.6-extended" = "grok-4.6";
+    "grok-4.7" = "grok-4.7";
+    "grok-4.7-extended" = "grok-4.7";
   };
 
-  # Same wire model; picker context_window only (managed_config pins).
+  # Same wire model; picker context_window only.
   grokContextPin = {
-    "grok-4.6" = 200000;
     "grok-4.6-extended" = 500000;
+    "grok-4.7-extended" = 500000;
   };
 
   grokExtendedName = {
     "grok-4.6-extended" = "Grok 4.6 Extended (AI Gateway)";
+    "grok-4.7-extended" = "Grok 4.7 Extended (AI Gateway)";
   };
+
+  # CLIProxyAPI model entries. Clients send catalog ids, LiteLLM aliases, or
+  # team keys (Grok wire ids), and the gateway accepts all of them.
+  cpaModelsFor = rows:
+    lib.concatMap (r:
+      map (wire: {
+        name = wire;
+        alias = wire;
+        display-name = displayOf r;
+        max-context-length = r.max_input_tokens;
+      }) (lib.unique ([r.id] ++ r.aliases ++ lib.optional ((r.teamKey or null) != null) r.teamKey)))
+    rows;
 
   tomlModelKey = id:
     if builtins.match "[A-Za-z0-9_-]+" id != null
@@ -370,7 +395,7 @@
 
   isGrokId = id: lib.hasPrefix "grok" id;
 
-  # Grok agent path uses responses (managed_config). Anthropic uses messages.
+  # Grok agent path uses responses. Anthropic uses messages.
   # Otherwise team.api_backend, then catalog mode, else chat_completions.
   grokApiBackend = r:
     if isGrokId r.id
@@ -417,7 +442,7 @@
   # system_prompt_label for Grok rows (extended keeps the base label).
   grokSystemLabel = slug: wire: display:
     if grokExtendedName ? ${slug}
-    then "Grok 4.6"
+    then lib.removeSuffix " Extended (AI Gateway)" grokExtendedName.${slug}
     else if isGrokId wire
     then lib.removeSuffix " (AI Gateway)" display
     else display;
@@ -427,6 +452,7 @@
     r,
     context ? null,
     name ? null,
+    hidden ? false,
   }: let
     wire = grokWireModel slug r;
     out =
@@ -462,13 +488,14 @@
     lines =
       [
         "[model.${tomlModelKey slug}]"
-        "model = ${tomlString wire}"
+        "model = ${tomlString (modelPrefix + wire)}"
         "name = ${tomlString display}"
-        "model_provider = \"nlk-gateway\""
+        "model_provider = ${tomlString grokProvider}"
         "api_backend = ${tomlString backend}"
         "context_window = ${toString ctx}"
         "max_completion_tokens = ${toString out}"
       ]
+      ++ lib.optional hidden "hidden = true"
       ++ lib.optional (isGrokId wire) "system_prompt_label = ${tomlString (grokSystemLabel slug wire display)}"
       ++ lib.optional (isGrokId wire) "supports_backend_search = true"
       ++ lib.optional (efforts != null) "supports_reasoning_effort = true"
@@ -495,22 +522,21 @@
       resolved;
 
     # Managed *-extended slugs: extra picker row, same wire id as the base.
-    extended =
-      lib.filter (e: e != null) (
-        map (
-          slug: let
-            catalogId = grokManagedSlugs.${slug};
-            r = resolvedByAlias.${catalogId} or null;
-          in
-            if !(lib.hasSuffix "-extended" slug) || r == null
-            then null
-            else {
-              inherit slug r;
-              context = grokContextPin.${slug} or null;
-              name = grokExtendedName.${slug} or null;
-            }
-        ) (builtins.attrNames grokManagedSlugs)
-      );
+    extended = lib.filter (e: e != null) (
+      map (
+        slug: let
+          catalogId = grokManagedSlugs.${slug};
+          r = resolvedByAlias.${catalogId} or null;
+        in
+          if !(lib.hasSuffix "-extended" slug) || r == null
+          then null
+          else {
+            inherit slug r;
+            context = grokContextPin.${slug} or null;
+            name = grokExtendedName.${slug} or null;
+          }
+      ) (builtins.attrNames grokManagedSlugs)
+    );
 
     # Fold by slug; later entries overwrite (extended after primary).
     bySlug = lib.foldl' (
@@ -530,6 +556,8 @@
             inherit (e) r;
             context = e.context;
             name = e.name;
+            # Picker shows only the -extended row; the base still routes via -m.
+            hidden = bySlug ? "${slug}-extended";
           }
       )
       slugs
@@ -547,11 +575,17 @@ in {
 
   opencodeModels = builtins.listToAttrs (
     map (r: {
-      name = r.id;
+      name = modelPrefix + r.id;
       value = toOpencodeModel r;
     })
     resolved
   );
 
   zedAvailableModels = map toZedModel resolved;
+
+  # Anthropic rows go through CPA's native claude provider (gateway /v1/messages).
+  # The openai-compatibility translation drops thinking signatures, and Grok's
+  # messages backend rejects thinking blocks without one.
+  cliProxyApiClaudeModels = cpaModelsFor (builtins.filter (r: isAnthropicId r.id) resolved);
+  cliProxyApiModels = cpaModelsFor (builtins.filter (r: !isAnthropicId r.id) resolved);
 }

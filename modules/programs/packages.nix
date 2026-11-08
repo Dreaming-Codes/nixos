@@ -11,8 +11,13 @@
   cfg = config.dreaming.programs.packages;
   llmAgents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
   t3code = llmAgents.t3code.override {
-    providerPackages = with llmAgents; [claude-code cursor-agent grok opencode2];
+    providerPackages = with llmAgents; [claude-code grok opencode2];
   };
+  # Upstream wrapper hard-sets AGENT_BROWSER_EXECUTABLE_PATH to chromium, so wrap the inner binary.
+  agentBrowser = pkgs.runCommand "agent-browser-brave" {nativeBuildInputs = [pkgs.makeBinaryWrapper];} ''
+    makeWrapper ${llmAgents.agent-browser}/bin/.agent-browser-wrapped $out/bin/agent-browser \
+      --set AGENT_BROWSER_EXECUTABLE_PATH ${pkgs.brave}/bin/brave
+  '';
   signalDesktop = pkgs.symlinkJoin {
     name = "signal-desktop";
     paths = [pkgs.signal-desktop];
@@ -92,11 +97,10 @@ in {
         awscli2
         any-nix-shell
         inputs.nix-alien.packages.${stdenv.hostPlatform.system}.nix-alien
-        llmAgents.agent-browser
+        agentBrowser
         llmAgents.agent-desktop
         llmAgents.cli-proxy-api
         llmAgents.claude-code
-        llmAgents.cursor-agent
         llmAgents.grok
         llmAgents.opencode2
         t3code
