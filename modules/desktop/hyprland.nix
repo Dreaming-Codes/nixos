@@ -97,6 +97,7 @@ in {
           postPatch =
             (old.postPatch or "")
             + ''
+              chmod -R u+w ../quickshell
               patch -p1 -d .. < ${./dux-shell-idle-inhibit-allow-monitor-off.patch}
             '';
         });
