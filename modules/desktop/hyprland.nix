@@ -92,8 +92,13 @@ in {
         });
         # Keep-awake/idle inhibit blocks lock+suspend, but still allows monitor-off
         # (including post-lock). Upstream gated all idle timers on inhibit.
+        # sourceRoot is core/; IdleService lives in sibling quickshell/.
         dux-shell = prev.dux-shell.overrideAttrs (old: {
-          patches = (old.patches or []) ++ [./dux-shell-idle-inhibit-allow-monitor-off.patch];
+          postPatch =
+            (old.postPatch or "")
+            + ''
+              patch -p1 -d .. < ${./dux-shell-idle-inhibit-allow-monitor-off.patch}
+            '';
         });
         dms-shell = final.dux-shell;
       })
