@@ -90,6 +90,12 @@ in {
         pam_u2f = prev.pam_u2f.overrideAttrs (old: {
           patches = (old.patches or []) ++ [./pam_u2f-authtok-pin.patch];
         });
+        # Keep-awake/idle inhibit blocks lock+suspend, but still allows monitor-off
+        # (including post-lock). Upstream gated all idle timers on inhibit.
+        dux-shell = prev.dux-shell.overrideAttrs (old: {
+          patches = (old.patches or []) ++ [./dux-shell-idle-inhibit-allow-monitor-off.patch];
+        });
+        dms-shell = final.dux-shell;
       })
     ];
 

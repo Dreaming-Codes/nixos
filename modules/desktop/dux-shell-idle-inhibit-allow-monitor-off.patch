@@ -1,0 +1,38 @@
+--- a/quickshell/Services/IdleService.qml
++++ b/quickshell/Services/IdleService.qml
+@@ -33,12 +33,11 @@
+     onIsShellLockedChanged: _rearmIdleMonitors()
+ 
+     function _applyMonitorEnableds() {
+-        // Gate on the shell's own inhibit state rather than relying on the
+-        // compositor honoring the bar-surface zwp_idle_inhibit inhibitor,
+-        // which goes inactive whenever the bar surface is occluded
+-        // (fullscreen windows) or hidden (auto-hide).
+-        const base = enabled && !SessionService.idleInhibited && !externalInhibitActive;
+-        monitorOffMonitor.enabled = base && monitorTimeout > 0 && !postLockMonitorActive;
++        // Keep-awake blocks lock/suspend; monitor-off still runs. App screensaver
++        // inhibits still block monitor-off.
++        const stayAwake = SessionService.idleInhibited || externalInhibitActive;
++        const base = enabled && !stayAwake;
++        monitorOffMonitor.enabled = enabled && !externalInhibitActive && monitorTimeout > 0 && !postLockMonitorActive;
+         postLockMonitorOffMonitor.enabled = enabled && postLockMonitorActive;
+         lockMonitor.enabled = base && lockTimeout > 0;
+         suspendMonitor.enabled = base && suspendTimeout > 0;
+@@ -76,7 +75,7 @@
+     IdleMonitor {
+         id: monitorOffMonitor
+         timeout: root.monitorTimeout > 0 ? root.monitorTimeout : 86400
+-        respectInhibitors: root.respectInhibitors
++        respectInhibitors: false
+         enabled: false
+         onIsIdleChanged: {
+             if (!enabled)
+@@ -99,7 +98,7 @@
+     IdleMonitor {
+         id: postLockMonitorOffMonitor
+         timeout: root.postLockMonitorTimeout > 0 ? root.postLockMonitorTimeout : 86400
+-        respectInhibitors: root.respectInhibitors
++        respectInhibitors: false
+         enabled: false
+         onIsIdleChanged: {
+             if (!enabled)
