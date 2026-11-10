@@ -58,12 +58,26 @@
     };
   });
 
+  xaiWorkPriority = 1;
+
   # Gateway id_tokens live ~65 min and `auth` only renews near expiry, so this
   # runs every few minutes. CLIProxyAPI hot-reloads config.yaml on change.
   cpaGatewaySync = pkgs.writeShellScript "cli-proxy-api-nlk-gateway-sync" ''
     set -euo pipefail
     umask 077
     config="$HOME/.cli-proxy-api/config.yaml"
+    shopt -s nullglob
+    for auth in "$HOME/.cli-proxy-api"/xai-*.json; do
+      prefix="$(${pkgs.jq}/bin/jq -r '.prefix // ""' "$auth")"
+      [ "$prefix" = "work" ] || continue
+      have="$(${pkgs.jq}/bin/jq -r '.priority // 0' "$auth")"
+      [ "$have" = "${toString xaiWorkPriority}" ] && continue
+      tmp="$(${pkgs.coreutils}/bin/mktemp)"
+      ${pkgs.jq}/bin/jq '.priority = ${toString xaiWorkPriority}' "$auth" > "$tmp"
+      ${pkgs.coreutils}/bin/chmod --reference="$auth" "$tmp"
+      ${pkgs.coreutils}/bin/mv "$tmp" "$auth"
+    done
+
     key="$(${nlk-llm-proxy}/bin/nlk-llm-proxy auth)"
 
     entries="$(${pkgs.coreutils}/bin/mktemp)"
