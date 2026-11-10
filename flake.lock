@@ -71,6 +71,22 @@
         "type": "github"
       }
     },
+    "cursor-plugins": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1794343102,
+        "narHash": "sha256-I9Ptc57x2VgLY+6zb37QuOfEnSV+Q0vZ4DQFRAgwsW8=",
+        "owner": "cursor",
+        "repo": "plugins",
+        "rev": "246bc508c139c5e036dfafea8978d31a7433279f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "cursor",
+        "repo": "plugins",
+        "type": "github"
+      }
+    },
     "determinate": {
       "inputs": {
         "determinate-nixd-aarch64-darwin": "determinate-nixd-aarch64-darwin",
@@ -887,6 +903,7 @@
     "root": {
       "inputs": {
         "agent-skills": "agent-skills",
+        "cursor-plugins": "cursor-plugins",
         "determinate": "determinate",
         "disko": "disko",
         "dms-plugin-registry": "dms-plugin-registry",
