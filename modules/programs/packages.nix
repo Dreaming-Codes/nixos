@@ -270,9 +270,7 @@ in {
       ++ lib.optionals isX86 [
         zoom-us
         slack
-        (discord.override {
-          withEquicord = true;
-        })
+        discord
         spotify
         zapfast
         mullvad-browser
