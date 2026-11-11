@@ -104,6 +104,7 @@ in {
         llmAgents.codex
         llmAgents.grok
         llmAgents.opencode2
+        llmAgents.grok-bot
         t3code
         t3code.desktop
         rio
