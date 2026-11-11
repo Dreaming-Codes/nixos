@@ -99,6 +99,7 @@ in {
         inputs.nix-alien.packages.${stdenv.hostPlatform.system}.nix-alien
         agentBrowser
         llmAgents.agent-desktop
+        llmAgents.agent-slack
         llmAgents.cli-proxy-api
         llmAgents.claude-code
         llmAgents.codex

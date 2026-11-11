@@ -73,13 +73,17 @@ in {
         path = llmAgents.agent-desktop.src;
         subdir = "skills";
       };
+      agent-slack = {
+        path = llmAgents.agent-slack.src;
+        subdir = "skills";
+      };
       # https://github.com/cursor/plugins/tree/main/pstack
       pstack = {
         path = inputs.cursor-plugins;
         subdir = "pstack/skills";
       };
     };
-    skills.enable = ["agent-browser" "agent-desktop" "agent-desktop-linux"];
+    skills.enable = ["agent-browser" "agent-desktop" "agent-desktop-linux" "agent-slack"];
     skills.enableAll = ["pstack"];
     # Claude Code, Cursor, Grok Build and OpenCode scan ~/.claude/skills.
     # Codex loads $CODEX_HOME/skills.
