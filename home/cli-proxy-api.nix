@@ -165,11 +165,11 @@
     apiKeyHelper = keyCommand;
     env = {
       ANTHROPIC_BASE_URL = cfg.url;
-      ANTHROPIC_MODEL = personal.defaultModelId;
-      ANTHROPIC_DEFAULT_OPUS_MODEL = personal.defaultModelId;
-      ANTHROPIC_DEFAULT_SONNET_MODEL = personal.defaultModelId;
-      ANTHROPIC_DEFAULT_HAIKU_MODEL = personal.smallModelId;
-      CLAUDE_CODE_SUBAGENT_MODEL = personal.defaultModelId;
+      ANTHROPIC_MODEL = personal.claudeOpusModelId;
+      ANTHROPIC_DEFAULT_OPUS_MODEL = personal.claudeOpusModelId;
+      ANTHROPIC_DEFAULT_SONNET_MODEL = personal.claudeSonnetModelId;
+      ANTHROPIC_DEFAULT_HAIKU_MODEL = personal.claudeHaikuModelId;
+      CLAUDE_CODE_SUBAGENT_MODEL = personal.claudeHaikuModelId;
     };
   });
 in {

@@ -1,5 +1,6 @@
-# Personal (xAI login) models served by CLIProxyAPI under the "personal/" prefix,
+# Personal models served by CLIProxyAPI under the "personal/" prefix,
 # generated from CLIProxyAPI's bundled model registry.
+# xAI logins speak the responses API. A Claude OAuth login speaks messages.
 {
   lib,
   catalog,
@@ -8,16 +9,31 @@
   defaultId = "grok-4.7";
   smallId = "grok-4.7-build-fast";
 
-  models =
+  catalogJson = builtins.fromJSON (builtins.readFile catalog);
+  # Claude 3.5 Haiku omits modalities; every other chat row is ["text"].
+  textOut = m: let
+    outs = m.supportedOutputModalities or null;
+  in
+    outs == null || outs == ["text"];
+  xai =
     builtins.filter (m: m.supportedOutputModalities or [] == ["text"])
-    (builtins.fromJSON (builtins.readFile catalog)).xai;
-  ids = map (m: m.id) models;
+    catalogJson.xai;
+  claude = builtins.filter textOut (catalogJson.claude or []);
+  models = xai ++ claude;
+  ids = map (m: m.id) xai;
+  claudeIds = map (m: m.id) claude;
+  # Same generation as the work Claude Code slots.
+  claudeModel = name:
+    assert lib.assertMsg (builtins.elem name claudeIds)
+    "cpa-personal-models: ${name} missing from ${catalog}";
+      prefix + name;
 
   efforts = m: m.thinking.levels or null;
   images = m: builtins.elem "image" (m.supportedInputModalities or []);
+  hasThinking = m: (m.thinking or null) != null;
 
   quote = s: ''"${s}"'';
-  toGrokToml = m:
+  toXaiGrokToml = m:
     lib.concatStringsSep "\n" (
       [
         "[model.${quote "personal-${m.id}"}]"
@@ -36,42 +52,78 @@
       ]
     )
     + "\n";
+
+  # messages keeps thinking signatures. OpenAI-compat translation drops them.
+  toClaudeGrokToml = m:
+    lib.concatStringsSep "\n" (
+      [
+        "[model.${quote "personal-${m.id}"}]"
+        "model = ${quote (prefix + m.id)}"
+        "name = ${quote "${m.display_name} (personal)"}"
+        "model_provider = \"cli-proxy-api\""
+        "api_backend = \"messages\""
+        "context_window = ${toString m.context_length}"
+        "max_completion_tokens = ${toString m.max_completion_tokens}"
+      ]
+      ++ lib.optionals (efforts m != null) [
+        "supports_reasoning_effort = true"
+        "reasoning_efforts = [${lib.concatMapStringsSep ", " quote (efforts m)}]"
+      ]
+      ++ lib.optional (efforts m == null && hasThinking m) "reasoning_effort = \"high\""
+      ++ [
+        ""
+        "[model.${quote "personal-${m.id}"}.extra_headers]"
+        "anthropic-version = \"2023-06-01\""
+      ]
+    )
+    + "\n";
+
+  toOpencode = m: {
+    name = prefix + m.id;
+    value = {
+      name = m.display_name;
+      limit = {
+        context = m.context_length;
+        output = m.max_completion_tokens;
+      };
+    };
+  };
+
+  toZed = chatCompletions: m:
+    {
+      name = prefix + m.id;
+      display_name = "${m.display_name} (personal)";
+      max_tokens = m.context_length;
+      max_output_tokens = m.max_completion_tokens;
+      capabilities = {
+        tools = true;
+        images = images m;
+        parallel_tool_calls = true;
+        prompt_cache_key = false;
+        chat_completions = chatCompletions;
+        interleaved_reasoning = chatCompletions && hasThinking m;
+        max_tokens_parameter = false;
+      };
+    }
+    // lib.optionalAttrs (efforts m != null || (chatCompletions && hasThinking m)) {
+      reasoning_effort = "high";
+    };
 in
   assert lib.assertMsg (builtins.elem defaultId ids && builtins.elem smallId ids)
-  "cpa-personal-models: ${defaultId} or ${smallId} missing from ${catalog}"; {
+  "cpa-personal-models: ${defaultId} or ${smallId} missing from ${catalog}";
+  assert lib.assertMsg (claude != [])
+  "cpa-personal-models: no claude models in ${catalog}"; {
     defaultModelId = prefix + defaultId;
     smallModelId = prefix + smallId;
+    claudeOpusModelId = claudeModel "claude-opus-5-5";
+    claudeSonnetModelId = claudeModel "claude-sonnet-5-5";
+    claudeHaikuModelId = claudeModel "claude-haiku-5-5";
 
-    grokConfigModelsToml = lib.concatMapStrings toGrokToml models;
+    grokConfigModelsToml =
+      lib.concatMapStrings toXaiGrokToml xai
+      + lib.concatMapStrings toClaudeGrokToml claude;
 
-    opencodeModels = builtins.listToAttrs (map (m: {
-        name = prefix + m.id;
-        value = {
-          name = m.display_name;
-          limit = {
-            context = m.context_length;
-            output = m.max_completion_tokens;
-          };
-        };
-      })
-      models);
+    opencodeModels = builtins.listToAttrs (map toOpencode models);
 
-    zedAvailableModels = map (m:
-      {
-        name = prefix + m.id;
-        display_name = "${m.display_name} (personal)";
-        max_tokens = m.context_length;
-        max_output_tokens = m.max_completion_tokens;
-        capabilities = {
-          tools = true;
-          images = images m;
-          parallel_tool_calls = true;
-          prompt_cache_key = false;
-          chat_completions = false;
-          interleaved_reasoning = false;
-          max_tokens_parameter = false;
-        };
-      }
-      // lib.optionalAttrs (efforts m != null) {reasoning_effort = "high";})
-    models;
+    zedAvailableModels = map (toZed false) xai ++ map (toZed true) claude;
   }
