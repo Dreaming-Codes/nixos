@@ -17,6 +17,7 @@
     inherit lib;
     modelPrefix = "work/";
     grokProvider = "cli-proxy-api";
+    cpaCatalog = cpa.registryFile;
   };
   cpa = config.dreaming.cliProxyApi;
 

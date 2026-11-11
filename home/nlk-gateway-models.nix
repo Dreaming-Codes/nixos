@@ -259,16 +259,27 @@
 
   cap = v: v != null && v;
 
+  # Registry levels, so Opus 5.5 offers xhigh and max. The OpenAI-compatible
+  # variant list is otherwise low/medium/high.
+  claudeEfforts = r:
+    if !isAnthropicId r.id
+    then null
+    else (cpaClaudeThinking.${cpaRegistryId r.id} or {}).levels or null;
+
   toOpencodeModel = r:
     {
       name = displayOf r;
-    }
-    // lib.optionalAttrs true {
       limit =
         {context = r.max_input_tokens;}
         // lib.optionalAttrs (r.max_output_tokens != null) {
           output = r.max_output_tokens;
         };
+    }
+    // lib.optionalAttrs (claudeEfforts r != null) {
+      capabilities.reasoning = {
+        supported = true;
+        effort = claudeEfforts r;
+      };
     };
 
   toZedModel = r: let

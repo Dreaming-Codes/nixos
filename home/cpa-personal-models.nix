@@ -80,13 +80,21 @@
 
   toOpencode = m: {
     name = prefix + m.id;
-    value = {
-      name = m.display_name;
-      limit = {
-        context = m.context_length;
-        output = m.max_completion_tokens;
+    value =
+      {
+        name = m.display_name;
+        limit = {
+          context = m.context_length;
+          output = m.max_completion_tokens;
+        };
+      }
+      # OpenAI-compatible variants default to low/medium/high.
+      // lib.optionalAttrs (efforts m != null) {
+        capabilities.reasoning = {
+          supported = true;
+          effort = efforts m;
+        };
       };
-    };
   };
 
   toZed = chatCompletions: m:
