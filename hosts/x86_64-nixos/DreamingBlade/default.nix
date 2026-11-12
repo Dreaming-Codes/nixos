@@ -104,6 +104,10 @@ in {
     cudaCapabilities = ["8.6"];
   };
 
+  # http://127.0.0.1:3000/d/airco2ntrol
+  dreaming.services.co2-grafana.enable = true;
+  dreaming.hardware.airco2ntrol.alarmPpm = 2000;
+
   hardware.keyboard.qmk.enable = true;
   services.udev.packages = with pkgs; [
     nrf-udev
