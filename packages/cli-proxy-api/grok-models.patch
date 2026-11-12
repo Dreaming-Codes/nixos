@@ -29,10 +29,22 @@ index e2b039a..b6eba0d 100644
  		if info.Thinking != nil {
  			model.ReasoningLevels = append([]string(nil), info.Thinking.Levels...)
 diff --git a/internal/client/codex/models/models.go b/internal/client/codex/models/models.go
-index 24d4287..751e4d0 100644
+index 24d4287..b5024f8 100644
 --- a/internal/client/codex/models/models.go
 +++ b/internal/client/codex/models/models.go
-@@ -758,7 +758,7 @@ func isCodexClientImageOrVideoModel(id string) bool {
+@@ -284,6 +284,11 @@ func applyCodexClientDisplayName(entry map[string]any, model map[string]any) {
+ 	if displayName := stringModelValue(model, "display_name"); displayName != "" {
+ 		entry["display_name"] = displayName
+ 	}
++	// Codex lists display names, so prefixed copies of a model need the prefix to tell them apart.
++	displayName := stringModelValue(entry, "display_name")
++	if prefix, _, ok := strings.Cut(stringModelValue(entry, "slug"), "/"); ok && displayName != "" && !strings.HasSuffix(displayName, " ("+prefix+")") {
++		entry["display_name"] = displayName + " (" + prefix + ")"
++	}
+ }
+ 
+ func applyCodexClientDevinDisplayName(entry map[string]any, id string, model map[string]any, providersForModel ProvidersForModelFunc) {
+@@ -758,7 +763,7 @@ func isCodexClientImageOrVideoModel(id string) bool {
  		target = strings.TrimSpace(target[idx+1:])
  	}
  	switch target {

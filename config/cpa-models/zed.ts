@@ -15,7 +15,7 @@ function toZed(m: Model) {
   const reasons = m.efforts.length > 0
   return {
     name: m.id,
-    display_name: `${m.name} (${m.id.split("/")[0]})`,
+    display_name: m.name,
     max_tokens: m.context,
     max_output_tokens: m.output,
     capabilities: {
