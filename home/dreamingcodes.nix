@@ -66,7 +66,7 @@
     builtins.readFile ../config/dms/defaults/plugin_settings.json
   );
 in {
-  imports = [./cli-proxy-api.nix];
+  imports = [./cli-proxy-api.nix ./zed.nix];
 
   # Set default applications (DreamingCodes specific)
   home.activation.dreamingCodesMimeApps = lib.hm.dag.entryAfter ["writeBoundary"] ''

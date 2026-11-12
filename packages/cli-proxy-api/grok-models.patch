@@ -1,0 +1,377 @@
+diff --git a/internal/api/server_routes.go b/internal/api/server_routes.go
+index e2b039a..b6eba0d 100644
+--- a/internal/api/server_routes.go
++++ b/internal/api/server_routes.go
+@@ -672,10 +672,22 @@ func grokModelsFromRegistryInfos(infos []*registry.ModelInfo) []grokbuild.ModelI
+ 		if info == nil {
+ 			continue
+ 		}
++		if !registry.OutputsText(info) {
++			continue
++		}
+ 		model := grokbuild.ModelInfo{
+-			ID:            info.ID,
+-			DisplayName:   info.DisplayName,
+-			ContextLength: info.ContextLength,
++			ID:                  info.ID,
++			DisplayName:         info.DisplayName,
++			ContextLength:       info.ContextLength,
++			Messages:            info.OwnedBy == "anthropic" || info.Type == "claude",
++			MaxCompletionTokens: info.MaxCompletionTokens,
++			WebSearch:           info.NativeCapabilities != nil && info.NativeCapabilities.WebSearch != nil && *info.NativeCapabilities.WebSearch,
++		}
++		if info.OwnedBy == "xai" {
++			model.SystemPromptLabel = info.DisplayName
++		}
++		if model.DisplayName != "" {
++			model.DisplayName = registry.PrefixedDisplayName(info)
+ 		}
+ 		if info.Thinking != nil {
+ 			model.ReasoningLevels = append([]string(nil), info.Thinking.Levels...)
+diff --git a/internal/client/codex/models/models.go b/internal/client/codex/models/models.go
+index 24d4287..0efaa62 100644
+--- a/internal/client/codex/models/models.go
++++ b/internal/client/codex/models/models.go
+@@ -194,6 +194,17 @@ func applyCodexClientNonTemplatePriorities(result []map[string]any, templates ma
+ 		slug        string
+ 	}
+ 
++	// Codex lists display names, so prefixed copies of a model need the prefix
++	// to tell them apart. Names that already carry a label are left alone.
++	for _, entry := range result {
++		displayName := stringModelValue(entry, "display_name")
++		prefix, _, ok := strings.Cut(stringModelValue(entry, "slug"), "/")
++		if !ok || displayName == "" || strings.HasSuffix(displayName, ")") || strings.Contains(strings.ToLower(displayName), strings.ToLower(prefix)) {
++			continue
++		}
++		entry["display_name"] = displayName + " (" + prefix + ")"
++	}
++
+ 	pending := make([]nonTemplateEntry, 0)
+ 	for index, entry := range result {
+ 		slug := stringModelValue(entry, "slug")
+@@ -758,7 +769,7 @@ func isCodexClientImageOrVideoModel(id string) bool {
+ 		target = strings.TrimSpace(target[idx+1:])
+ 	}
+ 	switch target {
+-	case "grok-imagine-image-quality", "gpt-image-1.5", "gpt-image-2", "gpt-image-2.5-flare", "gpt-image-2.5-sunburst", "gpt-image-2.5", "gpt-image-2.6-flare", "gpt-image-2.6-sunburst", "gpt-image-2.6", "grok-imagine-image", "grok-imagine-image-2.0", "grok-imagine-video", "grok-imagine-video-1.5", "grok-imagine-video-1.5-preview", "grok-tts", "grok-voice-tts-1.0":
++	case "grok-imagine-image-quality", "gpt-image-1.5", "gpt-image-2", "gpt-image-2.5-flare", "gpt-image-2.5-sunburst", "gpt-image-2.5", "gpt-image-2.6-flare", "gpt-image-2.6-sunburst", "gpt-image-2.6", "grok-imagine-image", "grok-imagine-image-2.0", "grok-imagine-video", "grok-imagine-video-1.5", "grok-imagine-video-1.5-preview", "grok-imagine-video-1.5-lite", "grok-tts", "grok-voice-tts-1.0":
+ 		return true
+ 	default:
+ 		return false
+diff --git a/internal/client/grokbuild/grokbuild.go b/internal/client/grokbuild/grokbuild.go
+index 2622c17..328eb86 100644
+--- a/internal/client/grokbuild/grokbuild.go
++++ b/internal/client/grokbuild/grokbuild.go
+@@ -8,6 +8,11 @@ type ModelInfo struct {
+ 	DisplayName     string
+ 	ContextLength   int
+ 	ReasoningLevels []string
++	// Messages routes the model through the Anthropic Messages API.
++	Messages            bool
++	MaxCompletionTokens int
++	WebSearch           bool
++	SystemPromptLabel   string
+ }
+ 
+ // ReasoningEffort represents reasoning effort level in Grok Shell model entries.
+@@ -24,6 +29,11 @@ type ModelEntry struct {
+ 	APIBackend       string            `json:"api_backend"`
+ 	SupportedInAPI   bool              `json:"supported_in_api"`
+ 	ReasoningEfforts []ReasoningEffort `json:"reasoning_efforts,omitempty"`
++
++	MaxCompletionTokens   int               `json:"maxCompletionTokens,omitempty"`
++	SupportsBackendSearch bool              `json:"supportsBackendSearch,omitempty"`
++	SystemPromptLabel     string            `json:"systemPromptLabel,omitempty"`
++	ExtraHeaders          map[string]string `json:"extraHeaders,omitempty"`
+ }
+ 
+ // Response represents the model list response envelope formatted for Grok Shell.
+@@ -62,6 +72,14 @@ func BuildResponse(models []ModelInfo) Response {
+ 			APIBackend:       "responses",
+ 			SupportedInAPI:   true,
+ 			ReasoningEfforts: efforts,
++
++			MaxCompletionTokens:   m.MaxCompletionTokens,
++			SupportsBackendSearch: m.WebSearch,
++			SystemPromptLabel:     m.SystemPromptLabel,
++		}
++		if m.Messages {
++			entry.APIBackend = "messages"
++			entry.ExtraHeaders = map[string]string{"anthropic-version": "2023-06-01"}
+ 		}
+ 
+ 		if m.ContextLength > 0 {
+diff --git a/internal/client/grokbuild/grokbuild_test.go b/internal/client/grokbuild/grokbuild_test.go
+index b002e2c..0b0174f 100644
+--- a/internal/client/grokbuild/grokbuild_test.go
++++ b/internal/client/grokbuild/grokbuild_test.go
+@@ -26,9 +26,10 @@ func TestBuildResponse(t *testing.T) {
+ 	response := BuildResponse([]ModelInfo{
+ 		{ID: "grok-4", DisplayName: "Grok 4", ContextLength: 256000, ReasoningLevels: []string{"high"}},
+ 		{ID: "plain-model", ContextLength: 0},
++		{ID: "claude-opus-4-7", DisplayName: "Claude Opus 4.7", Messages: true, MaxCompletionTokens: 128000},
+ 	})
+ 
+-	if response.Object != "list" || len(response.Data) != 2 {
++	if response.Object != "list" || len(response.Data) != 3 {
+ 		t.Fatalf("response envelope = %#v", response)
+ 	}
+ 	entry := response.Data[0]
+@@ -47,4 +48,8 @@ func TestBuildResponse(t *testing.T) {
+ 	if response.Data[1].Name != "plain-model" || response.Data[1].ContextWindow != 0 || response.Data[1].ReasoningEfforts != nil {
+ 		t.Fatalf("fallback/omitempty mapping = %#v", response.Data[1])
+ 	}
++	claude := response.Data[2]
++	if claude.APIBackend != "messages" || claude.ExtraHeaders["anthropic-version"] != "2023-06-01" || claude.MaxCompletionTokens != 128000 {
++		t.Fatalf("messages entry = %#v", claude)
++	}
+ }
+diff --git a/internal/registry/model_definitions.go b/internal/registry/model_definitions.go
+index f8885c1..133762c 100644
+--- a/internal/registry/model_definitions.go
++++ b/internal/registry/model_definitions.go
+@@ -376,79 +376,85 @@ func codexBuiltinImage26ModelInfo() *ModelInfo {
+ 
+ func xaiBuiltinImageModelInfo() *ModelInfo {
+ 	return &ModelInfo{
+-		ID:          xaiBuiltinImageModelID,
+-		Object:      "model",
+-		Created:     1735689600, // 2025-01-01
+-		OwnedBy:     "xai",
+-		Type:        "xai",
+-		DisplayName: "Grok Imagine Image",
+-		Name:        xaiBuiltinImageModelID,
+-		Description: "xAI Grok image generation model.",
++		ID:                        xaiBuiltinImageModelID,
++		Object:                    "model",
++		Created:                   1735689600, // 2025-01-01
++		OwnedBy:                   "xai",
++		Type:                      "xai",
++		DisplayName:               "Grok Imagine Image",
++		Name:                      xaiBuiltinImageModelID,
++		Description:               "xAI Grok image generation model.",
++		SupportedOutputModalities: []string{"image"},
+ 	}
+ }
+ 
+ func xaiBuiltinImageQualityModelInfo() *ModelInfo {
+ 	return &ModelInfo{
+-		ID:          xaiBuiltinImageQualityModelID,
+-		Object:      "model",
+-		Created:     1735689600, // 2025-01-01
+-		OwnedBy:     "xai",
+-		Type:        "xai",
+-		DisplayName: "Grok Imagine Image Quality",
+-		Name:        xaiBuiltinImageQualityModelID,
+-		Description: "xAI Grok higher-fidelity image generation model.",
++		ID:                        xaiBuiltinImageQualityModelID,
++		Object:                    "model",
++		Created:                   1735689600, // 2025-01-01
++		OwnedBy:                   "xai",
++		Type:                      "xai",
++		DisplayName:               "Grok Imagine Image Quality",
++		Name:                      xaiBuiltinImageQualityModelID,
++		Description:               "xAI Grok higher-fidelity image generation model.",
++		SupportedOutputModalities: []string{"image"},
+ 	}
+ }
+ 
+ func xaiBuiltinImage20ModelInfo() *ModelInfo {
+ 	return &ModelInfo{
+-		ID:          xaiBuiltinImage20ModelID,
+-		Object:      "model",
+-		Created:     1786060800, // 2026-08-07
+-		OwnedBy:     "xai",
+-		Type:        "xai",
+-		DisplayName: "Grok Imagine Image 2.0",
+-		Name:        xaiBuiltinImage20ModelID,
+-		Description: "xAI Grok image generation model.",
++		ID:                        xaiBuiltinImage20ModelID,
++		Object:                    "model",
++		Created:                   1786060800, // 2026-08-07
++		OwnedBy:                   "xai",
++		Type:                      "xai",
++		DisplayName:               "Grok Imagine Image 2.0",
++		Name:                      xaiBuiltinImage20ModelID,
++		Description:               "xAI Grok image generation model.",
++		SupportedOutputModalities: []string{"image"},
+ 	}
+ }
+ 
+ func xaiBuiltinVideoModelInfo() *ModelInfo {
+ 	return &ModelInfo{
+-		ID:          xaiBuiltinVideoModelID,
+-		Object:      "model",
+-		Created:     1735689600, // 2025-01-01
+-		OwnedBy:     "xai",
+-		Type:        "xai",
+-		DisplayName: "Grok Imagine Video",
+-		Name:        xaiBuiltinVideoModelID,
+-		Description: "xAI Grok video generation model.",
++		ID:                        xaiBuiltinVideoModelID,
++		Object:                    "model",
++		Created:                   1735689600, // 2025-01-01
++		OwnedBy:                   "xai",
++		Type:                      "xai",
++		DisplayName:               "Grok Imagine Video",
++		Name:                      xaiBuiltinVideoModelID,
++		Description:               "xAI Grok video generation model.",
++		SupportedOutputModalities: []string{"video"},
+ 	}
+ }
+ 
+ func xaiBuiltinVideo15ModelInfo() *ModelInfo {
+ 	return &ModelInfo{
+-		ID:          xaiBuiltinVideo15ModelID,
+-		Object:      "model",
+-		Created:     1735689600, // 2025-01-01
+-		OwnedBy:     "xai",
+-		Type:        "xai",
+-		DisplayName: "Grok Imagine Video 1.5",
+-		Name:        xaiBuiltinVideo15ModelID,
+-		Description: "xAI Grok video generation model.",
++		ID:                        xaiBuiltinVideo15ModelID,
++		Object:                    "model",
++		Created:                   1735689600, // 2025-01-01
++		OwnedBy:                   "xai",
++		Type:                      "xai",
++		DisplayName:               "Grok Imagine Video 1.5",
++		Name:                      xaiBuiltinVideo15ModelID,
++		Description:               "xAI Grok video generation model.",
++		SupportedOutputModalities: []string{"video"},
+ 	}
+ }
+ 
+ func xaiBuiltinVideo15PreviewModelInfo() *ModelInfo {
+ 	return &ModelInfo{
+-		ID:          xaiBuiltinVideo15PreviewID,
+-		Object:      "model",
+-		Created:     1735689600, // 2025-01-01
+-		OwnedBy:     "xai",
+-		Type:        "xai",
+-		DisplayName: "Grok Imagine Video 1.5 Preview",
+-		Name:        xaiBuiltinVideo15PreviewID,
+-		Description: "Compatibility alias for the xAI Grok video generation model.",
++		ID:                        xaiBuiltinVideo15PreviewID,
++		Object:                    "model",
++		Created:                   1735689600, // 2025-01-01
++		OwnedBy:                   "xai",
++		Type:                      "xai",
++		DisplayName:               "Grok Imagine Video 1.5 Preview",
++		Name:                      xaiBuiltinVideo15PreviewID,
++		Description:               "Compatibility alias for the xAI Grok video generation model.",
++		SupportedOutputModalities: []string{"video"},
+ 	}
+ }
+ 
+@@ -469,27 +475,29 @@ func xaiBuiltinVideo15LiteModelInfo() *ModelInfo {
+ 
+ func xaiBuiltinSpeechModelInfo() *ModelInfo {
+ 	return &ModelInfo{
+-		ID:          xaiBuiltinSpeechModelID,
+-		Object:      "model",
+-		Created:     1773619200, // 2026-03-16
+-		OwnedBy:     "xai",
+-		Type:        "xai",
+-		DisplayName: "Grok TTS",
+-		Name:        xaiBuiltinSpeechModelID,
+-		Description: "xAI Grok unary text-to-speech model.",
++		ID:                        xaiBuiltinSpeechModelID,
++		Object:                    "model",
++		Created:                   1773619200, // 2026-03-16
++		OwnedBy:                   "xai",
++		Type:                      "xai",
++		DisplayName:               "Grok TTS",
++		Name:                      xaiBuiltinSpeechModelID,
++		Description:               "xAI Grok unary text-to-speech model.",
++		SupportedOutputModalities: []string{"audio"},
+ 	}
+ }
+ 
+ func xaiBuiltinSpeechVoiceModelInfo() *ModelInfo {
+ 	return &ModelInfo{
+-		ID:          xaiBuiltinSpeechVoiceModelID,
+-		Object:      "model",
+-		Created:     1773619200, // 2026-03-16
+-		OwnedBy:     "xai",
+-		Type:        "xai",
+-		DisplayName: "Grok Voice TTS 1.0",
+-		Name:        xaiBuiltinSpeechVoiceModelID,
+-		Description: "xAI Grok unary text-to-speech model.",
++		ID:                        xaiBuiltinSpeechVoiceModelID,
++		Object:                    "model",
++		Created:                   1773619200, // 2026-03-16
++		OwnedBy:                   "xai",
++		Type:                      "xai",
++		DisplayName:               "Grok Voice TTS 1.0",
++		Name:                      xaiBuiltinSpeechVoiceModelID,
++		Description:               "xAI Grok unary text-to-speech model.",
++		SupportedOutputModalities: []string{"audio"},
+ 	}
+ }
+ 
+diff --git a/internal/registry/model_registry.go b/internal/registry/model_registry.go
+index 7f82e7d..1712632 100644
+--- a/internal/registry/model_registry.go
++++ b/internal/registry/model_registry.go
+@@ -1863,6 +1863,33 @@ func (r *ModelRegistry) GetModelInfo(modelID, provider string) *ModelInfo {
+ }
+ 
+ // convertModelToMap converts ModelInfo to the appropriate format for different handler types
++// PrefixedDisplayName labels prefixed copies of a model ("work/x" -> "X (work)")
++// for pickers that list display names only.
++func PrefixedDisplayName(info *ModelInfo) string {
++	name := info.DisplayName
++	if name == "" {
++		name = info.ID
++	}
++	if prefix, _, ok := strings.Cut(info.ID, "/"); ok {
++		return name + " (" + prefix + ")"
++	}
++	return name
++}
++
++// OutputsText reports whether a model produces text. Models without declared
++// output modalities are chat models.
++func OutputsText(info *ModelInfo) bool {
++	if len(info.SupportedOutputModalities) == 0 {
++		return true
++	}
++	for _, modality := range info.SupportedOutputModalities {
++		if strings.EqualFold(modality, "text") {
++			return true
++		}
++	}
++	return false
++}
++
+ func (r *ModelRegistry) convertModelToMap(model *ModelInfo, handlerType string) map[string]any {
+ 	if model == nil {
+ 		return nil
+@@ -1905,6 +1932,10 @@ func (r *ModelRegistry) convertModelToMap(model *ModelInfo, handlerType string)
+ 		return result
+ 
+ 	case "claude":
++		// Claude Code lists every row in /model, and media generators cannot chat.
++		if !OutputsText(model) {
++			return nil
++		}
+ 		result := map[string]any{
+ 			"id":       model.ID,
+ 			"object":   "model",
+@@ -1914,11 +1945,9 @@ func (r *ModelRegistry) convertModelToMap(model *ModelInfo, handlerType string)
+ 			result["created_at"] = time.Unix(model.Created, 0).UTC().Format(time.RFC3339)
+ 		}
+ 		result["type"] = "model"
+-		if model.DisplayName != "" {
+-			result["display_name"] = model.DisplayName
+-		} else {
+-			result["display_name"] = model.ID
+-		}
++		result["display_name"] = PrefixedDisplayName(model)
++		// Claude Code shows this under the name; ids are cloaked in the list.
++		result["description"] = model.ID
+ 		maxInput := model.ContextLength
+ 		if maxInput <= 0 {
+ 			maxInput = DefaultClaudeMaxInputTokens

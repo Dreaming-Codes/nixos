@@ -7,9 +7,15 @@
 }: let
   cfg = config.dreaming.cliProxyApi;
   llmAgents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
-  personal = cfg.personalModels;
+  cliProxyApi = import ../packages/cli-proxy-api {inherit inputs pkgs;};
   yq = "${pkgs.yq-go}/bin/yq";
   keyCommand = "${pkgs.coreutils}/bin/cat ${cfg.keyFile}";
+  # Clients read CPA's live model list through this shared catalog.
+  cpaModels = ../config/cpa-models;
+  zedCpaModels = "${pkgs.bun}/bin/bun ${cpaModels}/zed.ts";
+  opencodePlugin = pkgs.writeText "opencode-cpa-models.ts" ''
+    export { default } from "${cpaModels}/opencode.ts"
+  '';
 
   # Management API rewrites config.yaml, so it lives outside the store. The
   # management key stays in the env file because CPA hashes it inside config.yaml.
@@ -53,18 +59,42 @@
     exec ${llmAgents.cpa-usage-keeper}/bin/cpa-usage-keeper
   '';
 
-  grokProviderToml = ''
-    [model_providers.cli-proxy-api]
-    base_url = "${cfg.url}/v1"
-
-    [model_providers.cli-proxy-api.auth]
-    command = "${keyCommand}"
-
+  grokAuth = pkgs.writeShellScript "grok-cli-proxy-api-auth" ''
+    printf '{"access_token":"%s"}\n' "$(${keyCommand})"
   '';
-
-  # Rewrites the [model.*] tables and the cli-proxy-api provider in
-  # ~/.grok/config.toml, and turns off the fleet managed_config fetch.
-  grokModelsSync = pkgs.writeShellScript "grok-cli-proxy-api-models" ''
+  # Keys home-manager owns, per table. [model.*] tables and the old
+  # cli-proxy-api provider are dropped so the CPA model list wins.
+  grokConfigAwk = pkgs.writeText "grok-config.awk" ''
+    BEGIN {
+      tables[1] = "[features]"; keys[1] = "managed_config"
+      lines[1] = "managed_config = false"
+      tables[2] = "[endpoints]"; keys[2] = "models_base_url"
+      lines[2] = "models_base_url = \"${cfg.url}/v1\""
+      tables[3] = "[auth]"; keys[3] = "auth_provider_command|auth_provider_label"
+      lines[3] = "auth_provider_command = \"${grokAuth}\"\nauth_provider_label = \"CLIProxyAPI\""
+      for (i = 1; i <= 3; i++) index_of[tables[i]] = i
+    }
+    /^# (nlk-gateway-models|cli-proxy-api) \(home-manager/ { next }
+    /^\[/ {
+      table = $0
+      sub(/[ \t]*(#.*)?$/, "", table)
+      skip = (table ~ /^\[model\./ || table ~ /^\[model_providers\.cli-proxy-api[].]/)
+      t = (table in index_of) ? index_of[table] : 0
+    }
+    skip { next }
+    t && $0 ~ ("^[ \t]*(" keys[t] ")[ \t]*=") { next }
+    # Model ids were personal-<id> slugs before the CPA list.
+    table == "[models]" { sub(/^[ \t]*default[ \t]*=[ \t]*"personal-/, "default = \"personal/") }
+    { out[n++] = $0 }
+    /^\[/ && t { out[n++] = lines[t]; seen[t] = 1 }
+    END {
+      while (n > 0 && out[n - 1] ~ /^[ \t]*$/) n--
+      for (i = 0; i < n; i++) print out[i]
+      for (i = 1; i <= 3; i++) if (!seen[i]) printf "%s%s\n%s\n", (n || i > 1 ? "\n" : ""), tables[i], lines[i]
+    }
+  '';
+  # Grok fetches models from CPA's /v1/models and signs in through grokAuth.
+  grokConfigSync = pkgs.writeShellScript "grok-cli-proxy-api-config" ''
     set -euo pipefail
     dir="$HOME/.grok"
     config="$dir/config.toml"
@@ -74,38 +104,17 @@
     trap 'rm -f "$tmp"' EXIT
 
     [ -f "$config" ] || : > "$config"
-    ${pkgs.gawk}/bin/awk '
-      /^# (nlk-gateway-models|cli-proxy-api) \(home-manager/ { next }
-      /^\[/ {
-        skip = ($0 ~ /^\[model\./ || $0 ~ /^\[model_providers\.cli-proxy-api[].]/)
-        features = ($0 == "[features]")
-        if (features) has_features = 1
-      }
-      features && /^[ \t]*managed_config[ \t]*=/ { next }
-      !skip { lines[n++] = $0 }
-      features && /^\[features\]$/ { lines[n++] = "managed_config = false" }
-      END {
-        while (n > 0 && lines[n - 1] ~ /^[ \t]*$/) n--
-        for (i = 0; i < n; i++) print lines[i]
-        if (n > 0) print ""
-        if (!has_features) print "[features]\nmanaged_config = false\n"
-      }
-    ' "$config" > "$tmp"
-    {
-      echo '# cli-proxy-api (home-manager; do not edit)'
-      cat ${grokFragment}
-    } >> "$tmp"
+    ${pkgs.gawk}/bin/awk -f ${grokConfigAwk} "$config" > "$tmp"
     chmod 600 "$tmp"
     mv "$tmp" "$config"
   '';
-  grokFragment = pkgs.writeText "grok-cli-proxy-api.toml" (grokProviderToml + cfg.grokModels);
 
   quote = s: ''"${lib.escape ["\\" "\""] s}"'';
   # Root assignments stay above any [table]. Keys after a header belong to that table.
   codexRoot = pkgs.writeText "codex-cli-proxy-api-root.toml" ''
     # cli-proxy-api (home-manager; do not edit)
     model_provider = "cli-proxy-api"
-    model = ${quote cfg.codexModel}
+    model = ${quote cfg.defaultModel}
   '';
   codexProvider = pkgs.writeText "codex-cli-proxy-api-provider.toml" ''
     [model_providers.cli-proxy-api]
@@ -160,18 +169,31 @@
     mv "$tmp" "$config"
   '';
 
-  # --settings outranks ~/.claude/settings.json, so these env values win.
-  claudePersonalSettings = pkgs.writeText "claude-personal-settings.json" (builtins.toJSON {
-    apiKeyHelper = keyCommand;
-    env = {
-      ANTHROPIC_BASE_URL = cfg.url;
-      ANTHROPIC_MODEL = personal.claudeOpusModelId;
-      ANTHROPIC_DEFAULT_OPUS_MODEL = personal.claudeOpusModelId;
-      ANTHROPIC_DEFAULT_SONNET_MODEL = personal.claudeSonnetModelId;
-      ANTHROPIC_DEFAULT_HAIKU_MODEL = personal.claudeHaikuModelId;
-      CLAUDE_CODE_SUBAGENT_MODEL = personal.claudeHaikuModelId;
-    };
-  });
+  # Claude Code always lists its alias rows; point and label them per prefix.
+  claudeAliases = {
+    OPUS = ["claude-opus-5-5" "Opus 5.5"];
+    SONNET = ["claude-sonnet-5-5" "Sonnet 5.5"];
+    HAIKU = ["claude-haiku-5-5" "Haiku 5.5"];
+    FABLE = ["claude-fable-5-2" "Fable 5.2"];
+  };
+  claudeSettings = prefix: extraEnv:
+    pkgs.writeText "claude-${prefix}-settings.json" (builtins.toJSON {
+      apiKeyHelper = keyCommand;
+      env =
+        {
+          ANTHROPIC_BASE_URL = cfg.url;
+          # /model lists CPA's /v1/models.
+          CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY = "1";
+          CLAUDE_CODE_SUBAGENT_MODEL = "${prefix}/claude-haiku-5-5";
+        }
+        // lib.concatMapAttrs (slot: alias: {
+          "ANTHROPIC_DEFAULT_${slot}_MODEL" = "${prefix}/${lib.elemAt alias 0}";
+          "ANTHROPIC_DEFAULT_${slot}_MODEL_NAME" = "${lib.elemAt alias 1} (${prefix})";
+        })
+        claudeAliases
+        // extraEnv;
+    });
+  hostPrefix = lib.head (lib.splitString "/" cfg.defaultModel);
 in {
   options.dreaming.cliProxyApi = {
     url = lib.mkOption {
@@ -189,34 +211,32 @@ in {
       default = "${llmAgents.cli-proxy-api.src}/internal/registry/models/models.json";
       readOnly = true;
     };
-    personalModels = lib.mkOption {
-      type = lib.types.attrs;
-      default = import ./cpa-personal-models.nix {
-        inherit lib;
-        catalog = cfg.registryFile;
-      };
-      readOnly = true;
-    };
-    grokModels = lib.mkOption {
-      type = lib.types.lines;
-      default = "";
-      description = "[model.*] tables for ~/.grok/config.toml that use the cli-proxy-api provider.";
-    };
-    codexModel = lib.mkOption {
+    defaultModel = lib.mkOption {
       type = lib.types.str;
-      description = "Model id Codex requests through CLIProxyAPI.";
+      description = "CLIProxyAPI model id that Codex, Pi and Zed start with. Its prefix picks Claude Code's models.";
     };
   };
 
   config = {
-    dreaming.cliProxyApi.grokModels = personal.grokConfigModelsToml;
-    dreaming.cliProxyApi.codexModel = lib.mkDefault personal.defaultModelId;
+    dreaming.cliProxyApi.defaultModel = lib.mkDefault "personal/grok-4.7";
 
-    home.packages = [
-      (pkgs.writeShellScriptBin "claude-personal" ''
-        exec claude --settings ${claudePersonalSettings} "$@"
-      '')
-    ];
+    # Merge CPA routing into Claude Code's mutable user settings.
+    home.activation.claudeCliProxyApi = lib.hm.dag.entryAfter ["writeBoundary"] ''
+      settings="$HOME/.claude/settings.json"
+      mkdir -p "$HOME/.claude"
+      [ -s "$settings" ] || echo '{}' > "$settings"
+      tmp="$(${pkgs.coreutils}/bin/mktemp)"
+      ${pkgs.jq}/bin/jq -s '.[0] * .[1]' "$settings" ${claudeSettings hostPrefix {}} > "$tmp"
+      ${pkgs.coreutils}/bin/mv "$tmp" "$settings"
+    '';
+
+    # --settings outranks ~/.claude/settings.json, so personal models win.
+    home.packages = lib.optional (hostPrefix != "personal") (pkgs.writeShellScriptBin "claude-personal" ''
+      exec claude --settings ${claudeSettings "personal" {
+        # A model saved in ~/.claude/settings.json would otherwise be a work model.
+        ANTHROPIC_MODEL = "personal/claude-opus-5-5";
+      }} "$@"
+    '');
 
     # Hide OpenCode's built-in providers (anthropic, openai, opencode).
     programs.opencode.settings.enabled_providers = ["cpa-personal"];
@@ -227,11 +247,54 @@ in {
         baseURL = "${cfg.url}/v1";
         apiKey = "{file:${cfg.keyFile}}";
       };
-      models = personal.opencodeModels;
     };
+    programs.pi-coding-agent.settings = {
+      defaultProvider = "cpa-${lib.head (lib.splitString "/" cfg.defaultModel)}";
+      inherit (cfg) defaultModel;
+    };
+    home.file."${config.programs.pi-coding-agent.configDir}/extensions/cpa-models/index.ts".text = ''
+      export { default } from "${cpaModels}/pi.ts"
+    '';
 
-    home.activation.grokCliProxyApiModels =
-      lib.hm.dag.entryAfter ["writeBoundary"] "run ${grokModelsSync}";
+    # Zed reads CPA_PERSONAL_API_KEY. zedCpaModels fills in available_models
+    # for every cpa-* provider in settings.json.
+    programs.zed-editor.userSettings = {
+      language_models.openai_compatible.cpa-personal.api_url = "${cfg.url}/v1";
+      agent.default_model = {
+        provider = "cpa-${lib.head (lib.splitString "/" cfg.defaultModel)}";
+        model = cfg.defaultModel;
+      };
+    };
+    systemd.user.services.zed-cpa-models = {
+      Unit = {
+        Description = "Write CLIProxyAPI models into Zed settings";
+        After = ["cli-proxy-api.service"];
+        ConditionPathExists = "%h/.config/zed/settings.json";
+      };
+      Service = {
+        Type = "oneshot";
+        ExecStart = zedCpaModels;
+      };
+    };
+    systemd.user.timers.zed-cpa-models = {
+      Unit.Description = "Refresh CLIProxyAPI models in Zed settings";
+      Install.WantedBy = ["timers.target"];
+      Timer = {
+        OnActiveSec = "2min";
+        OnUnitActiveSec = "15min";
+      };
+    };
+    home.activation.zedCpaModels = lib.hm.dag.entryAfter ["zedSettingsActivation"] ''
+      run ${zedCpaModels} || echo "zed-cpa-models: CLIProxyAPI unreachable, keeping Zed models" >&2
+    '';
+
+    # OpenCode plugin discovery skips symlinks, so the entry is a copied file.
+    home.activation.opencodeCpaModels = lib.hm.dag.entryAfter ["linkGeneration"] ''
+      run ${pkgs.coreutils}/bin/install -Dm644 ${opencodePlugin} "${config.xdg.configHome}/opencode/plugins/cpa-models/index.ts"
+    '';
+
+    home.activation.grokCliProxyApi =
+      lib.hm.dag.entryAfter ["writeBoundary"] "run ${grokConfigSync}";
     home.activation.codexCliProxyApi =
       lib.hm.dag.entryAfter ["writeBoundary"] "run ${codexConfigSync}";
 
@@ -240,7 +303,7 @@ in {
       Install.WantedBy = ["default.target"];
       Service = {
         ExecStartPre = "${cpaInit}";
-        ExecStart = "${llmAgents.cli-proxy-api}/bin/cli-proxy-api -config %h/.cli-proxy-api/config.yaml";
+        ExecStart = "${cliProxyApi}/bin/cli-proxy-api -config %h/.cli-proxy-api/config.yaml";
         # Optional because ExecStartPre creates it on first start.
         EnvironmentFile = "-%h/.cli-proxy-api/management.env";
         WorkingDirectory = "%h";
