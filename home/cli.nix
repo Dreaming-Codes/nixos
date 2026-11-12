@@ -85,10 +85,23 @@ in {
     };
     skills.enable = ["agent-browser" "agent-desktop" "agent-desktop-linux" "agent-slack"];
     skills.enableAll = ["pstack"];
-    # Claude Code, Cursor, Grok Build and OpenCode scan ~/.claude/skills.
+    # Claude Code, Cursor, Grok Build, OpenCode and Pi scan ~/.claude/skills.
     # Codex loads $CODEX_HOME/skills.
     targets.claude.enable = true;
     targets.codex.enable = true;
+  };
+
+  programs.pi-coding-agent = {
+    enable = true;
+    package = llmAgents.pi;
+    # Pi saves /model and /settings choices into settings.json.
+    mutableSettings = true;
+    context = ../config/opencode/AGENTS.md;
+    settings = {
+      defaultThinkingLevel = "high";
+      enableInstallTelemetry = false;
+      skills = ["~/.claude/skills"];
+    };
   };
 
   programs.opencode = {

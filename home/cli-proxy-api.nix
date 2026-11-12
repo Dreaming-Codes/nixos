@@ -206,7 +206,7 @@ in {
     };
     defaultModel = lib.mkOption {
       type = lib.types.str;
-      description = "CLIProxyAPI model id that Codex and Zed start with.";
+      description = "CLIProxyAPI model id that Codex, Pi and Zed start with.";
     };
   };
 
@@ -229,6 +229,14 @@ in {
         apiKey = "{file:${cfg.keyFile}}";
       };
     };
+    programs.pi-coding-agent.settings = {
+      defaultProvider = "cpa-${lib.head (lib.splitString "/" cfg.defaultModel)}";
+      inherit (cfg) defaultModel;
+    };
+    home.file."${config.programs.pi-coding-agent.configDir}/extensions/cpa-models/index.ts".text = ''
+      export { default } from "${cpaModels}/pi.ts"
+    '';
+
     # Zed reads CPA_PERSONAL_API_KEY. zedCpaModels fills in available_models
     # for every cpa-* provider in settings.json.
     programs.zed-editor.userSettings = {
