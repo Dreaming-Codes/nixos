@@ -13,6 +13,7 @@
   keyCommand = "${pkgs.coreutils}/bin/cat ${cfg.keyFile}";
   # Clients read CPA's live model list through this shared catalog.
   cpaModels = ../config/cpa-models;
+  zedCpaModels = "${pkgs.bun}/bin/bun ${cpaModels}/zed.ts";
 
   # Management API rewrites config.yaml, so it lives outside the store. The
   # management key stays in the env file because CPA hashes it inside config.yaml.
@@ -111,7 +112,7 @@
   codexRoot = pkgs.writeText "codex-cli-proxy-api-root.toml" ''
     # cli-proxy-api (home-manager; do not edit)
     model_provider = "cli-proxy-api"
-    model = ${quote cfg.codexModel}
+    model = ${quote cfg.defaultModel}
   '';
   codexProvider = pkgs.writeText "codex-cli-proxy-api-provider.toml" ''
     [model_providers.cli-proxy-api]
@@ -203,14 +204,14 @@ in {
       };
       readOnly = true;
     };
-    codexModel = lib.mkOption {
+    defaultModel = lib.mkOption {
       type = lib.types.str;
-      description = "Model id Codex requests through CLIProxyAPI.";
+      description = "CLIProxyAPI model id that Codex and Zed start with.";
     };
   };
 
   config = {
-    dreaming.cliProxyApi.codexModel = lib.mkDefault personal.defaultModelId;
+    dreaming.cliProxyApi.defaultModel = lib.mkDefault "personal/grok-4.7";
 
     home.packages = [
       (pkgs.writeShellScriptBin "claude-personal" ''
@@ -228,6 +229,38 @@ in {
         apiKey = "{file:${cfg.keyFile}}";
       };
     };
+    # Zed reads CPA_PERSONAL_API_KEY. zedCpaModels fills in available_models
+    # for every cpa-* provider in settings.json.
+    programs.zed-editor.userSettings = {
+      language_models.openai_compatible.cpa-personal.api_url = "${cfg.url}/v1";
+      agent.default_model = {
+        provider = "cpa-${lib.head (lib.splitString "/" cfg.defaultModel)}";
+        model = cfg.defaultModel;
+      };
+    };
+    systemd.user.services.zed-cpa-models = {
+      Unit = {
+        Description = "Write CLIProxyAPI models into Zed settings";
+        After = ["cli-proxy-api.service"];
+        ConditionPathExists = "%h/.config/zed/settings.json";
+      };
+      Service = {
+        Type = "oneshot";
+        ExecStart = zedCpaModels;
+      };
+    };
+    systemd.user.timers.zed-cpa-models = {
+      Unit.Description = "Refresh CLIProxyAPI models in Zed settings";
+      Install.WantedBy = ["timers.target"];
+      Timer = {
+        OnActiveSec = "2min";
+        OnUnitActiveSec = "15min";
+      };
+    };
+    home.activation.zedCpaModels = lib.hm.dag.entryAfter ["zedSettingsActivation"] ''
+      run ${zedCpaModels} || echo "zed-cpa-models: CLIProxyAPI unreachable, keeping Zed models" >&2
+    '';
+
     xdg.configFile."opencode/plugins/cpa-models/index.ts".text = ''
       export { default } from "${cpaModels}/opencode.ts"
     '';
