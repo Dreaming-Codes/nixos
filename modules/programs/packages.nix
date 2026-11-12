@@ -10,6 +10,7 @@
   isX86 = config.nixpkgs.hostPlatform.isx86_64;
   cfg = config.dreaming.programs.packages;
   llmAgents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
+  cliProxyApi = import ../../packages/cli-proxy-api {inherit inputs pkgs;};
   t3code = llmAgents.t3code.override {
     providerPackages = with llmAgents; [claude-code codex grok opencode2];
   };
@@ -100,7 +101,7 @@ in {
         agentBrowser
         llmAgents.agent-desktop
         llmAgents.agent-slack
-        llmAgents.cli-proxy-api
+        cliProxyApi
         llmAgents.claude-code
         llmAgents.codex
         llmAgents.grok

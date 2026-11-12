@@ -7,6 +7,7 @@
 }: let
   cfg = config.dreaming.cliProxyApi;
   llmAgents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
+  cliProxyApi = import ../packages/cli-proxy-api {inherit inputs pkgs;};
   personal = cfg.personalModels;
   yq = "${pkgs.yq-go}/bin/yq";
   keyCommand = "${pkgs.coreutils}/bin/cat ${cfg.keyFile}";
@@ -240,7 +241,7 @@ in {
       Install.WantedBy = ["default.target"];
       Service = {
         ExecStartPre = "${cpaInit}";
-        ExecStart = "${llmAgents.cli-proxy-api}/bin/cli-proxy-api -config %h/.cli-proxy-api/config.yaml";
+        ExecStart = "${cliProxyApi}/bin/cli-proxy-api -config %h/.cli-proxy-api/config.yaml";
         # Optional because ExecStartPre creates it on first start.
         EnvironmentFile = "-%h/.cli-proxy-api/management.env";
         WorkingDirectory = "%h";
