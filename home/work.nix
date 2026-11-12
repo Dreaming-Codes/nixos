@@ -43,22 +43,6 @@
   };
 
   yq = "${pkgs.yq-go}/bin/yq";
-  cpaGatewayProviders = pkgs.writeText "cpa-nlk-gateway.json" (builtins.toJSON {
-    openai-compatibility = {
-      name = "nlk-gateway";
-      prefix = "work";
-      base-url = gatewayModels.apiUrl;
-      models = gatewayModels.cliProxyApiModels;
-    };
-    # Native Anthropic passthrough keeps thinking signatures intact.
-    claude = {
-      name = "nlk-gateway";
-      prefix = "work";
-      base-url = lib.removeSuffix "/v1" gatewayModels.apiUrl;
-      models = gatewayModels.cliProxyApiClaudeModels;
-    };
-  });
-
   xaiWorkPriority = 1;
 
   # Gateway id_tokens live ~65 min and `auth` only renews near expiry, so this
@@ -81,11 +65,18 @@
 
     key="$(${nlk-llm-proxy}/bin/nlk-llm-proxy auth)"
 
+    providers="$(${pkgs.coreutils}/bin/mktemp)"
     entries="$(${pkgs.coreutils}/bin/mktemp)"
-    trap 'rm -f "$entries"' EXIT
-    ${pkgs.jq}/bin/jq -S --arg k "$key" 'map_values(. + {keys: [{"api-key": $k}]}) | .claude.keys[0].cloak.mode = "never"' ${cpaGatewayProviders} > "$entries"
+    trap 'rm -f "$providers" "$entries"' EXIT
+    current_entries='.api-keys | with_entries(select(.key == "openai-compatibility" or .key == "claude")) | map_values([.[] | select(.name == "nlk-gateway")][0])'
+    if ! NLK_GATEWAY_TOKEN="$key" ${pkgs.bun}/bin/bun ${./nlk-gateway-cpa-models.ts} \
+      ${../secrets/work/ai-gateway-team-overrides.json} ${cpa.registryFile} > "$providers"; then
+      echo "gateway catalog fetch failed, keeping the current model entries" >&2
+      ${yq} -o=json "$current_entries" "$config" | ${pkgs.jq}/bin/jq -e 'map_values(del(.keys)) | select(.claude != null and ."openai-compatibility" != null)' > "$providers"
+    fi
+    ${pkgs.jq}/bin/jq -S --arg k "$key" 'map_values(. + {keys: [{"api-key": $k}]}) | .claude.keys[0].cloak.mode = "never"' "$providers" > "$entries"
 
-    current="$(${yq} -o=json '.api-keys | with_entries(select(.key == "openai-compatibility" or .key == "claude")) | map_values([.[] | select(.name == "nlk-gateway")][0])' "$config" | ${pkgs.jq}/bin/jq -S .)"
+    current="$(${yq} -o=json "$current_entries" "$config" | ${pkgs.jq}/bin/jq -S .)"
     [ "$current" = "$(cat "$entries")" ] && exit 0
 
     ENTRIES="$entries" ${yq} -i '
