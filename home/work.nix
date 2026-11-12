@@ -12,14 +12,13 @@
 
   claudeWorkSettings = pkgs.writeText "claude-work-settings.json" (builtins.toJSON {
     apiKeyHelper = "${pkgs.coreutils}/bin/cat ${cpa.keyFile}";
-    env = {
-      ANTHROPIC_BASE_URL = cpa.url;
-      # /model lists CPA's /v1/models.
-      CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY = "1";
-      ANTHROPIC_DEFAULT_OPUS_MODEL = "work/claude-opus-5-5";
-      ANTHROPIC_DEFAULT_SONNET_MODEL = "work/claude-sonnet-5-5";
-      ANTHROPIC_DEFAULT_HAIKU_MODEL = "work/claude-haiku-5-5";
-    };
+    env =
+      {
+        ANTHROPIC_BASE_URL = cpa.url;
+        # /model lists CPA's /v1/models.
+        CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY = "1";
+      }
+      // cpa.claudeAliasEnv "work";
   });
 
   nlk-llm-proxy = pkgs.writeShellApplication {

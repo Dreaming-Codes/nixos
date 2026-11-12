@@ -172,17 +172,30 @@
   # --settings outranks ~/.claude/settings.json, so these env values win.
   claudePersonalSettings = pkgs.writeText "claude-personal-settings.json" (builtins.toJSON {
     apiKeyHelper = keyCommand;
-    env = {
-      ANTHROPIC_BASE_URL = cfg.url;
-      # /model lists CPA's /v1/models.
-      CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY = "1";
-      ANTHROPIC_MODEL = "personal/claude-opus-5-5";
-      ANTHROPIC_DEFAULT_OPUS_MODEL = "personal/claude-opus-5-5";
-      ANTHROPIC_DEFAULT_SONNET_MODEL = "personal/claude-sonnet-5-5";
-      ANTHROPIC_DEFAULT_HAIKU_MODEL = "personal/claude-haiku-5-5";
-      CLAUDE_CODE_SUBAGENT_MODEL = "personal/claude-haiku-5-5";
-    };
+    env =
+      {
+        ANTHROPIC_BASE_URL = cfg.url;
+        # /model lists CPA's /v1/models.
+        CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY = "1";
+        ANTHROPIC_MODEL = "personal/claude-opus-5-5";
+        CLAUDE_CODE_SUBAGENT_MODEL = "personal/claude-haiku-5-5";
+      }
+      // cfg.claudeAliasEnv "personal";
   });
+
+  # Claude Code always lists its alias rows; point and label them per prefix.
+  claudeAliases = {
+    OPUS = ["claude-opus-5-5" "Opus 5.5"];
+    SONNET = ["claude-sonnet-5-5" "Sonnet 5.5"];
+    HAIKU = ["claude-haiku-5-5" "Haiku 5.5"];
+    FABLE = ["claude-fable-5-2" "Fable 5.2"];
+  };
+  claudeAliasEnv = prefix:
+    lib.concatMapAttrs (slot: alias: {
+      "ANTHROPIC_DEFAULT_${slot}_MODEL" = "${prefix}/${lib.elemAt alias 0}";
+      "ANTHROPIC_DEFAULT_${slot}_MODEL_NAME" = "${lib.elemAt alias 1} (${prefix})";
+    })
+    claudeAliases;
 in {
   options.dreaming.cliProxyApi = {
     url = lib.mkOption {
@@ -199,6 +212,12 @@ in {
       type = lib.types.str;
       default = "${llmAgents.cli-proxy-api.src}/internal/registry/models/models.json";
       readOnly = true;
+    };
+    claudeAliasEnv = lib.mkOption {
+      type = lib.types.functionTo (lib.types.attrsOf lib.types.str);
+      default = claudeAliasEnv;
+      readOnly = true;
+      description = "Claude Code env that points and labels its alias rows for a CPA prefix.";
     };
     defaultModel = lib.mkOption {
       type = lib.types.str;
