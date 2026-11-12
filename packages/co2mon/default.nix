@@ -5,10 +5,7 @@
   pkg-config,
   udev,
 }:
-# lnicola/co2mon only ships a library + the `watch` example (no CLI crate),
-# so build that example as the `co2mon` binary. Upstream does not commit a
-# Cargo.lock; ./Cargo.lock was generated with `cargo generate-lockfile` at
-# the pinned rev.
+# Upstream ships no CLI or Cargo.lock; the `watch` example is installed as `co2mon`.
 rustPlatform.buildRustPackage {
   pname = "co2mon";
   version = "2.1.1-unstable-2023-03-21";
@@ -28,7 +25,6 @@ rustPlatform.buildRustPackage {
   nativeBuildInputs = [pkg-config];
   buildInputs = [udev];
 
-  # hidraw backend (no libusb, no kernel driver detaching).
   buildNoDefaultFeatures = true;
   buildFeatures = ["linux-static-hidraw"];
   cargoBuildFlags = ["-p" "co2mon" "--example" "watch"];

@@ -5,50 +5,48 @@
   ...
 }: let
   cfg = config.dreaming.services.co2-grafana;
+  ds = {
+    type = "prometheus";
+    uid = "prometheus";
+  };
+  panel = id: x: title: expr: unit: steps: {
+    inherit id title;
+    type = "timeseries";
+    datasource = ds;
+    gridPos = {
+      inherit x;
+      y = 0;
+      w = 12;
+      h = 10;
+    };
+    fieldConfig.defaults = {
+      inherit unit;
+      color.mode = "thresholds";
+      thresholds = {
+        mode = "absolute";
+        inherit steps;
+      };
+      custom.thresholdsStyle.mode = "line";
+    };
+    targets = [
+      {
+        refId = "A";
+        datasource = ds;
+        inherit expr;
+        legendFormat = title;
+      }
+    ];
+  };
   dashboards = pkgs.writeTextDir "airco2ntrol.json" (builtins.toJSON {
     uid = "airco2ntrol";
     title = "AirCO2ntrol";
-    schemaVersion = 39;
     refresh = "30s";
     time = {
       from = "now-24h";
       to = "now";
     };
-    panels = let
-      ds = {
-        type = "prometheus";
-        uid = "prometheus";
-      };
-      panel = id: title: expr: unit: x: thresholds: {
-        inherit id title;
-        type = "timeseries";
-        datasource = ds;
-        gridPos = {
-          h = 10;
-          w = 12;
-          inherit x;
-          y = 0;
-        };
-        fieldConfig.defaults = {
-          inherit unit;
-          thresholds = {
-            mode = "absolute";
-            steps = thresholds;
-          };
-          color.mode = "thresholds";
-          custom.thresholdsStyle.mode = "line";
-        };
-        targets = [
-          {
-            refId = "A";
-            datasource = ds;
-            inherit expr;
-            legendFormat = title;
-          }
-        ];
-      };
-    in [
-      (panel 1 "CO2" "airco2ntrol_co2_ppm" "ppm" 0 [
+    panels = [
+      (panel 1 0 "CO2" "airco2ntrol_co2_ppm" "ppm" [
         {
           color = "green";
           value = null;
@@ -62,7 +60,7 @@
           value = 1400;
         }
       ])
-      (panel 2 "Temperature" "airco2ntrol_temperature_celsius" "celsius" 12 [
+      (panel 2 12 "Temperature" "airco2ntrol_temperature_celsius" "celsius" [
         {
           color = "blue";
           value = null;
@@ -71,16 +69,7 @@
     ];
   });
 in {
-  options.dreaming.services.co2-grafana = {
-    enable = lib.mkEnableOption ''
-      Prometheus + Grafana (localhost only) with a provisioned dashboard for
-      dreaming.hardware.airco2ntrol readings
-    '';
-    grafanaPort = lib.mkOption {
-      type = lib.types.port;
-      default = 3000;
-    };
-  };
+  options.dreaming.services.co2-grafana.enable = lib.mkEnableOption "localhost Prometheus + Grafana dashboard for the AirCO2ntrol sensor";
 
   config = lib.mkIf cfg.enable {
     dreaming.hardware.airco2ntrol.enable = true;
@@ -88,13 +77,11 @@ in {
     services.prometheus = {
       enable = true;
       listenAddress = "127.0.0.1";
-      port = 9090;
       retentionTime = "365d";
       exporters.node = {
         enable = true;
         listenAddress = "127.0.0.1";
-        enabledCollectors = ["textfile"];
-        extraFlags = ["--collector.textfile.directory=/var/lib/airco2ntrol"];
+        extraFlags = ["--collector.disable-defaults" "--collector.textfile" "--collector.textfile.directory=/run/airco2ntrol"];
       };
       scrapeConfigs = [
         {
@@ -108,28 +95,22 @@ in {
     services.grafana = {
       enable = true;
       settings = {
-        server = {
-          http_addr = "127.0.0.1";
-          http_port = cfg.grafanaPort;
-        };
-        # Local-only box: anonymous read-only viewing; admin login still works.
         "auth.anonymous" = {
           enabled = true;
           org_role = "Viewer";
         };
-        security.secret_key = "$__file{/var/lib/grafana/secret_key}";
+        security.secret_key = "$__file{${config.services.grafana.dataDir}/secret_key}";
         analytics.reporting_enabled = false;
       };
       provision = {
         enable = true;
         datasources.settings.datasources = [
-          {
-            name = "Prometheus";
-            uid = "prometheus";
-            type = "prometheus";
-            url = "http://127.0.0.1:${toString config.services.prometheus.port}";
-            isDefault = true;
-          }
+          (ds
+            // {
+              name = "Prometheus";
+              url = "http://127.0.0.1:${toString config.services.prometheus.port}";
+              isDefault = true;
+            })
         ];
         dashboards.settings.providers = [
           {
@@ -140,11 +121,8 @@ in {
       };
     };
 
-    # Generate Grafana's secret_key once instead of committing one.
-    systemd.services.grafana.preStart = lib.mkBefore ''
-      if [ ! -s /var/lib/grafana/secret_key ]; then
-        (umask 077; ${pkgs.openssl}/bin/openssl rand -hex 32 > /var/lib/grafana/secret_key)
-      fi
+    systemd.services.grafana.preStart = ''
+      [ -s secret_key ] || (umask 077; ${lib.getExe pkgs.openssl} rand -hex 32 > secret_key)
     '';
   };
 }

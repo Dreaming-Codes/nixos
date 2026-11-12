@@ -104,7 +104,7 @@ in {
     cudaCapabilities = ["8.6"];
   };
 
-  # TFA AirCO2ntrol Mini -> Prometheus -> Grafana (http://127.0.0.1:3000/d/airco2ntrol)
+  # http://127.0.0.1:3000/d/airco2ntrol
   dreaming.services.co2-grafana.enable = true;
 
   hardware.keyboard.qmk.enable = true;
