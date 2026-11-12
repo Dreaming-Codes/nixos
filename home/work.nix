@@ -32,6 +32,8 @@
     };
   });
 
+  zedCpaModels = "${pkgs.bun}/bin/bun ${../config/cpa-models}/zed.ts";
+
   nlk-llm-proxy = pkgs.writeShellApplication {
     name = "nlk-llm-proxy";
     runtimeInputs = [
@@ -112,6 +114,31 @@ in {
       OnUnitActiveSec = "4min";
     };
   };
+
+  systemd.user.services.zed-cpa-models = {
+    Unit = {
+      Description = "Write CLIProxyAPI models into Zed settings";
+      After = ["cli-proxy-api.service" "cli-proxy-api-nlk-gateway.service"];
+      ConditionPathExists = "%h/.config/zed/settings.json";
+    };
+    Service = {
+      Type = "oneshot";
+      ExecStart = zedCpaModels;
+    };
+  };
+
+  systemd.user.timers.zed-cpa-models = {
+    Unit.Description = "Refresh CLIProxyAPI models in Zed settings";
+    Install.WantedBy = ["timers.target"];
+    Timer = {
+      OnActiveSec = "2min";
+      OnUnitActiveSec = "15min";
+    };
+  };
+
+  home.activation.zedCpaModels = lib.hm.dag.entryAfter ["zedSettingsActivation"] ''
+    run ${zedCpaModels} || echo "zed-cpa-models: CLIProxyAPI unreachable, keeping Zed models" >&2
+  '';
 
   # Stock OpenCode binary (cli.nix); work models go through CLIProxyAPI.
   programs.opencode.settings = {
@@ -250,15 +277,10 @@ in {
           font_style = "italic";
         };
       };
+      # zedCpaModels fills in available_models.
       language_models.openai_compatible = {
-        cpa-work = {
-          api_url = "${cpa.url}/v1";
-          available_models = workModels.zedAvailableModels;
-        };
-        cpa-personal = {
-          api_url = "${cpa.url}/v1";
-          available_models = cpa.personalModels.zedAvailableModels;
-        };
+        cpa-work.api_url = "${cpa.url}/v1";
+        cpa-personal.api_url = "${cpa.url}/v1";
       };
       agent.default_model = {
         # Nested key under language_models.openai_compatible.
