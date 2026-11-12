@@ -17,6 +17,16 @@
     cp ${../config/pi-extensions/ask-user/index.ts} $out/index.ts
     ln -s ${piChoices} $out/node_modules/pi-choices
   '';
+
+  piDir = config.programs.pi-coding-agent.configDir;
+  piSubagent = "${config.programs.pi-coding-agent.package}/libexec/pi/examples/extensions/subagent";
+  # Upstream agents pin bare Anthropic model ids; without them subagents inherit the session model.
+  piSubagentAgents = pkgs.runCommand "pi-subagent-agents" {} ''
+    mkdir $out
+    for f in ${piSubagent}/agents/*.md; do
+      sed '/^model:/d' "$f" > "$out/$(basename "$f")"
+    done
+  '';
 in {
   imports = [inputs.agent-skills.homeManagerModules.default];
 
@@ -114,7 +124,17 @@ in {
       skills = ["~/.claude/skills"];
     };
   };
-  home.file."${config.programs.pi-coding-agent.configDir}/extensions/ask-user".source = piAskUser;
+  home.file."${piDir}/extensions/ask-user".source = piAskUser;
+  home.file."${piDir}/extensions/watch/index.ts".source = ../config/pi-extensions/watch/index.ts;
+  home.file."${piDir}/extensions/subagent".source = piSubagent;
+  home.file."${piDir}/agents" = {
+    source = piSubagentAgents;
+    recursive = true;
+  };
+  home.file."${piDir}/prompts" = {
+    source = "${piSubagent}/prompts";
+    recursive = true;
+  };
 
   programs.opencode = {
     enable = true;
