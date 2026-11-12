@@ -1,8 +1,8 @@
 diff --git a/internal/api/server_routes.go b/internal/api/server_routes.go
-index e2b039a..615fc0b 100644
+index e2b039a..c2a707d 100644
 --- a/internal/api/server_routes.go
 +++ b/internal/api/server_routes.go
-@@ -672,10 +672,19 @@ func grokModelsFromRegistryInfos(infos []*registry.ModelInfo) []grokbuild.ModelI
+@@ -672,10 +672,23 @@ func grokModelsFromRegistryInfos(infos []*registry.ModelInfo) []grokbuild.ModelI
  		if info == nil {
  			continue
  		}
@@ -22,10 +22,14 @@ index e2b039a..615fc0b 100644
 +		}
 +		if info.OwnedBy == "xai" {
 +			model.SystemPromptLabel = info.DisplayName
++		}
++		// Grok Shell lists display names only, so prefixed copies of a model need the prefix to tell them apart.
++		if prefix, _, ok := strings.Cut(info.ID, "/"); ok && model.DisplayName != "" {
++			model.DisplayName += " (" + prefix + ")"
  		}
  		if info.Thinking != nil {
  			model.ReasoningLevels = append([]string(nil), info.Thinking.Levels...)
-@@ -685,6 +694,20 @@ func grokModelsFromRegistryInfos(infos []*registry.ModelInfo) []grokbuild.ModelI
+@@ -685,6 +698,20 @@ func grokModelsFromRegistryInfos(infos []*registry.ModelInfo) []grokbuild.ModelI
  	return models
  }
  

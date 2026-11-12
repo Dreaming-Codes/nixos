@@ -15,7 +15,7 @@ function toZed(m: Model) {
   const reasons = m.efforts.length > 0
   return {
     name: m.id,
-    display_name: m.provider === providers.personal ? `${m.name} (personal)` : m.name,
+    display_name: `${m.name} (${m.id.split("/")[0]})`,
     max_tokens: m.context,
     max_output_tokens: m.output,
     capabilities: {

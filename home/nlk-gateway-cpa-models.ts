@@ -107,11 +107,14 @@ function familyRank(id: string): number {
 }
 resolved.sort((a, b) => familyRank(a.id) - familyRank(b.id) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
 
+// Clients label rows by CPA prefix, so the gateway suffix is dropped.
 function displayName(r: (typeof resolved)[number]): string {
-  if (r.teamName != null) return r.teamName
-  let s = r.id
-  for (const p of ["global.anthropic.", "us.anthropic.", "openai.", "global."]) if (s.startsWith(p)) s = s.slice(p.length)
-  return s
+  let s = r.teamName?.replace(/ \(AI Gateway[^)]*\)$/, "")
+  if (s == null) {
+    s = r.id
+    for (const p of ["global.anthropic.", "us.anthropic.", "openai.", "global."]) if (s.startsWith(p)) s = s.slice(p.length)
+  }
+  return r.id.startsWith("us.") ? `${s} US` : s
 }
 
 // CLIProxyAPI strips `thinking` from requests to models without a thinking
