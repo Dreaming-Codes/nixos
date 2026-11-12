@@ -28,24 +28,6 @@
         --prefix LD_PRELOAD " " "${pkgs.boringssl}/lib/libcrypto.so ${pkgs.boringssl}/lib/libssl.so"
     '';
   };
-
-  rsworktree = pkgs.rustPlatform.buildRustPackage rec {
-    pname = "rsworktree";
-    version = "0.7.1";
-
-    src = pkgs.fetchCrate {
-      inherit pname version;
-      hash = "sha256-tvgvbOlZvg24WoiC4EPgvqaPizNd/Ir68QQpYjWQZgk=";
-    };
-
-    cargoHash = "sha256-PJrl8JghJ69+FbtSVKibiJYFaQQ3PV9+eU7N9nX/TxA=";
-
-    # Tests require git and network access
-    doCheck = false;
-
-    nativeBuildInputs = [pkgs.pkg-config];
-    buildInputs = [pkgs.openssl];
-  };
 in {
   options.dreaming.programs.packages.enable =
     lib.mkEnableOption "common system packages and program defaults"
@@ -177,7 +159,6 @@ in {
         evcxr
 
         # Git worktree manager from crates.io
-        rsworktree
         cargo-edit
         gh
         glab
