@@ -174,6 +174,8 @@
     apiKeyHelper = keyCommand;
     env = {
       ANTHROPIC_BASE_URL = cfg.url;
+      # /model lists CPA's /v1/models.
+      CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY = "1";
       ANTHROPIC_MODEL = "personal/claude-opus-5-5";
       ANTHROPIC_DEFAULT_OPUS_MODEL = "personal/claude-opus-5-5";
       ANTHROPIC_DEFAULT_SONNET_MODEL = "personal/claude-sonnet-5-5";
