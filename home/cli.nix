@@ -6,6 +6,17 @@
   ...
 }: let
   llmAgents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
+
+  piChoices = pkgs.fetchzip {
+    url = "https://registry.npmjs.org/pi-choices/-/pi-choices-0.1.5.tgz";
+    hash = "sha256-d2f3j/qD5BnPUk6hSXhVWiqmwrFZ3WaW0hlZ5MX+BJI=";
+  };
+  # Imports pi-choices as a library, so its pi_choices tool stays unregistered.
+  piAskUser = pkgs.runCommand "pi-ask-user" {} ''
+    mkdir -p $out/node_modules
+    cp ${../config/pi-extensions/ask-user/index.ts} $out/index.ts
+    ln -s ${piChoices} $out/node_modules/pi-choices
+  '';
 in {
   imports = [inputs.agent-skills.homeManagerModules.default];
 
@@ -103,6 +114,7 @@ in {
       skills = ["~/.claude/skills"];
     };
   };
+  home.file."${config.programs.pi-coding-agent.configDir}/extensions/ask-user".source = piAskUser;
 
   programs.opencode = {
     enable = true;
