@@ -280,6 +280,10 @@
         supported = true;
         effort = claudeEfforts r;
       };
+    }
+    # CPA returns reasoning text only when the chat request asks for a summary.
+    // lib.optionalAttrs (cap r.reasoning) {
+      body.include_reasoning = true;
     };
 
   toZedModel = r: let

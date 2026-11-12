@@ -31,6 +31,10 @@
   efforts = m: m.thinking.levels or null;
   images = m: builtins.elem "image" (m.supportedInputModalities or []);
   hasThinking = m: (m.thinking or null) != null;
+  # grok-4.20-0309-reasoning has no thinking object in the registry.
+  reasons = m:
+    hasThinking m
+    || (lib.hasInfix "reasoning" m.id && !lib.hasInfix "non-reasoning" m.id);
 
   quote = s: ''"${s}"'';
   toXaiGrokToml = m:
@@ -94,6 +98,10 @@
           supported = true;
           effort = efforts m;
         };
+      }
+      # CPA returns reasoning text only when the chat request asks for a summary.
+      // lib.optionalAttrs (reasons m) {
+        body.include_reasoning = true;
       };
   };
 
