@@ -29,22 +29,28 @@ index e2b039a..b6eba0d 100644
  		if info.Thinking != nil {
  			model.ReasoningLevels = append([]string(nil), info.Thinking.Levels...)
 diff --git a/internal/client/codex/models/models.go b/internal/client/codex/models/models.go
-index 24d4287..b5024f8 100644
+index 24d4287..0efaa62 100644
 --- a/internal/client/codex/models/models.go
 +++ b/internal/client/codex/models/models.go
-@@ -284,6 +284,11 @@ func applyCodexClientDisplayName(entry map[string]any, model map[string]any) {
- 	if displayName := stringModelValue(model, "display_name"); displayName != "" {
- 		entry["display_name"] = displayName
+@@ -194,6 +194,17 @@ func applyCodexClientNonTemplatePriorities(result []map[string]any, templates ma
+ 		slug        string
  	}
-+	// Codex lists display names, so prefixed copies of a model need the prefix to tell them apart.
-+	displayName := stringModelValue(entry, "display_name")
-+	if prefix, _, ok := strings.Cut(stringModelValue(entry, "slug"), "/"); ok && displayName != "" && !strings.HasSuffix(displayName, " ("+prefix+")") {
+ 
++	// Codex lists display names, so prefixed copies of a model need the prefix
++	// to tell them apart. Names that already carry a label are left alone.
++	for _, entry := range result {
++		displayName := stringModelValue(entry, "display_name")
++		prefix, _, ok := strings.Cut(stringModelValue(entry, "slug"), "/")
++		if !ok || displayName == "" || strings.HasSuffix(displayName, ")") || strings.Contains(strings.ToLower(displayName), strings.ToLower(prefix)) {
++			continue
++		}
 +		entry["display_name"] = displayName + " (" + prefix + ")"
 +	}
- }
- 
- func applyCodexClientDevinDisplayName(entry map[string]any, id string, model map[string]any, providersForModel ProvidersForModelFunc) {
-@@ -758,7 +763,7 @@ func isCodexClientImageOrVideoModel(id string) bool {
++
+ 	pending := make([]nonTemplateEntry, 0)
+ 	for index, entry := range result {
+ 		slug := stringModelValue(entry, "slug")
+@@ -758,7 +769,7 @@ func isCodexClientImageOrVideoModel(id string) bool {
  		target = strings.TrimSpace(target[idx+1:])
  	}
  	switch target {
