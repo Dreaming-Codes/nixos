@@ -31,13 +31,17 @@ function tail(value: string): string {
 	return value.length > MAX_REPORT_CHARS ? `...${value.slice(-MAX_REPORT_CHARS)}` : value;
 }
 
-function describe(w: Watch): string {
+function summary(w: Watch): string {
 	const t = w.trigger;
 	const rule =
 		t.kind === "stream"
 			? `stream /${t.match.source}/`
 			: `poll every ${t.intervalMs / 1000}s ${t.match ? `until /${t.match.source}/` : "on change"}`;
-	return `${w.id} [${w.label}] ${rule}${w.once ? " once" : ""}, fired ${w.fired}x: ${w.command}`;
+	return `${w.id} [${w.label}] ${rule}${w.once ? " once" : ""}, fired ${w.fired}x`;
+}
+
+function describe(w: Watch): string {
+	return `${summary(w)}: ${w.command}`;
 }
 
 export default function watch(pi: ExtensionAPI) {
@@ -45,14 +49,14 @@ export default function watch(pi: ExtensionAPI) {
 	let nextId = 1;
 	let ui: ExtensionContext["ui"] | undefined;
 
-	function refreshStatus() {
-		ui?.setStatus("watch", watches.size ? `watching ${watches.size}` : undefined);
+	function showStatus(w: Watch) {
+		ui?.setStatus(`watch:${w.id}`, watches.has(w.id) ? `watch ${summary(w)}` : undefined);
 	}
 
 	function remove(w: Watch) {
 		if (!watches.delete(w.id)) return;
 		w.stop();
-		refreshStatus();
+		showStatus(w);
 	}
 
 	function fire(w: Watch, report: string, end = w.once) {
@@ -68,6 +72,7 @@ export default function watch(pi: ExtensionAPI) {
 			{ triggerTurn: true, deliverAs: "steer" },
 		);
 		if (end) remove(w);
+		else showStatus(w);
 	}
 
 	function startStream(w: Watch, match: RegExp, cwd: string): () => void {
@@ -183,7 +188,7 @@ export default function watch(pi: ExtensionAPI) {
 			};
 			watches.set(id, w);
 			w.stop = trigger.kind === "stream" ? startStream(w, trigger.match, ctx.cwd) : startPoll(w, trigger, ctx.cwd);
-			refreshStatus();
+			showStatus(w);
 			return text(`Started ${describe(w)}`);
 		},
 	});
