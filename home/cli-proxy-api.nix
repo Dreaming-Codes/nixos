@@ -13,6 +13,9 @@
   # Clients read CPA's live model list through this shared catalog.
   cpaModels = ../config/cpa-models;
   zedCpaModels = "${pkgs.bun}/bin/bun ${cpaModels}/zed.ts";
+  opencodePlugin = pkgs.writeText "opencode-cpa-models.ts" ''
+    export { default } from "${cpaModels}/opencode.ts"
+  '';
 
   # Management API rewrites config.yaml, so it lives outside the store. The
   # management key stays in the env file because CPA hashes it inside config.yaml.
@@ -260,8 +263,9 @@ in {
       run ${zedCpaModels} || echo "zed-cpa-models: CLIProxyAPI unreachable, keeping Zed models" >&2
     '';
 
-    xdg.configFile."opencode/plugins/cpa-models/index.ts".text = ''
-      export { default } from "${cpaModels}/opencode.ts"
+    # OpenCode plugin discovery skips symlinks, so the entry is a copied file.
+    home.activation.opencodeCpaModels = lib.hm.dag.entryAfter ["linkGeneration"] ''
+      run ${pkgs.coreutils}/bin/install -Dm644 ${opencodePlugin} "${config.xdg.configHome}/opencode/plugins/cpa-models/index.ts"
     '';
 
     home.activation.grokCliProxyApi =
