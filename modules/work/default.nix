@@ -11,6 +11,11 @@ in {
   config = lib.mkIf cfg.enable {
     home-manager.users.dreamingcodes.imports = [../../home/work.nix];
 
+    # Work repos commit .claude/settings.json that targets the AI gateway
+    # directly; managed settings keep Claude Code on CPA's prefixed models.
+    environment.etc."claude-code/managed-settings.json".source =
+      config.home-manager.users.dreamingcodes.dreaming.cliProxyApi.claudeManagedSettings;
+
     # Neuralink Internal Root CA. The cert lives in this repo under
     # secrets/certs/ encrypted at rest with git-crypt; the working tree holds
     # the decrypted PEM, so security.pki bakes it into the system CA bundle at

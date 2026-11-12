@@ -176,8 +176,9 @@
     HAIKU = ["claude-haiku-5-5" "Haiku 5.5"];
     FABLE = ["claude-fable-5-2" "Fable 5.2"];
   };
-  claudeSettings = prefix: extraEnv:
-    pkgs.writeText "claude-${prefix}-settings.json" (builtins.toJSON {
+  claudeSettings = prefix: extraEnv: claudeSettingsWith prefix extraEnv {};
+  claudeSettingsWith = prefix: extraEnv: extra:
+    pkgs.writeText "claude-${prefix}-settings.json" (builtins.toJSON (extra // {
       apiKeyHelper = keyCommand;
       env =
         {
@@ -192,7 +193,7 @@
         })
         claudeAliases
         // extraEnv;
-    });
+    }));
   hostPrefix = lib.head (lib.splitString "/" cfg.defaultModel);
 in {
   options.dreaming.cliProxyApi = {
@@ -214,6 +215,18 @@ in {
     defaultModel = lib.mkOption {
       type = lib.types.str;
       description = "CLIProxyAPI model id that Codex, Pi and Zed start with. Its prefix picks Claude Code's models.";
+    };
+    claudeManagedSettings = lib.mkOption {
+      type = lib.types.package;
+      readOnly = true;
+      description = "Claude Code settings for /etc/claude-code/managed-settings.json, which outrank project settings that point at another gateway.";
+      # ANTHROPIC_MODEL from claude-personal's --settings still beats this model.
+      default = claudeSettingsWith hostPrefix {
+        # Repos may ship an unprefixed custom option that CPA rejects.
+        ANTHROPIC_CUSTOM_MODEL_OPTION = "${hostPrefix}/gpt-5.6-sol";
+        ANTHROPIC_CUSTOM_MODEL_OPTION_NAME = "GPT-5.6 Sol (${hostPrefix})";
+        ANTHROPIC_CUSTOM_MODEL_OPTION_DESCRIPTION = "Via CLIProxyAPI";
+      } {model = cfg.defaultModel;};
     };
   };
 
