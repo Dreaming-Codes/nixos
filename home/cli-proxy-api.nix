@@ -11,6 +11,8 @@
   personal = cfg.personalModels;
   yq = "${pkgs.yq-go}/bin/yq";
   keyCommand = "${pkgs.coreutils}/bin/cat ${cfg.keyFile}";
+  # Clients read CPA's live model list through this shared catalog.
+  cpaModels = ../config/cpa-models;
 
   # Management API rewrites config.yaml, so it lives outside the store. The
   # management key stays in the env file because CPA hashes it inside config.yaml.
@@ -225,8 +227,10 @@ in {
         baseURL = "${cfg.url}/v1";
         apiKey = "{file:${cfg.keyFile}}";
       };
-      models = personal.opencodeModels;
     };
+    xdg.configFile."opencode/plugins/cpa-models/index.ts".text = ''
+      export { default } from "${cpaModels}/opencode.ts"
+    '';
 
     home.activation.grokCliProxyApi =
       lib.hm.dag.entryAfter ["writeBoundary"] "run ${grokConfigSync}";

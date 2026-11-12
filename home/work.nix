@@ -20,6 +20,7 @@
     cpaCatalog = cpa.registryFile;
   };
   cpa = config.dreaming.cliProxyApi;
+  defaultModel = "work/global.anthropic.claude-opus-5-5";
 
   claudeWorkSettings = pkgs.writeText "claude-work-settings.json" (builtins.toJSON {
     apiKeyHelper = "${pkgs.coreutils}/bin/cat ${cpa.keyFile}";
@@ -122,12 +123,11 @@ in {
         baseURL = "${cpa.url}/v1";
         apiKey = "{file:${cpa.keyFile}}";
       };
-      models = workModels.opencodeModels;
     };
-    model = lib.mkDefault "cpa-work/work/${gatewayModels.defaultModelId}";
+    model = lib.mkDefault "cpa-work/${defaultModel}";
   };
 
-  dreaming.cliProxyApi.codexModel = "work/${gatewayModels.defaultModelId}";
+  dreaming.cliProxyApi.codexModel = defaultModel;
 
   # Merge work routing into Claude Code's mutable user settings.
   home.activation.claudeCliProxyApi = lib.hm.dag.entryAfter ["writeBoundary"] ''
@@ -263,7 +263,7 @@ in {
       agent.default_model = {
         # Nested key under language_models.openai_compatible.
         provider = "cpa-work";
-        model = "work/${gatewayModels.defaultModelId}";
+        model = defaultModel;
       };
       # Helix :reload reloads the buffer; Zed has no such colon cmd, so the
       # palette fuzzy-matches workspace::Reload (app restart). Alias to file reload.
