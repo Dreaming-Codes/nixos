@@ -133,11 +133,15 @@ function registryId(id: string): string {
 
 const isAnthropic = (id: string) => id.includes("anthropic") || id.startsWith("claude") || id.includes("fable")
 
+// Claude rows keep only the global inference profiles, listed under their
+// registry id (global.anthropic.claude-opus-5-5 -> claude-opus-5-5).
+const claudeRows = resolved.filter((r) => isAnthropic(r.id) && !r.id.startsWith("us.") && !r.id.includes("fallback"))
+
 const entry = (r: (typeof resolved)[number]) => {
   const thinking = claudeThinking.get(registryId(r.id))
   return {
     name: r.id,
-    alias: r.id,
+    alias: isAnthropic(r.id) ? registryId(r.id) : r.id,
     "display-name": displayName(r),
     "max-context-length": r.context,
     ...(thinking && { thinking }),
@@ -158,7 +162,7 @@ console.log(
       name: "nlk-gateway",
       prefix: "work",
       "base-url": base,
-      models: resolved.filter((r) => isAnthropic(r.id)).map(entry),
+      models: claudeRows.map(entry),
     },
   }),
 )

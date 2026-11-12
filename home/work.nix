@@ -8,15 +8,15 @@
   wallpaperDest = "${config.home.homeDirectory}/Pictures/neuralink-4k.png";
 
   cpa = config.dreaming.cliProxyApi;
-  defaultModel = "work/global.anthropic.claude-opus-5-5";
+  defaultModel = "work/claude-opus-5-5";
 
   claudeWorkSettings = pkgs.writeText "claude-work-settings.json" (builtins.toJSON {
     apiKeyHelper = "${pkgs.coreutils}/bin/cat ${cpa.keyFile}";
     env = {
       ANTHROPIC_BASE_URL = cpa.url;
-      ANTHROPIC_DEFAULT_OPUS_MODEL = "work/global.anthropic.claude-opus-5-5";
-      ANTHROPIC_DEFAULT_SONNET_MODEL = "work/global.anthropic.claude-sonnet-5-5";
-      ANTHROPIC_DEFAULT_HAIKU_MODEL = "work/global.anthropic.claude-haiku-5-5";
+      ANTHROPIC_DEFAULT_OPUS_MODEL = "work/claude-opus-5-5";
+      ANTHROPIC_DEFAULT_SONNET_MODEL = "work/claude-sonnet-5-5";
+      ANTHROPIC_DEFAULT_HAIKU_MODEL = "work/claude-haiku-5-5";
     };
   });
 
