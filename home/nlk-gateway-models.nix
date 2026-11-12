@@ -266,6 +266,13 @@
     then null
     else (cpaClaudeThinking.${cpaRegistryId r.id} or {}).levels or null;
 
+  # capabilities is not a provider-model field, so OpenCode drops it.
+  # options outside apiKey/baseURL are merged into the chat request body.
+  effortList = r:
+    if r.reasoning_efforts != null
+    then r.reasoning_efforts
+    else claudeEfforts r;
+
   toOpencodeModel = r:
     {
       name = displayOf r;
@@ -275,15 +282,14 @@
           output = r.max_output_tokens;
         };
     }
-    // lib.optionalAttrs (claudeEfforts r != null) {
-      capabilities.reasoning = {
-        supported = true;
-        effort = claudeEfforts r;
-      };
-    }
-    # CPA returns reasoning text only when the chat request asks for a summary.
     // lib.optionalAttrs (cap r.reasoning) {
-      body.include_reasoning = true;
+      options.include_reasoning = true;
+    }
+    // lib.optionalAttrs (effortList r != null) {
+      variants = builtins.listToAttrs (map (level: {
+        name = level;
+        value.reasoningEffort = level;
+      }) (effortList r));
     };
 
   toZedModel = r: let

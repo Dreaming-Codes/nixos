@@ -92,16 +92,16 @@
           output = m.max_completion_tokens;
         };
       }
-      # OpenAI-compatible variants default to low/medium/high.
-      // lib.optionalAttrs (efforts m != null) {
-        capabilities.reasoning = {
-          supported = true;
-          effort = efforts m;
-        };
-      }
-      # CPA returns reasoning text only when the chat request asks for a summary.
+      # capabilities is not a provider-model field, so OpenCode drops it.
+      # options outside apiKey/baseURL are merged into the chat request body.
       // lib.optionalAttrs (reasons m) {
-        body.include_reasoning = true;
+        options.include_reasoning = true;
+      }
+      // lib.optionalAttrs (efforts m != null) {
+        variants = builtins.listToAttrs (map (level: {
+          name = level;
+          value.reasoningEffort = level;
+        }) (efforts m));
       };
   };
 
