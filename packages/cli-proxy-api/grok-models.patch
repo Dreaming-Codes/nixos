@@ -1,12 +1,12 @@
 diff --git a/internal/api/server_routes.go b/internal/api/server_routes.go
-index e2b039a..c2a707d 100644
+index e2b039a..e3d3ad6 100644
 --- a/internal/api/server_routes.go
 +++ b/internal/api/server_routes.go
 @@ -672,10 +672,23 @@ func grokModelsFromRegistryInfos(infos []*registry.ModelInfo) []grokbuild.ModelI
  		if info == nil {
  			continue
  		}
-+		if !registryInfoOutputsText(info) {
++		if !registry.OutputsText(info) {
 +			continue
 +		}
  		model := grokbuild.ModelInfo{
@@ -29,27 +29,6 @@ index e2b039a..c2a707d 100644
  		}
  		if info.Thinking != nil {
  			model.ReasoningLevels = append([]string(nil), info.Thinking.Levels...)
-@@ -685,6 +698,20 @@ func grokModelsFromRegistryInfos(infos []*registry.ModelInfo) []grokbuild.ModelI
- 	return models
- }
- 
-+// registryInfoOutputsText keeps image, video and audio generators out of the
-+// Grok Shell picker. Models without declared output modalities are chat models.
-+func registryInfoOutputsText(info *registry.ModelInfo) bool {
-+	if len(info.SupportedOutputModalities) == 0 {
-+		return true
-+	}
-+	for _, modality := range info.SupportedOutputModalities {
-+		if strings.EqualFold(modality, "text") {
-+			return true
-+		}
-+	}
-+	return false
-+}
-+
- func (s *Server) handleGrokModels(c *gin.Context) {
- 	var models []grokbuild.ModelInfo
- 	if cfg := s.getConfig(); cfg != nil && cfg.Home.Enabled {
 diff --git a/internal/client/codex/models/models.go b/internal/client/codex/models/models.go
 index 24d4287..751e4d0 100644
 --- a/internal/client/codex/models/models.go
@@ -315,3 +294,39 @@ index f8885c1..133762c 100644
  	}
  }
  
+diff --git a/internal/registry/model_registry.go b/internal/registry/model_registry.go
+index 7f82e7d..a462d29 100644
+--- a/internal/registry/model_registry.go
++++ b/internal/registry/model_registry.go
+@@ -1863,6 +1863,20 @@ func (r *ModelRegistry) GetModelInfo(modelID, provider string) *ModelInfo {
+ }
+ 
+ // convertModelToMap converts ModelInfo to the appropriate format for different handler types
++// OutputsText reports whether a model produces text. Models without declared
++// output modalities are chat models.
++func OutputsText(info *ModelInfo) bool {
++	if len(info.SupportedOutputModalities) == 0 {
++		return true
++	}
++	for _, modality := range info.SupportedOutputModalities {
++		if strings.EqualFold(modality, "text") {
++			return true
++		}
++	}
++	return false
++}
++
+ func (r *ModelRegistry) convertModelToMap(model *ModelInfo, handlerType string) map[string]any {
+ 	if model == nil {
+ 		return nil
+@@ -1905,6 +1919,10 @@ func (r *ModelRegistry) convertModelToMap(model *ModelInfo, handlerType string)
+ 		return result
+ 
+ 	case "claude":
++		// Claude Code lists every row in /model, and media generators cannot chat.
++		if !OutputsText(model) {
++			return nil
++		}
+ 		result := map[string]any{
+ 			"id":       model.ID,
+ 			"object":   "model",
