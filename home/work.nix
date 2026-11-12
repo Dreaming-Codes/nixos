@@ -127,7 +127,6 @@ in {
     model = lib.mkDefault "cpa-work/work/${gatewayModels.defaultModelId}";
   };
 
-  dreaming.cliProxyApi.grokModels = workModels.grokConfigModelsToml;
   dreaming.cliProxyApi.codexModel = "work/${gatewayModels.defaultModelId}";
 
   # Merge work routing into Claude Code's mutable user settings.

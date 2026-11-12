@@ -54,18 +54,42 @@
     exec ${llmAgents.cpa-usage-keeper}/bin/cpa-usage-keeper
   '';
 
-  grokProviderToml = ''
-    [model_providers.cli-proxy-api]
-    base_url = "${cfg.url}/v1"
-
-    [model_providers.cli-proxy-api.auth]
-    command = "${keyCommand}"
-
+  grokAuth = pkgs.writeShellScript "grok-cli-proxy-api-auth" ''
+    printf '{"access_token":"%s"}\n' "$(${keyCommand})"
   '';
-
-  # Rewrites the [model.*] tables and the cli-proxy-api provider in
-  # ~/.grok/config.toml, and turns off the fleet managed_config fetch.
-  grokModelsSync = pkgs.writeShellScript "grok-cli-proxy-api-models" ''
+  # Keys home-manager owns, per table. [model.*] tables and the old
+  # cli-proxy-api provider are dropped so the CPA model list wins.
+  grokConfigAwk = pkgs.writeText "grok-config.awk" ''
+    BEGIN {
+      tables[1] = "[features]"; keys[1] = "managed_config"
+      lines[1] = "managed_config = false"
+      tables[2] = "[endpoints]"; keys[2] = "models_base_url"
+      lines[2] = "models_base_url = \"${cfg.url}/v1\""
+      tables[3] = "[auth]"; keys[3] = "auth_provider_command|auth_provider_label"
+      lines[3] = "auth_provider_command = \"${grokAuth}\"\nauth_provider_label = \"CLIProxyAPI\""
+      for (i = 1; i <= 3; i++) index_of[tables[i]] = i
+    }
+    /^# (nlk-gateway-models|cli-proxy-api) \(home-manager/ { next }
+    /^\[/ {
+      table = $0
+      sub(/[ \t]*(#.*)?$/, "", table)
+      skip = (table ~ /^\[model\./ || table ~ /^\[model_providers\.cli-proxy-api[].]/)
+      t = (table in index_of) ? index_of[table] : 0
+    }
+    skip { next }
+    t && $0 ~ ("^[ \t]*(" keys[t] ")[ \t]*=") { next }
+    # Model ids were personal-<id> slugs before the CPA list.
+    table == "[models]" { sub(/^[ \t]*default[ \t]*=[ \t]*"personal-/, "default = \"personal/") }
+    { out[n++] = $0 }
+    /^\[/ && t { out[n++] = lines[t]; seen[t] = 1 }
+    END {
+      while (n > 0 && out[n - 1] ~ /^[ \t]*$/) n--
+      for (i = 0; i < n; i++) print out[i]
+      for (i = 1; i <= 3; i++) if (!seen[i]) printf "%s%s\n%s\n", (n || i > 1 ? "\n" : ""), tables[i], lines[i]
+    }
+  '';
+  # Grok fetches models from CPA's /v1/models and signs in through grokAuth.
+  grokConfigSync = pkgs.writeShellScript "grok-cli-proxy-api-config" ''
     set -euo pipefail
     dir="$HOME/.grok"
     config="$dir/config.toml"
@@ -75,31 +99,10 @@
     trap 'rm -f "$tmp"' EXIT
 
     [ -f "$config" ] || : > "$config"
-    ${pkgs.gawk}/bin/awk '
-      /^# (nlk-gateway-models|cli-proxy-api) \(home-manager/ { next }
-      /^\[/ {
-        skip = ($0 ~ /^\[model\./ || $0 ~ /^\[model_providers\.cli-proxy-api[].]/)
-        features = ($0 == "[features]")
-        if (features) has_features = 1
-      }
-      features && /^[ \t]*managed_config[ \t]*=/ { next }
-      !skip { lines[n++] = $0 }
-      features && /^\[features\]$/ { lines[n++] = "managed_config = false" }
-      END {
-        while (n > 0 && lines[n - 1] ~ /^[ \t]*$/) n--
-        for (i = 0; i < n; i++) print lines[i]
-        if (n > 0) print ""
-        if (!has_features) print "[features]\nmanaged_config = false\n"
-      }
-    ' "$config" > "$tmp"
-    {
-      echo '# cli-proxy-api (home-manager; do not edit)'
-      cat ${grokFragment}
-    } >> "$tmp"
+    ${pkgs.gawk}/bin/awk -f ${grokConfigAwk} "$config" > "$tmp"
     chmod 600 "$tmp"
     mv "$tmp" "$config"
   '';
-  grokFragment = pkgs.writeText "grok-cli-proxy-api.toml" (grokProviderToml + cfg.grokModels);
 
   quote = s: ''"${lib.escape ["\\" "\""] s}"'';
   # Root assignments stay above any [table]. Keys after a header belong to that table.
@@ -198,11 +201,6 @@ in {
       };
       readOnly = true;
     };
-    grokModels = lib.mkOption {
-      type = lib.types.lines;
-      default = "";
-      description = "[model.*] tables for ~/.grok/config.toml that use the cli-proxy-api provider.";
-    };
     codexModel = lib.mkOption {
       type = lib.types.str;
       description = "Model id Codex requests through CLIProxyAPI.";
@@ -210,7 +208,6 @@ in {
   };
 
   config = {
-    dreaming.cliProxyApi.grokModels = personal.grokConfigModelsToml;
     dreaming.cliProxyApi.codexModel = lib.mkDefault personal.defaultModelId;
 
     home.packages = [
@@ -231,8 +228,8 @@ in {
       models = personal.opencodeModels;
     };
 
-    home.activation.grokCliProxyApiModels =
-      lib.hm.dag.entryAfter ["writeBoundary"] "run ${grokModelsSync}";
+    home.activation.grokCliProxyApi =
+      lib.hm.dag.entryAfter ["writeBoundary"] "run ${grokConfigSync}";
     home.activation.codexCliProxyApi =
       lib.hm.dag.entryAfter ["writeBoundary"] "run ${codexConfigSync}";
 
