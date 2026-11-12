@@ -23,13 +23,28 @@
 
   yq = "${pkgs.yq-go}/bin/yq";
 
-  # Gateway id_tokens live ~65 min and `auth` only renews near expiry, so this
-  # runs every few minutes. CLIProxyAPI hot-reloads config.yaml on change.
+  # `auth` renews only within 60s of expiry, shorter than the sync interval, so
+  # the token used to expire between runs. Renew 10 min ahead instead.
+  gatewayToken = pkgs.writeText "nlk-gateway-token.py" ''
+    import importlib.util
+    import sys
+
+    spec = importlib.util.spec_from_file_location("llm_proxy", "${../secrets/work/llm_proxy.py}")
+    llm_proxy = importlib.util.module_from_spec(spec)
+    sys.modules["llm_proxy"] = llm_proxy
+    spec.loader.exec_module(llm_proxy)
+    llm_proxy.NLK_SKEW_SECONDS = 600
+    sys.argv = ["llm_proxy", "auth"]
+    llm_proxy.main()
+  '';
+
+  # Gateway id_tokens live ~60 min. CLIProxyAPI hot-reloads config.yaml on change.
   cpaGatewaySync = pkgs.writeShellScript "cli-proxy-api-nlk-gateway-sync" ''
     set -euo pipefail
     umask 077
     config="$HOME/.cli-proxy-api/config.yaml"
-    key="$(${nlk-llm-proxy}/bin/nlk-llm-proxy auth)"
+    key="$(${pkgs.python3}/bin/python3 ${gatewayToken})"
+    [ -n "$key" ]
 
     providers="$(${pkgs.coreutils}/bin/mktemp)"
     entries="$(${pkgs.coreutils}/bin/mktemp)"
