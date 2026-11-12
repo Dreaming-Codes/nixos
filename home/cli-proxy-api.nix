@@ -169,20 +169,6 @@
     mv "$tmp" "$config"
   '';
 
-  # --settings outranks ~/.claude/settings.json, so these env values win.
-  claudePersonalSettings = pkgs.writeText "claude-personal-settings.json" (builtins.toJSON {
-    apiKeyHelper = keyCommand;
-    env =
-      {
-        ANTHROPIC_BASE_URL = cfg.url;
-        # /model lists CPA's /v1/models.
-        CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY = "1";
-        ANTHROPIC_MODEL = "personal/claude-opus-5-5";
-        CLAUDE_CODE_SUBAGENT_MODEL = "personal/claude-haiku-5-5";
-      }
-      // cfg.claudeAliasEnv "personal";
-  });
-
   # Claude Code always lists its alias rows; point and label them per prefix.
   claudeAliases = {
     OPUS = ["claude-opus-5-5" "Opus 5.5"];
@@ -190,12 +176,24 @@
     HAIKU = ["claude-haiku-5-5" "Haiku 5.5"];
     FABLE = ["claude-fable-5-2" "Fable 5.2"];
   };
-  claudeAliasEnv = prefix:
-    lib.concatMapAttrs (slot: alias: {
-      "ANTHROPIC_DEFAULT_${slot}_MODEL" = "${prefix}/${lib.elemAt alias 0}";
-      "ANTHROPIC_DEFAULT_${slot}_MODEL_NAME" = "${lib.elemAt alias 1} (${prefix})";
-    })
-    claudeAliases;
+  claudeSettings = prefix: extraEnv:
+    pkgs.writeText "claude-${prefix}-settings.json" (builtins.toJSON {
+      apiKeyHelper = keyCommand;
+      env =
+        {
+          ANTHROPIC_BASE_URL = cfg.url;
+          # /model lists CPA's /v1/models.
+          CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY = "1";
+          CLAUDE_CODE_SUBAGENT_MODEL = "${prefix}/claude-haiku-5-5";
+        }
+        // lib.concatMapAttrs (slot: alias: {
+          "ANTHROPIC_DEFAULT_${slot}_MODEL" = "${prefix}/${lib.elemAt alias 0}";
+          "ANTHROPIC_DEFAULT_${slot}_MODEL_NAME" = "${lib.elemAt alias 1} (${prefix})";
+        })
+        claudeAliases
+        // extraEnv;
+    });
+  hostPrefix = lib.head (lib.splitString "/" cfg.defaultModel);
 in {
   options.dreaming.cliProxyApi = {
     url = lib.mkOption {
@@ -213,26 +211,32 @@ in {
       default = "${llmAgents.cli-proxy-api.src}/internal/registry/models/models.json";
       readOnly = true;
     };
-    claudeAliasEnv = lib.mkOption {
-      type = lib.types.functionTo (lib.types.attrsOf lib.types.str);
-      default = claudeAliasEnv;
-      readOnly = true;
-      description = "Claude Code env that points and labels its alias rows for a CPA prefix.";
-    };
     defaultModel = lib.mkOption {
       type = lib.types.str;
-      description = "CLIProxyAPI model id that Codex, Pi and Zed start with.";
+      description = "CLIProxyAPI model id that Codex, Pi and Zed start with. Its prefix picks Claude Code's models.";
     };
   };
 
   config = {
     dreaming.cliProxyApi.defaultModel = lib.mkDefault "personal/grok-4.7";
 
-    home.packages = [
-      (pkgs.writeShellScriptBin "claude-personal" ''
-        exec claude --settings ${claudePersonalSettings} "$@"
-      '')
-    ];
+    # Merge CPA routing into Claude Code's mutable user settings.
+    home.activation.claudeCliProxyApi = lib.hm.dag.entryAfter ["writeBoundary"] ''
+      settings="$HOME/.claude/settings.json"
+      mkdir -p "$HOME/.claude"
+      [ -s "$settings" ] || echo '{}' > "$settings"
+      tmp="$(${pkgs.coreutils}/bin/mktemp)"
+      ${pkgs.jq}/bin/jq -s '.[0] * .[1]' "$settings" ${claudeSettings hostPrefix {}} > "$tmp"
+      ${pkgs.coreutils}/bin/mv "$tmp" "$settings"
+    '';
+
+    # --settings outranks ~/.claude/settings.json, so personal models win.
+    home.packages = lib.optional (hostPrefix != "personal") (pkgs.writeShellScriptBin "claude-personal" ''
+      exec claude --settings ${claudeSettings "personal" {
+        # A model saved in ~/.claude/settings.json would otherwise be a work model.
+        ANTHROPIC_MODEL = "personal/claude-opus-5-5";
+      }} "$@"
+    '');
 
     # Hide OpenCode's built-in providers (anthropic, openai, opencode).
     programs.opencode.settings.enabled_providers = ["cpa-personal"];

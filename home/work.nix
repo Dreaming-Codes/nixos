@@ -10,17 +10,6 @@
   cpa = config.dreaming.cliProxyApi;
   defaultModel = "work/claude-opus-5-5";
 
-  claudeWorkSettings = pkgs.writeText "claude-work-settings.json" (builtins.toJSON {
-    apiKeyHelper = "${pkgs.coreutils}/bin/cat ${cpa.keyFile}";
-    env =
-      {
-        ANTHROPIC_BASE_URL = cpa.url;
-        # /model lists CPA's /v1/models.
-        CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY = "1";
-      }
-      // cpa.claudeAliasEnv "work";
-  });
-
   nlk-llm-proxy = pkgs.writeShellApplication {
     name = "nlk-llm-proxy";
     runtimeInputs = [
@@ -104,16 +93,6 @@ in {
   };
 
   dreaming.cliProxyApi.defaultModel = defaultModel;
-
-  # Merge work routing into Claude Code's mutable user settings.
-  home.activation.claudeCliProxyApi = lib.hm.dag.entryAfter ["writeBoundary"] ''
-    settings="$HOME/.claude/settings.json"
-    mkdir -p "$HOME/.claude"
-    [ -s "$settings" ] || echo '{}' > "$settings"
-    tmp="$(${pkgs.coreutils}/bin/mktemp)"
-    ${pkgs.jq}/bin/jq -s '.[0] * .[1]' "$settings" ${claudeWorkSettings} > "$tmp"
-    ${pkgs.coreutils}/bin/mv "$tmp" "$settings"
-  '';
 
   # Zed reads CPA_WORK_API_KEY, which cli-proxy-api writes into environment.d.
   programs.zed-editor.userSettings.language_models.openai_compatible.cpa-work.api_url = "${cpa.url}/v1";
