@@ -7,18 +7,6 @@
   wallpaper = ../config/wallpaper/neuralink-4k.png;
   wallpaperDest = "${config.home.homeDirectory}/Pictures/neuralink-4k.png";
 
-  # Model lists generated from git-crypt'd gateway catalog dumps.
-  gatewayModels = import ./nlk-gateway-models.nix {
-    inherit lib;
-    cpaCatalog = cpa.registryFile;
-  };
-  # Same catalog as seen by clients through CLIProxyAPI.
-  workModels = import ./nlk-gateway-models.nix {
-    inherit lib;
-    modelPrefix = "work/";
-    grokProvider = "cli-proxy-api";
-    cpaCatalog = cpa.registryFile;
-  };
   cpa = config.dreaming.cliProxyApi;
   defaultModel = "work/global.anthropic.claude-opus-5-5";
 

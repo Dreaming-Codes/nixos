@@ -8,7 +8,6 @@
   cfg = config.dreaming.cliProxyApi;
   llmAgents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
   cliProxyApi = import ../packages/cli-proxy-api {inherit inputs pkgs;};
-  personal = cfg.personalModels;
   yq = "${pkgs.yq-go}/bin/yq";
   keyCommand = "${pkgs.coreutils}/bin/cat ${cfg.keyFile}";
   # Clients read CPA's live model list through this shared catalog.
@@ -172,11 +171,11 @@
     apiKeyHelper = keyCommand;
     env = {
       ANTHROPIC_BASE_URL = cfg.url;
-      ANTHROPIC_MODEL = personal.claudeOpusModelId;
-      ANTHROPIC_DEFAULT_OPUS_MODEL = personal.claudeOpusModelId;
-      ANTHROPIC_DEFAULT_SONNET_MODEL = personal.claudeSonnetModelId;
-      ANTHROPIC_DEFAULT_HAIKU_MODEL = personal.claudeHaikuModelId;
-      CLAUDE_CODE_SUBAGENT_MODEL = personal.claudeHaikuModelId;
+      ANTHROPIC_MODEL = "personal/claude-opus-5-5";
+      ANTHROPIC_DEFAULT_OPUS_MODEL = "personal/claude-opus-5-5";
+      ANTHROPIC_DEFAULT_SONNET_MODEL = "personal/claude-sonnet-5-5";
+      ANTHROPIC_DEFAULT_HAIKU_MODEL = "personal/claude-haiku-5-5";
+      CLAUDE_CODE_SUBAGENT_MODEL = "personal/claude-haiku-5-5";
     };
   });
 in {
@@ -194,14 +193,6 @@ in {
     registryFile = lib.mkOption {
       type = lib.types.str;
       default = "${llmAgents.cli-proxy-api.src}/internal/registry/models/models.json";
-      readOnly = true;
-    };
-    personalModels = lib.mkOption {
-      type = lib.types.attrs;
-      default = import ./cpa-personal-models.nix {
-        inherit lib;
-        catalog = cfg.registryFile;
-      };
       readOnly = true;
     };
     defaultModel = lib.mkOption {

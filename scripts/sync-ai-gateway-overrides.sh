@@ -1,25 +1,24 @@
 #!/usr/bin/env bash
-# Refresh LiteLLM catalog JSON, then open Grok to reconcile team overrides.
+# Snapshot the LiteLLM catalog, then open Grok to reconcile team overrides.
 #
-# 1. scripts/update-ai-gateway-models.sh
-#      → secrets/work/ai-gateway-models.json
-#      → secrets/work/ai-gateway-model-info.json
+# 1. GET /v1/models and /v1/model/info into a temporary directory
 # 2. grok with a task prompt to update
-#      → secrets/work/ai-gateway-team-overrides.json
+#      -> secrets/work/ai-gateway-team-overrides.json
 #    using Neuralink sw repo model wiring (Claude / Codex / OpenCode / Grok /
 #    LiteLLM) when the gateway omits or mis-reports limits.
 #
-# Run from anywhere. Does not rebuild the system (OpenCode/Zed lists refresh
-# from home/nlk-gateway-models.nix on the next home-manager switch).
+# Run from anywhere. Does not rebuild the system. cli-proxy-api-nlk-gateway
+# reads the overrides from the store after the next home-manager switch.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-update_script="${repo_root}/scripts/update-ai-gateway-models.sh"
+base_url="${NLK_AI_GATEWAY_URL:-https://ai-gateway.svc.int.n7k.io}"
 out_dir="${repo_root}/secrets/work"
 overrides_file="${out_dir}/ai-gateway-team-overrides.json"
-models_file="${out_dir}/ai-gateway-models.json"
-info_file="${out_dir}/ai-gateway-model-info.json"
-generator="${repo_root}/home/nlk-gateway-models.nix"
+catalog_dir="$(mktemp -d)"
+models_file="${catalog_dir}/ai-gateway-models.json"
+info_file="${catalog_dir}/ai-gateway-model-info.json"
+generator="${repo_root}/home/nlk-gateway-cpa-models.ts"
 
 # Neuralink monorepo: model IDs, aliases, and product defaults live here.
 sw_repo="${NLK_SW_REPO:-/home/dreamingcodes/Documents/codeProjects/neuralink/sw/root}"
@@ -32,13 +31,10 @@ need() {
   }
 }
 
-need bash
+need curl
+need jq
+need nlk-llm-proxy
 need "$grok_bin"
-
-if [[ ! -x "$update_script" && ! -f "$update_script" ]]; then
-  echo "error: update script missing: $update_script" >&2
-  exit 1
-fi
 
 if [[ ! -d "$out_dir" ]]; then
   echo "error: expected directory missing: $out_dir" >&2
@@ -51,17 +47,14 @@ if [[ ! -d "$sw_repo" ]]; then
   exit 1
 fi
 
-echo "=== 1/2 Refresh LiteLLM catalog ==="
-update_log="$(mktemp)"
-# shellcheck disable=SC2064
-trap "rm -f '$update_log'" EXIT
-
-if ! bash "$update_script" 2>&1 | tee "$update_log"; then
-  echo "error: catalog refresh failed" >&2
-  exit 1
-fi
-
-update_output="$(cat "$update_log")"
+echo "=== 1/2 Snapshot LiteLLM catalog ==="
+token="$(nlk-llm-proxy auth)"
+for path in /v1/models /v1/model/info; do
+  dest="$models_file"
+  [[ "$path" == /v1/model/info ]] && dest="$info_file"
+  curl -fsS --max-time 120 -H "Authorization: Bearer ${token}" "${base_url}${path}" | jq -S . >"$dest"
+  echo "GET ${path}: $(jq '.data | length' "$dest") models -> ${dest}"
+done
 
 # Optional: ensure team managed_config is current (nlkgrok / grok setup).
 if command -v nlkgrok >/dev/null 2>&1; then
@@ -82,27 +75,16 @@ prompt="$(
 
 ## What just ran
 
-The following command has already been run successfully:
-
-\`\`\`
-bash ${update_script}
-\`\`\`
-
-Output:
-
-\`\`\`
-${update_output}
-\`\`\`
-
-That refreshed the LiteLLM catalog snapshots:
+The LiteLLM catalog was just snapshotted (they are scratch files, not part of
+the repo):
 
 - \`${models_file}\`  ← GET /v1/models
 - \`${info_file}\`     ← GET /v1/model/info
 
 Your job is **not** to re-fetch those. Your job is to inspect them, then
-update the hand-maintained overrides file so OpenCode/Zed get correct
-names, context windows, capabilities, and API backends when LiteLLM is
-missing or wrong.
+update the hand-maintained overrides file so CLIProxyAPI, and every client
+that lists models from it, gets correct names and context windows when
+LiteLLM is missing or wrong.
 
 ## File you must edit
 
@@ -122,10 +104,13 @@ Per-model fields (all optional except that an entry should be useful):
 | \`name\` | human display name for pickers |
 | \`api_backend\` | \`messages\` (Anthropic) or \`chat_completions\` |
 | \`context_window\` | max input tokens when catalog omits it |
-| \`max_output_tokens\` | only if it should differ from context; if omitted, generator mirrors context |
+| \`max_output_tokens\` | only if it should differ from context |
 | \`vision\` / \`tools\` / \`reasoning\` | booleans |
 | \`reasoning_effort\` | e.g. \`"high"\` |
 | \`reasoning_efforts\` | array of allowed efforts (GPT Mantle models) |
+
+The generator reads \`name\` and \`context_window\`; the other fields are
+reference data.
 
 Keys should be **gateway-facing model ids** as they appear in
 \`ai-gateway-models.json\` / \`ai-gateway-model-info.json\`, e.g.
@@ -135,7 +120,7 @@ Keys should be **gateway-facing model ids** as they appear in
 (\`gpt-5.6-sol\`, \`claude-opus-5\`, \`gemini\`, \`grok\`, …) just because
 clients or docs mention them. The generator collapses alias ids that share
 a LiteLLM upstream onto one picker entry, so one canonical team key usually
-covers the whole group (see ranking in nlk-gateway-models.nix).
+covers the whole group (see \`rankId\` in nlk-gateway-cpa-models.ts).
 
 **When an alias key is allowed:** only if that exact id is already present
 in the model catalog (\`ai-gateway-models.json\` / model-info) **and** it
@@ -153,7 +138,7 @@ Read \`${generator}\` before editing. Summary:
 2. Team overrides fill gaps (null / missing context, name, caps, backend).
 3. Alias ids that share the same LiteLLM upstream collapse to one picker entry.
 4. Models with **no** context from catalog **and** no team override are
-   dropped (\`skippedNoLimits\`).
+   dropped.
 5. After you edit overrides, do **not** rebuild Nix unless the user asks;
    just leave the JSON correct for the next home-manager switch.
 
@@ -247,7 +232,7 @@ Terraform module:
    (separate upstream or otherwise would leave harnesses with wrong
    limits). Remove stale keys for models no longer in the catalog.
 6. Summarize what you changed and which models still lack limits (would
-   be skipped by the Nix generator).
+   be skipped by the generator).
 
 ## Constraints
 
