@@ -74,6 +74,7 @@ function rankId(id: string): number {
   if (id.includes("[1m]")) score -= 10000
   if (id.includes("fallback")) score -= 5000
   if (id.includes("preview")) score -= 20
+  if (id.endsWith("-zdr")) score -= 20
   if (id.startsWith("us.")) score -= 100
   if (!id.includes(".") && !id.includes("-")) score -= 200
   if (id.startsWith("openai.")) score -= 10
