@@ -135,6 +135,8 @@ in {
 
         gimp3-with-plugins
 
+        neothesia
+
         fvm
 
         lurk
