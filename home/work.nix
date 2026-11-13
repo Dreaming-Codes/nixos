@@ -1,5 +1,6 @@
 {
   config,
+  osConfig,
   lib,
   pkgs,
   ...
@@ -66,10 +67,72 @@
       .api-keys.claude = ([(.api-keys.claude // [])[] | select(.name != "nlk-gateway")] + [$e.claude])
     ' "$config"
   '';
+
+  # Userpass tokens last 24h and are renewable up to the mount's max TTL, so
+  # renew while possible and fall back to a fresh login. Token stays off argv.
+  vaultLogin = pkgs.writeShellApplication {
+    name = "vault-auto-login";
+    runtimeInputs = [pkgs.curl pkgs.jq pkgs.coreutils];
+    text = ''
+      umask 077
+      addr="https://vault.int.n7k.io"
+      user="lorenzo.rizzotti"
+      password_file="${osConfig.sops.secrets.vault_password.path}"
+      token_file="$HOME/.vault-token"
+      min_ttl=21600
+
+      with_token() {
+        printf 'X-Vault-Token: %s\n' "$(cat "$token_file")" \
+          | curl -sS --fail --max-time 15 -H @- "$@"
+      }
+
+      if [ -s "$token_file" ] && info="$(with_token "$addr/v1/auth/token/lookup-self")"; then
+        ttl="$(jq -r '.data.ttl' <<<"$info")"
+        if [ "$ttl" -eq 0 ] || [ "$ttl" -gt "$min_ttl" ]; then
+          exit 0
+        fi
+        if [ "$(jq -r '.data.renewable' <<<"$info")" = true ] \
+          && renewed="$(with_token -X POST -d '{}' "$addr/v1/auth/token/renew-self")" \
+          && [ "$(jq -r '.auth.lease_duration' <<<"$renewed")" -gt "$min_ttl" ]; then
+          echo "renewed vault token"
+          exit 0
+        fi
+      fi
+
+      resp="$(jq -Rs '{password: rtrimstr("\n")}' <"$password_file" \
+        | curl -sS --fail-with-body --max-time 15 -X POST --data @- "$addr/v1/auth/userpass/login/$user")" || {
+        jq -r '.errors // [] | join("; ")' <<<"$resp" >&2 || true
+        exit 1
+      }
+      tmp="$(mktemp "$token_file.XXXXXX")"
+      jq -j '.auth.client_token' <<<"$resp" >"$tmp"
+      mv "$tmp" "$token_file"
+      echo "logged in to vault as $user"
+    '';
+  };
 in {
   home.packages = [
     nlk-llm-proxy
+    vaultLogin
   ];
+
+  systemd.user.services.vault-auto-login = {
+    Unit.Description = "Keep ~/.vault-token valid for vault.int.n7k.io";
+    Service = {
+      Type = "oneshot";
+      ExecStart = "${vaultLogin}/bin/vault-auto-login";
+    };
+  };
+
+  # Retries every 30 min, which also covers Tailscale being down at login.
+  systemd.user.timers.vault-auto-login = {
+    Unit.Description = "Refresh Vault token";
+    Install.WantedBy = ["timers.target"];
+    Timer = {
+      OnActiveSec = "30s";
+      OnUnitActiveSec = "30min";
+    };
+  };
 
   systemd.user.services.cli-proxy-api-nlk-gateway = {
     Unit = {

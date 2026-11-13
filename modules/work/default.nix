@@ -37,6 +37,15 @@ in {
 
     services.tailscale.enable = true;
 
+    # Userpass password for vault.int.n7k.io; home/work.nix logs in with it.
+    sops.secrets.vault_password = {
+      owner = "dreamingcodes";
+      group = "users";
+      mode = "0400";
+    };
+    environment.sessionVariables.VAULT_ADDR = "https://vault.int.n7k.io";
+    environment.systemPackages = [pkgs.vault-bin];
+
     # Keychron: hidraw access for VIA / Keychron Launcher (vendor 3434).
     hardware.keyboard.qmk.enable = true;
     services.udev.packages = [pkgs.keychron-udev-rules];
