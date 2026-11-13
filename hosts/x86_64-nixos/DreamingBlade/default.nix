@@ -21,7 +21,6 @@
     });
 in {
   dreaming.core.boot.aspect = "16x9";
-  dreaming.services.hermes.enable = true;
 
   boot.initrd.availableKernelModules = [
     "nvme"
