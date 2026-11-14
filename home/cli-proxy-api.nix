@@ -185,7 +185,6 @@
           ANTHROPIC_BASE_URL = cfg.url;
           # /model lists CPA's /v1/models.
           CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY = "1";
-          CLAUDE_CODE_SUBAGENT_MODEL = "${prefix}/claude-haiku-5-5";
         }
         // lib.concatMapAttrs (slot: alias: {
           "ANTHROPIC_DEFAULT_${slot}_MODEL" = "${prefix}/${lib.elemAt alias 0}";
