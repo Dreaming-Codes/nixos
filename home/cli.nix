@@ -95,8 +95,12 @@ in {
         path = inputs.cursor-plugins;
         subdir = "pstack/skills";
       };
+      anthropic = {
+        path = inputs.anthropic-skills;
+        subdir = "skills";
+      };
     };
-    skills.enable = ["agent-browser" "agent-desktop" "agent-desktop-linux" "agent-slack"];
+    skills.enable = ["agent-browser" "agent-desktop" "agent-desktop-linux" "agent-slack" "frontend-design"];
     skills.enableAll = ["pstack"];
     # Claude Code, Cursor, Grok Build, OpenCode and Pi scan ~/.claude/skills.
     # Codex loads $CODEX_HOME/skills.
