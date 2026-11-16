@@ -35,7 +35,10 @@ in {
       ];
     };
 
-    services.tailscale.enable = true;
+    services.tailscale = {
+      enable = true;
+      extraSetFlags = ["--operator=dreamingcodes"];
+    };
 
     # Userpass password for vault.int.n7k.io; home/work.nix logs in with it.
     sops.secrets.vault_password = {
