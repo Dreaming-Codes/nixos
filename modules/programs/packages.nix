@@ -169,10 +169,6 @@ in {
         # Not sure what caused this but now this is needed to make bash work
         bashInteractive
 
-        psst
-        (spotify-player.override {
-          withAudioBackend = "pulseaudio";
-        })
         mission-center
 
         xwayland-satellite
