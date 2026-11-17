@@ -7,15 +7,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1794456227,
-        "narHash": "sha256-qu7S1arVl+Q6H/yZhJ2VdeDY/kBxY8mK8m6U49M0alk=",
-        "owner": "Kyure-A",
+        "lastModified": 1794907399,
+        "narHash": "sha256-5+EABai6WlB5XpreQTVQzYBP6OmkhpRDIf5BcJaY2Ms=",
+        "owner": "Dreaming-Codes",
         "repo": "agent-skills-nix",
-        "rev": "93a02cb60eda167de8c5baa085e4a2bcfc71b885",
+        "rev": "89743d5eebb87daec3cd219a2a6eb2aa3e102bfd",
         "type": "github"
       },
       "original": {
-        "owner": "Kyure-A",
+        "owner": "Dreaming-Codes",
+        "ref": "feat/subagents",
         "repo": "agent-skills-nix",
         "type": "github"
       }

@@ -38,7 +38,7 @@
     # No nixpkgs follows so the Numtide binary cache hits.
     llm-agents.url = "github:numtide/llm-agents.nix";
     agent-skills = {
-      url = "github:Kyure-A/agent-skills-nix";
+      url = "github:Dreaming-Codes/agent-skills-nix/feat/subagents";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     cursor-plugins = {

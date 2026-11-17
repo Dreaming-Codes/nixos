@@ -94,14 +94,20 @@ in {
       pstack = {
         path = inputs.cursor-plugins;
         subdir = "pstack/skills";
+        subagentsSubdir = "pstack/agents";
+      };
+      cursor-team-kit = {
+        path = inputs.cursor-plugins;
+        subdir = "cursor-team-kit/skills";
       };
       anthropic = {
         path = inputs.anthropic-skills;
         subdir = "skills";
       };
     };
-    skills.enable = ["agent-browser" "agent-desktop" "agent-desktop-linux" "agent-slack" "frontend-design"];
+    skills.enable = ["agent-browser" "agent-desktop" "agent-desktop-linux" "agent-slack" "frontend-design" "deslop" "control-cli" "control-ui"];
     skills.enableAll = ["pstack"];
+    subagents.enableAll = ["pstack"];
     # Claude Code, Cursor, Grok Build, OpenCode and Pi scan ~/.claude/skills.
     # Codex loads $CODEX_HOME/skills.
     targets.claude.enable = true;
