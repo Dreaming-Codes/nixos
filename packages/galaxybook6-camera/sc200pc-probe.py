@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Step SC200PC controls on a raw ISYS capture and print, per step, the mean
 raw level above black and the frame period. The level is taken over the 32x32
-tiles that never clip during the run, so it stays linear in exposure.
+tiles that never clip during the run, so it stays linear in exposure. Levels
+from two runs compare only over one tile set: pass both the same --tiles file.
 
-  sc200pc-probe.py [--gain 64] [--dwell 1.5] [--trace] STEP...
+  sc200pc-probe.py [--gain 64] [--dwell 1.5] [--tiles FILE] [--trace] STEP...
 
 A STEP is a list of control writes issued back to back in the order given:
   exposure=1000   vblank=2302,exposure=2119   exposure=500,vblank=1172
@@ -67,14 +68,15 @@ def main():
     ap.add_argument("--gain", type=int, default=64, help="analogue gain code, 16 = 1x")
     ap.add_argument("--dwell", type=float, default=1.5, help="seconds per step")
     ap.add_argument("--settle", type=float, default=0.5, help="seconds ignored after each write")
+    ap.add_argument("--tiles", help="tile set to measure over, saved by the first run that names it")
     ap.add_argument("--trace", action="store_true", help="print every frame")
     args = ap.parse_args()
 
     nodes = device_nodes(args.media)
     sensor = next(n for n in nodes if n.startswith("sc200pc "))
     sh("media-ctl", "-d", args.media, "-l", '"%s":1 -> "%s":0[1]' % (CSI, CAPTURE))
-    sh("media-ctl", "-d", args.media, "-V", '"%s":0 %s' % (sensor, FMT),
-       "-V", '"%s":0 %s' % (CSI, FMT), "-V", '"%s":1 %s' % (CSI, FMT))
+    sh("media-ctl", "-d", args.media, "-V",
+       '"%s":0 %s, "%s":0 %s, "%s":1 %s' % (sensor, FMT, CSI, FMT, CSI, FMT))
 
     subdev = open(nodes[sensor], "rb+", buffering=0)
     write_controls(subdev, [("vblank", 1172), ("gain", args.gain), ("dgain", 128)] + args.steps[0])
@@ -124,6 +126,13 @@ def main():
     os.rmdir(os.path.dirname(fifo))
 
     unclipped = np.all([peak < CLIP for _, peak in levels], axis=0)
+    if args.tiles and os.path.exists(args.tiles):
+        saved = np.load(args.tiles)
+        print("%d of the %d saved tiles clip in this run" % ((saved & ~unclipped).sum(), saved.sum()))
+        unclipped = saved
+    elif args.tiles:
+        with open(args.tiles, "wb") as f:
+            np.save(f, unclipped)
     frames = []
     for (seq, ts), (mean, _), (pseq, pts) in zip(stamps[1:], levels[1:], stamps):
         frames.append((ts, (ts - pts) * 1000 / (seq - pseq), float(mean[unclipped].mean()) - BLACK, seq - pseq - 1))

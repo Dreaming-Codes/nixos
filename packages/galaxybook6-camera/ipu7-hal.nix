@@ -60,7 +60,12 @@ in
         65b75702f33e880f9976cf51a3afa41e577dd33c1f1995e9a9fdfd1e29e5c99e  SC200PC_KAFC917_PTL.aiqb
         EOF
 
-        cp $U/sc200pc-uf.json $C/sensors/
+        # The driver writes exposure and gain as plain registers, which the sensor applies one
+        # frame later, not two.
+        substitute $U/sc200pc-uf.json $C/sensors/sc200pc-uf.json \
+          --replace-fail '"exposureLag":  2' '"exposureLag": 1' \
+          --replace-fail '"gainLag": 2' '"gainLag": 1' \
+          --replace-fail '"digitalGainLag": 0' '"digitalGainLag": 1'
         # Samsung's tuning as Windows uses it. Its ISP tuning is keyed to the Windows DOL
         # stream ids; without the Linux ids AIC runs bnlm/xnr/TNR on library defaults.
         python3 $U/aiqb-stream-ids.py $W/SC200PC_KAFC917_PTL.aiqb $C/SC200PC_KAFC917_PTL.aiqb
