@@ -96,6 +96,11 @@ in {
           name = "pstack-t3code";
           src = inputs.cursor-plugins;
           patches = [./pstack-t3code.patch];
+          postPatch = ''
+            grep -rlF '~/.cursor/rules/pstack-models.mdc' pstack | while read -r f; do
+              substituteInPlace "$f" --replace-fail '~/.cursor/rules/pstack-models.mdc' '~/.config/pstack-models.mdc'
+            done
+          '';
         };
         subdir = "pstack/skills";
         subagentsSubdir = "pstack/agents";

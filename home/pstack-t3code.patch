@@ -1,17 +1,19 @@
 diff --git a/pstack/skills/poteto-help/SKILL.md b/pstack/skills/poteto-help/SKILL.md
-index 8e4c506..9ab62ed 100644
+index 8e4c506..773359b 100644
 --- a/pstack/skills/poteto-help/SKILL.md
 +++ b/pstack/skills/poteto-help/SKILL.md
-@@ -45,7 +45,7 @@ If cost is the worry, say where the tokens go and how to spend fewer. pstack spe
+@@ -43,9 +43,7 @@ Installing changes nothing until the user invokes a skill. Only `/setup-pstack`
  
- pstack is built for Cursor, and it also installs in Claude Code with `/plugin marketplace add cursor/plugins`, then `/plugin install pstack@cursor-plugins`. There, each command takes a `pstack:` prefix, such as `/pstack:poteto-mode`. The [Claude Code adapter](../../docs/harness/claude-code.md) maps the Cursor names, and a step that needs a Cursor-only feature, such as Bugbot or Automations, is skipped with a one-line note.
+ If cost is the worry, say where the tokens go and how to spend fewer. pstack spends extra tokens on subagents and review panels. Rerun `/setup-pstack` and pick a smaller budget or cheaper models. A role set to `auto` or `inherit-parent` runs on the chat's model, which saves tokens when the chat runs on Auto or a cheaper model. A shorter panel list runs fewer subagents, one for each entry. Save `/poteto-mode` for work that needs rigor.
  
+-pstack is built for Cursor, and it also installs in Claude Code with `/plugin marketplace add cursor/plugins`, then `/plugin install pstack@cursor-plugins`. There, each command takes a `pstack:` prefix, such as `/pstack:poteto-mode`. The [Claude Code adapter](../../docs/harness/claude-code.md) maps the Cursor names, and a step that needs a Cursor-only feature, such as Bugbot or Automations, is skipped with a one-line note.
+-
 -Other tools can read the skills, because they use the Agent Skills format. But most workflow skills, including `/poteto-mode`, `/how`, and `/teach`, spawn Cursor subagents, some with per-role models, and Custom Modes and `/loop` are Cursor features, so those parts may not work there.
 +Other tools can read the skills, because they use the Agent Skills format. But most workflow skills, including `/poteto-mode`, `/how`, and `/teach`, spawn subagents, some with per-role models. Orchestrate, autopilot, shipping, and `/swarm` run their workers as T3 Code child agents through `delegate_task`. Custom Modes and `/loop` are Cursor features, so those parts may not work there.
  
  ## Start a task with `/poteto-mode`
  
-@@ -77,7 +77,7 @@ The default answer is `/poteto-mode`, which runs most of the others when its ste
+@@ -77,7 +75,7 @@ The default answer is `/poteto-mode`, which runs most of the others when its ste
  | Know what a small diff could break outside itself | [`/blast-radius`](../blast-radius/SKILL.md) |
  | Settle types and module shape before code that crosses a function boundary | [`/architect`](../architect/SKILL.md) |
  | Get several attempts at one brief, merged into the best one | [`/arena`](../arena/SKILL.md) |
@@ -20,7 +22,7 @@ index 8e4c506..9ab62ed 100644
  | Have different models review a diff and try to break it | [`/interrogate`](../interrogate/SKILL.md) |
  | Fix a bug test-first when a cheap local test exists | [`/tdd`](../tdd/SKILL.md) |
  | Apply TypeScript rules to `.ts` or `.tsx` work | [`/typescript-best-practices`](../typescript-best-practices/SKILL.md) |
-@@ -143,7 +143,7 @@ Principles are one-rule skills that `/poteto-mode` reads and cites in its replie
+@@ -143,7 +141,7 @@ Principles are one-rule skills that `/poteto-mode` reads and cites in its replie
  | A new model choice had no effect | The rule from `/setup-pstack` applies to new chats. Start one. |
  | Runs cost more than expected | See the cost paragraph under Get set up. |
  | A skill didn't load on its own | Only `/setup-pstack` loads from the user's words. The others load when the user types them or when `/poteto-mode` runs them, and it doesn't run every skill. |
@@ -125,6 +127,29 @@ index 0a0c3cf..7bdfac7 100644
  2. **Land only the contiguous verified run rooted at the bottom.** Walk up from the lowest unmerged PR and stop at the first one without `PASS` or `PASS+NOTES`. The PRs below it are the run, and the top one is the ceiling. A verified PR above an unverified one waits, because it cannot land without the code below it. One whose branch neither holds nor needs that code can move onto trunk and land on its own. It needs a fresh verdict first, because its old one ran with that code beneath it and trunk does not have it.
  3. **Re-check that the verdicts still describe the code.** A verdict covers a patch, and a chain rebase moves every PR above it to a new SHA without failing any check. Compare `git patch-id` at the verdict SHA with the current head before trusting an older verdict. When the patches differ only in tests, docs, or lint config, a lane's result stands if what it ran builds the same at both SHAs apart from noise. Noise is a difference that also shows up between two builds of the verdict SHA, or an embedded commit SHA. Report each kind of noise with its files, so a reader can check the call. The change itself still gets fresh checks and a review, because the old verdict never saw it. A lane with no build output, such as a dev server, cannot show this, so rerun it, and re-verify anything else that drifted.
  4. **Land bottom-up, one PR at a time.** Always merge the run's lowest unmerged PR, with `origin pr merge <pr>` or `gh pr merge <pr> --squash`. On Origin the plain command also merges every PR below the one you name, and on GitHub a PR whose base is still its parent's branch merges into that branch, not trunk. Read the PR back for the result (`origin pr view <pr>` or `gh pr view <pr> --json state,mergedAt,baseRefName`), because a merge command can report success when a merge queue only queued the PR, and a requested auto-merge is not a merge. A landed PR reads merged with trunk as its base, not its parent's branch. Arm `--auto` (Origin merge-when-ready or GitHub auto-merge) only on a PR whose verdict covers its current head, because it lands whatever head is ready. After a merge lands, retarget the PR whose base was the merged branch to trunk (`origin pr edit <pr> --base <trunk>` or `gh pr edit <pr> --base <trunk>`), move its patch onto the merge result, and push with `--force-with-lease`. The verdict covers the patch, not its commits, so step 3's patch-id rule decides whether the verdict survives. Merge it once its checks pass and its verdict survives.
+diff --git a/pstack/skills/setup-pstack/SKILL.md b/pstack/skills/setup-pstack/SKILL.md
+index 3de528e..594c0fe 100644
+--- a/pstack/skills/setup-pstack/SKILL.md
++++ b/pstack/skills/setup-pstack/SKILL.md
+@@ -11,7 +11,7 @@ Write `~/.cursor/rules/pstack-models.mdc`, an always-applied rule that sets psta
+ 
+ ### 1. Detect available models
+ 
+-Enumerate the model slugs you can pass to a `Task` subagent in this session. That is the dependable source. If Cursor also exposes a models API or CLI that lists the user's entitled models, prefer it for completeness. If you cannot detect any, ask the user to paste the slugs they have access to. Never write a real slug you have not confirmed is available. The aliases `inherit-parent` and `auto` are always valid even though they are not detected slugs.
++Call T3 Code's `orchestrator_capabilities` and enumerate the models it lists for `delegate_task`, with each model's effort option values. That is the dependable source. Pass `search` to find models the short list omits. A detected slug is a model id followed by one of its effort values, such as `<model>-xhigh`. A trailing `fast` is detected only when that model lists a fast option. If you cannot detect any, ask the user to paste the slugs they have access to. Never write a real slug you have not confirmed is available. The aliases `inherit-parent` and `auto` are always valid even though they are not detected slugs.
+ 
+ ### 2. Load current state
+ 
+@@ -52,7 +52,8 @@ description: pstack per-role model choices (overrides skill defaults)
+ alwaysApply: true
+ ---
+ # pstack model configuration. One line per role. Delete a line to fall back to the skill default.
+-# `inherit-parent` or `auto` as a value: the role runs on the parent chat model (omit Task `model`). Alias entries in a panel list still count toward its fan-out.
++# T3 Code: `<model>-<effort>[-fast]` -> `delegate_task` `target.model: <model>`, `target.options` with the model's effort option (`effort`, `reasoningEffort`, or `thinking`) and its fast option for `-fast`.
++# `inherit-parent` or `auto` as a value: the role runs on the parent chat model (omit `delegate_task` `target.model`). Alias entries in a panel list still count toward its fan-out.
+ # defaults: 2
+ # budget: large (xhigh)
+ feature, refactoring: claude-opus-5-5-xhigh
 diff --git a/pstack/skills/swarm/SKILL.md b/pstack/skills/swarm/SKILL.md
 index f30da87..1ca8f8f 100644
 --- a/pstack/skills/swarm/SKILL.md
