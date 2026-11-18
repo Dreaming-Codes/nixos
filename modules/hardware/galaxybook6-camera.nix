@@ -13,6 +13,7 @@
   psys = kernelPackages.callPackage (pkgDir + "/psys.nix") {};
   hal = pkgs.callPackage (pkgDir + "/ipu7-hal.nix") {};
   icamerasrc = pkgs.callPackage (pkgDir + "/icamerasrc.nix") {inherit hal;};
+  nntm = pkgs.callPackage (pkgDir + "/nntm") {};
   cameraLabel = "Built-in Front Camera";
 in {
   options.dreaming.hardware.galaxybook6-camera = {
@@ -20,6 +21,15 @@ in {
       Samsung Galaxy Book6 Ultra built-in camera (IPU7 + SC200PC / ACPI SSLC2000)
       through the IPU7 hardware ISP and Intel's camera HAL with Samsung's tuning
     '';
+
+    neuralToneMap = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Run the local tone mapping network of Samsung's Windows driver on every frame, as
+        Windows does. It runs on the CPU and keeps most of one core busy while the camera is on.
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -43,11 +53,13 @@ in {
     services.v4l2-relayd.instances.sc200pc = {
       enable = true;
       cardLabel = cameraLabel;
-      extraPackages = [icamerasrc];
+      extraPackages = [icamerasrc] ++ lib.optional cfg.neuralToneMap nntm;
       input = {
         # Caps come from the relay's appsink, built from the fields below. fps-range lets AE
-        # lengthen the frame in dim light instead of adding gain; it settles no lower than 17 fps.
-        pipeline = "icamerasrc device-name=sc200pc-uf fps-range=15~30";
+        # lengthen the frame in dim light, down to 15 fps, instead of adding gain.
+        pipeline =
+          "icamerasrc device-name=sc200pc-uf fps-range=15~30"
+          + lib.optionalString cfg.neuralToneMap " ! nntm range=limited";
         format = "NV12";
         width = 1920;
         height = 1080;
