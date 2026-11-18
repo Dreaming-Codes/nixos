@@ -413,17 +413,6 @@ in {
   };
 
   programs = {
-    mangohud = {
-      # MangoHud is a gaming FPS overlay; only meaningful on the x86 desktop/laptop.
-      enable = pkgs.stdenv.hostPlatform.isx86_64;
-      enableSessionWide = pkgs.stdenv.hostPlatform.isx86_64;
-      settings = {
-        full = true;
-        no_display = true;
-        cpu_load_change = true;
-      };
-    };
-
     gpg = {
       enable = true;
       settings = {
