@@ -1,0 +1,24 @@
+--- a/src/core/CameraContext.cpp
++++ b/src/core/CameraContext.cpp
+@@ -38,6 +38,7 @@
+     deinterlaceMode(DEINTERLACE_OFF) {
+     cropRegion = {0, 0, 0};
+     zoomRegion = {0, 0, 0, 0, 1.0F, icamera::ROTATE_NONE};
++    mAiqParams.yuvColorRangeMode = PlatformData::getYuvColorRangeMode(cameraId);
+ 
+     camera_coordinate_system_t activePixelArray = PlatformData::getActivePixelArray(cameraId);
+     if ((activePixelArray.right > activePixelArray.left) &&
+--- a/src/core/IpuPacAdaptor.cpp
++++ b/src/core/IpuPacAdaptor.cpp
+@@ -285,7 +285,10 @@
+     auto cameraContext = CameraContext::getInstance(mCameraId);
+     auto dataContext = cameraContext->getDataContextBySeq(sequence);
+ 
+-    *mediaFormat = media_format_legacy;
++    *mediaFormat = (dataContext->mAiqParams.yuvColorRangeMode ==
++                    CAMERA_REDUCED_MODE_YUV_COLOR_RANGE) ?
++                           media_format_legacy_narrow :
++                           media_format_legacy;
+     if (dataContext->mAiqParams.tonemapMode == TONEMAP_MODE_GAMMA_VALUE) {
+         const float gamma = dataContext->mAiqParams.tonemapGamma;
+         if (std::fabs(gamma - 1.0F) < std::numeric_limits<float>::epsilon()) {

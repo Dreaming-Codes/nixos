@@ -39,7 +39,11 @@ in
       hash = "sha256-pica+qa9RMudr2acXm6u6gG4JHWiI9YHhfrRmtISpyc=";
     };
 
-    patches = ["${upstream}/ipu7-hal/hal-e5172cc.patch" ./hal-aic-operation-mode-0.patch];
+    patches = [
+      "${upstream}/ipu7-hal/hal-e5172cc.patch"
+      ./hal-aic-operation-mode-0.patch
+      ./hal-yuv-range.patch
+    ];
 
     nativeBuildInputs = old.nativeBuildInputs ++ [python3 unzip];
 
@@ -61,11 +65,13 @@ in
         EOF
 
         # The driver writes exposure and gain as plain registers, which the sensor applies one
-        # frame later, not two.
+        # frame later, not two. v4l2loopback consumers assume limited-range YUV, which is also
+        # what the tuning's media format record asks for.
         substitute $U/sc200pc-uf.json $C/sensors/sc200pc-uf.json \
           --replace-fail '"exposureLag":  2' '"exposureLag": 1' \
           --replace-fail '"gainLag": 2' '"gainLag": 1' \
-          --replace-fail '"digitalGainLag": 0' '"digitalGainLag": 1'
+          --replace-fail '"digitalGainLag": 0' '"digitalGainLag": 1' \
+          --replace-fail '"yuvColorRangeMode": "full"' '"yuvColorRangeMode": "reduced"'
         # Samsung's tuning as Windows uses it. Its ISP tuning is keyed to the Windows DOL
         # stream ids; without the Linux ids AIC runs bnlm/xnr/TNR on library defaults.
         python3 $U/aiqb-stream-ids.py $W/SC200PC_KAFC917_PTL.aiqb $W/sc200pc-ids.aiqb
