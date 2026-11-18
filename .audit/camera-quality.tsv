@@ -1,0 +1,5 @@
+ts	phase	decision	why	evidence	result
+2026-11-18T07:10:17Z	frame	defined done as four measured units: driver exposure and timing, low-light and range policy, neural tone mapping port, two-exposure capture and merge	perfect quality is not checkable, parity with each Windows stage on the real camera is	memory/galaxybook6-camera-quality-research.md, /tmp/camre	open
+2026-11-18T07:10:17Z	frame	no nixos-rebuild, test by loading built modules by hand and running the HAL as the normal user	AGENTS.md forbids unprompted rebuilds, passwordless sudo exists	AGENTS.md	open
+2026-11-18T07:10:17Z	design	run driver work and tone-mapping port in parallel in separate worktrees, two-exposure capture after the driver lands	one camera, so only one live owner at a time, the tone-mapping port works on recorded frames	.audit/camera-quality.tsv	open
+2026-11-18T07:10:17Z	design	owners run on personal Fable 5.2 at xhigh, checks on personal Opus 5.5, trail review on personal Grok 4.7	user said personal models only and ignore the pstack config, standing note says subagents run on Fable	memory/subagents-use-fable.md	open
