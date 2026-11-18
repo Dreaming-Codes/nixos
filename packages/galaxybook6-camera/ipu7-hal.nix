@@ -3,6 +3,7 @@
   fetchurl,
   ipu7x-camera-hal,
   ipu7-camera-bins,
+  openvino,
   python3,
   unzip,
 }: let
@@ -43,9 +44,12 @@ in
       "${upstream}/ipu7-hal/hal-e5172cc.patch"
       ./hal-aic-operation-mode-0.patch
       ./hal-yuv-range.patch
+      ./hal-face-detection.patch
     ];
 
-    nativeBuildInputs = old.nativeBuildInputs ++ [python3 unzip];
+    cmakeFlags = old.cmakeFlags ++ ["-DFACE_DETECTION=ON"];
+    buildInputs = old.buildInputs ++ [openvino];
+    nativeBuildInputs = old.nativeBuildInputs ++ [(python3.withPackages (ps: [ps.numpy])) unzip];
 
     # Upstream ipu7-hal/build.sh's graph conversion: Windows graph rebuilt as Linux graph 100002.
     postInstall =
@@ -58,7 +62,7 @@ in
         mkdir -p $W
 
         unzip -j ${windowsDriver} camera/graph_settings_SC200PC_KAFC917_PTL.bin \
-          camera/SC200PC_KAFC917_PTL.aiqb -d $W
+          camera/SC200PC_KAFC917_PTL.aiqb camera/intelic_data.bin -d $W
         (cd $W && sha256sum -c) <<EOF
         acd119628426009170a12ee86ed7fa7e1bd7650e259339b43551b4685f8c9bd0  graph_settings_SC200PC_KAFC917_PTL.bin
         65b75702f33e880f9976cf51a3afa41e577dd33c1f1995e9a9fdfd1e29e5c99e  SC200PC_KAFC917_PTL.aiqb
@@ -71,7 +75,20 @@ in
           --replace-fail '"exposureLag":  2' '"exposureLag": 1' \
           --replace-fail '"gainLag": 2' '"gainLag": 1' \
           --replace-fail '"digitalGainLag": 0' '"digitalGainLag": 1' \
-          --replace-fail '"yuvColorRangeMode": "full"' '"yuvColorRangeMode": "reduced"'
+          --replace-fail '"yuvColorRangeMode": "full"' '"yuvColorRangeMode": "reduced"' \
+          --replace-fail 'availableFaceDetectModes" : [0]' 'availableFaceDetectModes" : [0, 1]' \
+          --replace-fail '"psysBundleWithAic": false,' '"psysBundleWithAic": false,
+                "faceAeEnabled": true, "faceEngineVendor": 2, "runFaceWithSyncMode": true,
+                "faceEngineRunningInterval": 3,'
+        python3 - $W/intelic_data.bin $C <<'EOF'
+        import runpy, sys
+        blobs = runpy.run_path("${./nntm/extract.py}")["blobs"]
+        names = {"15559407078137448213": "centernet_face.xml", "15378421583209103717": "centernet_face.bin"}
+        for key, data in blobs(open(sys.argv[1], "rb").read()):
+            if key in names:
+                open(f"{sys.argv[2]}/{names.pop(key)}", "wb").write(data)
+        assert not names, names
+        EOF
         # Samsung's tuning as Windows uses it. Its ISP tuning is keyed to the Windows DOL
         # stream ids; without the Linux ids AIC runs bnlm/xnr/TNR on library defaults.
         python3 $U/aiqb-stream-ids.py $W/SC200PC_KAFC917_PTL.aiqb $W/sc200pc-ids.aiqb
