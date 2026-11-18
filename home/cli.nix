@@ -92,7 +92,11 @@ in {
       };
       # https://github.com/cursor/plugins/tree/main/pstack
       pstack = {
-        path = inputs.cursor-plugins;
+        path = pkgs.applyPatches {
+          name = "pstack-t3code";
+          src = inputs.cursor-plugins;
+          patches = [./pstack-t3code.patch];
+        };
         subdir = "pstack/skills";
         subagentsSubdir = "pstack/agents";
       };
