@@ -68,7 +68,10 @@ in
           --replace-fail '"digitalGainLag": 0' '"digitalGainLag": 1'
         # Samsung's tuning as Windows uses it. Its ISP tuning is keyed to the Windows DOL
         # stream ids; without the Linux ids AIC runs bnlm/xnr/TNR on library defaults.
-        python3 $U/aiqb-stream-ids.py $W/SC200PC_KAFC917_PTL.aiqb $C/SC200PC_KAFC917_PTL.aiqb
+        python3 $U/aiqb-stream-ids.py $W/SC200PC_KAFC917_PTL.aiqb $W/sc200pc-ids.aiqb
+        # Upstream's stretched AE plan. Where the factory plan holds 16.7 ms and raises total gain
+        # from 25x to 37x, this one holds 25x and lengthens the exposure to 33 ms.
+        python3 $U/aiqb-ae-plan.py $W/sc200pc-ids.aiqb $C/SC200PC_KAFC917_PTL.aiqb
         python3 $U/patch-hashes.py $W/graph_settings_SC200PC_KAFC917_PTL.bin $W/sc200pc_patched.bin
         python3 $U/gen-kernel-meta.py $H/Ipu75xaStaticGraphAutogen.cpp $W/kernel_meta.h \
           LbffDol2Inputs LbffBayer BbpsWithTnr

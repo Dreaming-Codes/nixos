@@ -45,8 +45,9 @@ in {
       cardLabel = cameraLabel;
       extraPackages = [icamerasrc];
       input = {
-        # Caps come from the relay's appsink, built from the fields below.
-        pipeline = "icamerasrc device-name=sc200pc-uf";
+        # Caps come from the relay's appsink, built from the fields below. fps-range lets AE
+        # lengthen the frame in dim light instead of adding gain; it settles no lower than 17 fps.
+        pipeline = "icamerasrc device-name=sc200pc-uf fps-range=15~30";
         format = "NV12";
         width = 1920;
         height = 1080;
