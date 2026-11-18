@@ -1,5 +1,5 @@
 diff --git a/pstack/skills/poteto-help/SKILL.md b/pstack/skills/poteto-help/SKILL.md
-index 8e4c506..773359b 100644
+index 77f1bd5..f3ab6bb 100644
 --- a/pstack/skills/poteto-help/SKILL.md
 +++ b/pstack/skills/poteto-help/SKILL.md
 @@ -43,9 +43,7 @@ Installing changes nothing until the user invokes a skill. Only `/setup-pstack`
@@ -9,7 +9,7 @@ index 8e4c506..773359b 100644
 -pstack is built for Cursor, and it also installs in Claude Code with `/plugin marketplace add cursor/plugins`, then `/plugin install pstack@cursor-plugins`. There, each command takes a `pstack:` prefix, such as `/pstack:poteto-mode`. The [Claude Code adapter](../../docs/harness/claude-code.md) maps the Cursor names, and a step that needs a Cursor-only feature, such as Bugbot or Automations, is skipped with a one-line note.
 -
 -Other tools can read the skills, because they use the Agent Skills format. But most workflow skills, including `/poteto-mode`, `/how`, and `/teach`, spawn Cursor subagents, some with per-role models, and Custom Modes and `/loop` are Cursor features, so those parts may not work there.
-+Other tools can read the skills, because they use the Agent Skills format. But most workflow skills, including `/poteto-mode`, `/how`, and `/teach`, spawn subagents, some with per-role models. Orchestrate, autopilot, shipping, and `/swarm` run their workers as T3 Code child agents through `delegate_task`. Custom Modes and `/loop` are Cursor features, so those parts may not work there.
++Other tools can read the skills, because they use the Agent Skills format. But most workflow skills, including `/poteto-mode`, `/how`, and `/teach`, spawn subagents, some with per-role models. Shipping, autopilot, and `/swarm` run their workers as T3 Code child agents through `delegate_task`. Custom Modes and `/loop` are Cursor features, so those parts may not work there.
  
  ## Start a task with `/poteto-mode`
  
@@ -22,7 +22,7 @@ index 8e4c506..773359b 100644
  | Have different models review a diff and try to break it | [`/interrogate`](../interrogate/SKILL.md) |
  | Fix a bug test-first when a cheap local test exists | [`/tdd`](../tdd/SKILL.md) |
  | Apply TypeScript rules to `.ts` or `.tsx` work | [`/typescript-best-practices`](../typescript-best-practices/SKILL.md) |
-@@ -143,7 +141,7 @@ Principles are one-rule skills that `/poteto-mode` reads and cites in its replie
+@@ -142,7 +140,7 @@ Principles are one-rule skills that `/poteto-mode` reads and cites in its replie
  | A new model choice had no effect | The rule from `/setup-pstack` applies to new chats. Start one. |
  | Runs cost more than expected | See the cost paragraph under Get set up. |
  | A skill didn't load on its own | Only `/setup-pstack` loads from the user's words. The others load when the user types them or when `/poteto-mode` runs them, and it doesn't run every skill. |
@@ -32,90 +32,55 @@ index 8e4c506..773359b 100644
  | The reply claims success from a green build | Ask for the real command, flow, stored value, or profile. That's the prove-it-works principle. |
  
 diff --git a/pstack/skills/poteto-mode/SKILL.md b/pstack/skills/poteto-mode/SKILL.md
-index 98b16f9..6775104 100644
+index 057af2d..08af032 100644
 --- a/pstack/skills/poteto-mode/SKILL.md
 +++ b/pstack/skills/poteto-mode/SKILL.md
-@@ -142,7 +142,7 @@ A large or cross-cutting effort (a migration across many call sites, an ambitiou
- - **Orchestrate.** A standing project handed to one coordinator chat: multi-day, many stacked PRs, dozens to hundreds of subagents, minimal human turns ("run this whole project", "own this migration until it lands"). Distinct from Autonomous run, which drives one task to a predicate. Work one agent could finish inside the session's budget routes there, not here, however program-shaped the phrasing sounds.
- - **Autopilot-full.** A queue of independent PRs run to merged with full autonomy. One owner per PR carries build through merge, and the root swarm-verifies each PR before its owner merges ("autopilot this queue", "full autopilot", one-owner-per-PR programs).
- - **Autopilot-stack.** Autopilot-full without the merge. A queue of PRs built and verified with full autonomy, then handed to the operator to land. A PR stacks only on a PR it builds on ("autopilot-stack", "autopilot, don't merge", "stack them, don't ship", "build the stack, I'll land it").
--- **Session pickup.** Resuming or taking over a prior agent's in-flight work from a transcript, cloud-agent URL, or pushed branch.
-+- **Session pickup.** Resuming or taking over a prior agent's in-flight work from a transcript, T3 Code child thread, or pushed branch.
- - **Pause safely.** Suspending in-flight work cleanly so it can be resumed, on an explicit pause, going offline, a Cursor restart, or imminent context compaction. The complement to Session pickup.
- - **Multi-phase or multi-PR plan.** Work that spans phases or stacked PRs. File: `playbooks/multi-phase-plan.md`.
- - **Worktree and simulator cleanup.** Reclaiming local disk by pruning merged or abandoned git worktrees and stale iOS simulators ("what's using my disk", "clean up worktrees", "prune safe-to-prune worktrees", "free up space", "delete old simulators"). File: `playbooks/worktree-cleanup.md`.
+@@ -17,7 +17,7 @@ The Principles section below grounds every trigger. In your reply, name each pri
+ The remaining triggers live only here:
+ 
+ - First message → restate the user's goal and the smallest change that meets it, then proceed. Open each subagent brief, PR `## Why`, and final report with the goal.
+-- Starting any agent, whether a Task subagent or a Project worker → the first line of its kickoff is `Read <path>/worker.md before anything else.`, with `<path>` the absolute path of this skill's folder. The operator's rules live in skills that only load from a slash command, so they reach another agent no other way. Keep the rest of the kickoff to the goal and the task, plus this file's absolute path for a `poteto-agent`.
++- Starting any agent, whether a Task subagent or a T3 Code child agent (`delegate_task`) → the first line of its kickoff is `Read <path>/worker.md before anything else.`, with `<path>` the absolute path of this skill's folder. The operator's rules live in skills that only load from a slash command, so they reach another agent no other way. Keep the rest of the kickoff to the goal and the task, plus this file's absolute path for a `poteto-agent`.
+ - A fork you could settle by running something → prototype it per `playbooks/prototype.md` instead of asking.
+ - Code → name the data shape first. Across a function boundary → **architect**. Fan-out → **swarm**. Bakeoff → **arena**. Contested design → **interrogate**.
+ - Prose, your reply included → **unslop**. Docs, PR descriptions, commit messages → **technical-writing**.
+@@ -85,7 +85,7 @@ Read the leaf skill in full for any principle you apply. Each entry names when i
+ 
+ **Use `subagent_type: "poteto-agent"` for any subagent you spawn directly inside a playbook step.** The chat that receives `/poteto-mode` runs the playbook itself. Routed workflow skills (`interrogate`, `swarm`) set their own `subagent_type`. Respect it.
+ 
+-**Defaults for every `Task` call.** `run_in_background: true`, agent mode (readonly strips MCP), file pointers not inlined context, and an explicit model per role, Project workers included. `/setup-pstack` writes `~/.cursor/rules/pstack-models.mdc`, whose per-role lines override the defaults below and the role models in the routed skills (`arena`, `swarm`, `interrogate`). A role with no line keeps its default. A line of `inherit-parent` or `auto` runs the role on the parent model, so omit `model` and spawn `generalPurpose`, because `poteto-agent` defaults to Opus 5.5. Each code playbook reads its own line (`feature, refactoring`, `bug-fix`, `perf-issue`, or `hillclimb`), prose and judgment read `judgment and prose`, and trivial mechanical edits read `swarm workers`. If the rule has no `# defaults: 3` line, an older setup wrote it. Keep honoring its lines, and tell the user once per session to rerun `/setup-pstack`.
++**Defaults for every `Task` call.** `run_in_background: true`, agent mode (readonly strips MCP), file pointers not inlined context, and an explicit model per role, T3 Code child agents included. `/setup-pstack` writes `~/.cursor/rules/pstack-models.mdc`, whose per-role lines override the defaults below and the role models in the routed skills (`arena`, `swarm`, `interrogate`). A role with no line keeps its default. A line of `inherit-parent` or `auto` runs the role on the parent model, so omit `model` and spawn `generalPurpose`, because `poteto-agent` defaults to Opus 5.5. Each code playbook reads its own line (`feature, refactoring`, `bug-fix`, `perf-issue`, or `hillclimb`), prose and judgment read `judgment and prose`, and trivial mechanical edits read `swarm workers`. If the rule has no `# defaults: 3` line, an older setup wrote it. Keep honoring its lines, and tell the user once per session to rerun `/setup-pstack`.
+ 
+ - Code, prose, and judgment: `claude-opus-5-5-xhigh-fast`.
+ - Trivial mechanical edits: `claude-opus-5-5-high-fast`.
 diff --git a/pstack/skills/poteto-mode/playbooks/autopilot-full.md b/pstack/skills/poteto-mode/playbooks/autopilot-full.md
-index bbc5b37..5f879ff 100644
+index be91d5a..7d78004 100644
 --- a/pstack/skills/poteto-mode/playbooks/autopilot-full.md
 +++ b/pstack/skills/poteto-mode/playbooks/autopilot-full.md
 @@ -5,7 +5,7 @@
  A verdict covers one patch and green CI covers one head. Step 4 runs a full swarm once, and again only for a major change. The patch-id rule in `playbooks/shipping.md` can carry a lane's result, and every new head needs its own green CI.
  
  1. **The operator's gates come first.** The grant covers only the queue's items, so items the operator names as theirs and PRs outside the queue stop at merge-ready. A request to state the plan is not a go.
--2. **Spawn one owner per PR, and keep its work where a replacement can find it.** Resolve the forge once for the program. GitHub CLI (`gh`) is the default. If `command -v origin` succeeds and Origin can resolve the repository, use `origin pr` for every PR operation. Otherwise stay on `gh` and record the fallback. Never require Graphite (`gt`). Each owner is a Cursor cloud agent that builds, opens its PR per `playbooks/opening-a-pr.md`, proves the change on the real artifact, babysits to green per `playbooks/babysit.md`, and merges once steps 4 and 5 clear it.
-+2. **Spawn one owner per PR, and keep its work where a replacement can find it.** Resolve the forge once for the program. GitHub CLI (`gh`) is the default. If `command -v origin` succeeds and Origin can resolve the repository, use `origin pr` for every PR operation. Otherwise stay on `gh` and record the fallback. Never require Graphite (`gt`). Each owner is a T3 Code child agent (`delegate_task` with `isolation: 'worktree'`) that builds, opens its PR per `playbooks/opening-a-pr.md`, proves the change on the real artifact, babysits to green per `playbooks/babysit.md`, and merges once steps 4 and 5 clear it.
+-2. **Spawn one owner per PR, and keep its work where a replacement can find it.** Resolve the forge once for the program. GitHub CLI (`gh`) is the default. If `command -v origin` succeeds and Origin can resolve the repository, use `origin pr` for every PR operation. Otherwise stay on `gh` and record the fallback. Never require Graphite (`gt`). Each owner is a Cursor cloud agent that builds, opens its PR per `playbooks/opening-a-pr.md`, proves the change on the real artifact, babysits to green per `playbooks/babysit.md`, and merges once steps 4 and 5 clear it. Where that playbook says to report a rebase, the owner rebases its own branch and publishes it with `git push --force-with-lease`.
++2. **Spawn one owner per PR, and keep its work where a replacement can find it.** Resolve the forge once for the program. GitHub CLI (`gh`) is the default. If `command -v origin` succeeds and Origin can resolve the repository, use `origin pr` for every PR operation. Otherwise stay on `gh` and record the fallback. Never require Graphite (`gt`). Each owner is a T3 Code child agent (`delegate_task` with `isolation: 'worktree'`) that builds, opens its PR per `playbooks/opening-a-pr.md`, proves the change on the real artifact, babysits to green per `playbooks/babysit.md`, and merges once steps 4 and 5 clear it. Where that playbook says to report a rebase, the owner rebases its own branch and publishes it with `git push --force-with-lease`.
  
     Open the PR early so CI and bots run alongside the work. The code is ready only after the slop-strip (the `deslop` skill from the `cursor-team-kit` plugin (`/deslop`)) and the `/no-comments` pass, so the full swarm runs on finished code. Then rebase onto current trunk and report the code-ready head before self-proof, so verification runs on the base the patch lands on. Report every later head, and merge-ready once self-proof, CI, and babysit are done. Fix rounds stay on that base unless trunk conflicts, breaks CI, or lands a known concurrent change to the same files, because each rebase restarts CI. Run the repo's checks for the touched paths on the committed head before the code-ready push and before a later push that needs a verifier.
  
-diff --git a/pstack/skills/poteto-mode/playbooks/multi-phase-plan.md b/pstack/skills/poteto-mode/playbooks/multi-phase-plan.md
-index 277091a..7a0a310 100644
---- a/pstack/skills/poteto-mode/playbooks/multi-phase-plan.md
-+++ b/pstack/skills/poteto-mode/playbooks/multi-phase-plan.md
-@@ -68,7 +68,7 @@ Tests alone are not sufficient verification. A PR is verified only when its unit
- 
- ### Boot recipe, for every live lane
- 
--Each live lane runs on its own cloud VM at the PR head. Drive through `control-ui` or `control-cli` from `cursor-team-kit`.
-+Each live lane runs as its own T3 Code child agent (`delegate_task` with `isolation: 'worktree'`) at the PR head. Drive through `control-ui` or `control-cli` from `cursor-team-kit`.
- 
- - [ ] `git fetch origin <head-branch> && git checkout <head SHA>`.
- - [ ] <Start the backend and the surface. Wait for ready.>
-diff --git a/pstack/skills/poteto-mode/playbooks/orchestrate.md b/pstack/skills/poteto-mode/playbooks/orchestrate.md
-index b6e5f56..228380a 100644
---- a/pstack/skills/poteto-mode/playbooks/orchestrate.md
-+++ b/pstack/skills/poteto-mode/playbooks/orchestrate.md
-@@ -2,14 +2,14 @@
- 
- **You run the program, never the code. Decide which agent does each piece of work, then check what each one produces.** For a standing project handed to one coordinator chat: multi-day, many stacked PRs, dozens to hundreds of subagents, few human turns. One task driven to a predicate is Autonomous run. One ambitious run that needs a bespoke workflow is figure-it-out. Work that one agent could finish inside the session's budget is not a program.
- 
--Run it with your own tools. Spawn workers with `Task`. Keep the program's state in the Project tracker (`notes.md`) and the Project store. Watch each PR with PR and CI event subscriptions when your harness has them. Call no scripts, run no polling loops, and never relay messages or status between agents.
-+Run it with your own tools. Spawn workers as T3 Code child agents with `delegate_task`. Each completion wakes you, and `task_status` reads its result. Keep the program's state in the Project tracker (`notes.md`) and the Project store. Watch each PR with PR and CI event subscriptions when your harness has them. Call no scripts, run no polling loops, and never relay messages or status between agents.
- 
- #### Topology
- 
- - **One owner per PR.** The owner is the only writer of its branch and carries the PR from build to merge. Only the owner pushes, rebases, or retargets it. Closing or retargeting a base PR orphans every PR above it, so the owner does that only on your call. You never author or edit code. Conflicted merges, chain rebases, and fixes go to owners.
--- **A fresh worker for each independent task.** Its kickoff carries everything it needs, including each upstream report it depends on, pasted in full. Workers can't see their siblings. Run workers on a new cloud VM (`environment: "cloud"`) unless the work needs this machine: a `control-ui` or `control-cli` runtime check (from `cursor-team-kit`), local transcripts, a simulator, or auth that exists only here. Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section.
-+- **A fresh worker for each independent task.** Its kickoff carries everything it needs, including each upstream report it depends on, pasted in full. Workers can't see their siblings. Start each worker with `isolation: 'worktree'`. Run it on a linked environment (`target.environmentId` from `t3_environment_links`) when one answers, unless the work needs this machine: a `control-ui` or `control-cli` runtime check (from `cursor-team-kit`), local transcripts, a simulator, or auth that exists only here. Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section.
- - **A sub-coordinator only when one area has many parallel workers.** It owns that area's workers and kickoffs and sends you one rollup, never raw worker reports. Stop at three levels: you, sub-coordinators, and workers. Keep about ten workers in flight per coordinator, and start the next one as each finishes instead of waiting on a whole batch.
--- **Fork when new work needs a worker's built state,** such as its checkout, uncommitted changes, or a running process. Message a worker only for a follow-up on the same work. Never message one to check on it, because a message restarts an idle agent.
-+- **Reuse a child when new work needs a worker's built state,** such as its checkout, uncommitted changes, or a running process. `t3_thread_send` to its child thread starts a fresh task there. Message a worker only for a follow-up on the same work. Never message one to check on it, because a message restarts an idle agent.
- - **Each PR gets a verifier that isn't its author,** on a different model family. The owner merges only on that verifier's pass at the current head.
- - **Start with one unit.** Take it through kickoff, owner, verifier, and merge before you fan out, so a flaw in the kickoff costs one agent instead of fifty. On near-identical cheap units, the first unit is that test.
- 
-@@ -19,7 +19,7 @@ Run it with your own tools. Spawn workers with `Task`. Keep the program's state
- - **Read the diff or the artifact, not only the worker's summary.** Green CI is an input to a verdict, not a verdict. Behavioral work needs more than a type check. A verdict covers one head SHA, so a new push needs a new verdict. Read a sample of each sub-coordinator's kickoffs while its workers run, and fix its instructions when one fails.
- - **Send back work that drifts from scope or grows past what was asked.** Keep only the fixes that block the program, and park the rest as follow-ups.
- - **Check a PR's live state before you report on it,** with `gh pr view` and `gh pr checks` or your forge's equivalents, not the worker's last report. Account for every worker you spawned as done, replaced, or absorbed into another worker's scope.
--- **Stop or replace a worker that stalls or loops.** Judge it by its pushes and PR activity, not its status text. Retry by cause: a smaller scope after a context or memory limit, the same kickoff after a dropped connection, and a different model after a tool error. After two retries, drop the unit and replan around it. When a stopped worker returns late, check its result against the PR's current state, and hand any unique findings to a fresh worker.
-+- **Stop (`task_cancel`) or replace a worker that stalls or loops.** Judge it by its pushes and PR activity, not its status text. Retry by cause: a smaller scope after a context or memory limit, the same kickoff after a dropped connection, and a different model after a tool error. After two retries, drop the unit and replan around it. When a stopped worker returns late, check its result against the PR's current state, and hand any unique findings to a fresh worker.
- - **Ask the user only for a real decision or a blocker,** such as an irreversible action, a product or preference call that no experiment settles, or a dead end that survived a replan. Rebase mechanics, retries, CI flakes, review triage, and "should I keep going" never reach the user.
- 
- **Reply:** what landed against the goal, each PR's live state and verdict with its link, what was dropped and why, and the decisions waiting on the user.
 diff --git a/pstack/skills/poteto-mode/playbooks/session-pickup.md b/pstack/skills/poteto-mode/playbooks/session-pickup.md
-index 876b143..aded475 100644
+index fcde2b2..554a2ee 100644
 --- a/pstack/skills/poteto-mode/playbooks/session-pickup.md
 +++ b/pstack/skills/poteto-mode/playbooks/session-pickup.md
 @@ -2,7 +2,7 @@
  
  **You own the resume point. Read the prior trail, don't redo it.**
  
--1. Locate the prior trail. A local transcript under the active workspace's `agent-transcripts/` directory (the system prompt names the path. Do not glob across `~/.cursor/projects/*/`, that crosses workspace boundaries and reads private chats from unrelated projects), a cloud-agent URL, or a pushed branch. Read the metadata overview and last messages first, then scan back for the decision points. Parse a long transcript in a subagent and keep the reduced timeline in the main thread (the **principle-guard-the-context-window** skill). Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section.
-+1. Locate the prior trail. A local transcript under the active workspace's `agent-transcripts/` directory (the system prompt names the path. Do not glob across `~/.cursor/projects/*/`, that crosses workspace boundaries and reads private chats from unrelated projects), a T3 Code child thread (`t3_thread_read`), or a pushed branch. Read the metadata overview and last messages first, then scan back for the decision points. Parse a long transcript in a subagent and keep the reduced timeline in the main thread (the **principle-guard-the-context-window** skill). Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section.
+-1. Locate the prior trail. A local transcript under the active workspace's `agent-transcripts/` directory (the system prompt names the path. Do not glob across `~/.cursor/projects/*/`, that crosses workspace boundaries and reads private chats from unrelated projects), a cloud-agent URL, or a pushed branch. Read the metadata overview and last messages first, then scan back for the decision points. Parse a long transcript in a subagent and keep the reduced timeline in the main thread (the **principle-guard-the-context-window** skill). Pick each subagent's reasoning level for the job, per the Subagents section.
++1. Locate the prior trail. A local transcript under the active workspace's `agent-transcripts/` directory (the system prompt names the path. Do not glob across `~/.cursor/projects/*/`, that crosses workspace boundaries and reads private chats from unrelated projects), a T3 Code child thread (`t3_thread_read`), or a pushed branch. Read the metadata overview and last messages first, then scan back for the decision points. Parse a long transcript in a subagent and keep the reduced timeline in the main thread (the **principle-guard-the-context-window** skill). Pick each subagent's reasoning level for the job, per the Subagents section.
  2. Reconstruct operational state. The branch and worktree, what already landed (`git log`, `git diff` against the base), the open todos, the decisions made. The prior trail is authoritative input. Resist the bias to re-derive it.
  3. Diff done vs pending. Compare what shipped against what was planned, name the resume point, do not re-run the prior repro or redo completed work. A "let me verify from scratch" pass means you're treating the trail as untrustworthy when it's authoritative.
  4. Route the remaining work to the matching playbook and pick the verdict: continue the execution, ship a finished recommendation, ratify or override a prior conclusion, or postmortem a failed run. The pickup playbook ends here. The routed playbook owns the rest.
 diff --git a/pstack/skills/poteto-mode/playbooks/shipping.md b/pstack/skills/poteto-mode/playbooks/shipping.md
-index 0a0c3cf..7bdfac7 100644
+index 8f7e7b9..28c0656 100644
 --- a/pstack/skills/poteto-mode/playbooks/shipping.md
 +++ b/pstack/skills/poteto-mode/playbooks/shipping.md
 @@ -2,7 +2,7 @@
@@ -128,7 +93,7 @@ index 0a0c3cf..7bdfac7 100644
  3. **Re-check that the verdicts still describe the code.** A verdict covers a patch, and a chain rebase moves every PR above it to a new SHA without failing any check. Compare `git patch-id` at the verdict SHA with the current head before trusting an older verdict. When the patches differ only in tests, docs, or lint config, a lane's result stands if what it ran builds the same at both SHAs apart from noise. Noise is a difference that also shows up between two builds of the verdict SHA, or an embedded commit SHA. Report each kind of noise with its files, so a reader can check the call. The change itself still gets fresh checks and a review, because the old verdict never saw it. A lane with no build output, such as a dev server, cannot show this, so rerun it, and re-verify anything else that drifted.
  4. **Land bottom-up, one PR at a time.** Always merge the run's lowest unmerged PR, with `origin pr merge <pr>` or `gh pr merge <pr> --squash`. On Origin the plain command also merges every PR below the one you name, and on GitHub a PR whose base is still its parent's branch merges into that branch, not trunk. Read the PR back for the result (`origin pr view <pr>` or `gh pr view <pr> --json state,mergedAt,baseRefName`), because a merge command can report success when a merge queue only queued the PR, and a requested auto-merge is not a merge. A landed PR reads merged with trunk as its base, not its parent's branch. Arm `--auto` (Origin merge-when-ready or GitHub auto-merge) only on a PR whose verdict covers its current head, because it lands whatever head is ready. After a merge lands, retarget the PR whose base was the merged branch to trunk (`origin pr edit <pr> --base <trunk>` or `gh pr edit <pr> --base <trunk>`), move its patch onto the merge result, and push with `--force-with-lease`. The verdict covers the patch, not its commits, so step 3's patch-id rule decides whether the verdict survives. Merge it once its checks pass and its verdict survives.
 diff --git a/pstack/skills/setup-pstack/SKILL.md b/pstack/skills/setup-pstack/SKILL.md
-index 3de528e..594c0fe 100644
+index e9d16b1..287cc89 100644
 --- a/pstack/skills/setup-pstack/SKILL.md
 +++ b/pstack/skills/setup-pstack/SKILL.md
 @@ -11,7 +11,7 @@ Write `~/.cursor/rules/pstack-models.mdc`, an always-applied rule that sets psta
@@ -140,26 +105,26 @@ index 3de528e..594c0fe 100644
  
  ### 2. Load current state
  
-@@ -52,7 +52,8 @@ description: pstack per-role model choices (overrides skill defaults)
+@@ -51,7 +51,8 @@ description: pstack per-role model choices (overrides skill defaults)
  alwaysApply: true
  ---
  # pstack model configuration. One line per role. Delete a line to fall back to the skill default.
--# `inherit-parent` or `auto` as a value: the role runs on the parent chat model (omit Task `model`). Alias entries in a panel list still count toward its fan-out.
+-# `inherit-parent` or `auto` as a value: the role runs on the parent chat model (omit Task `model` and spawn `generalPurpose`). Alias entries in a panel list still count toward its fan-out.
 +# T3 Code: `<model>-<effort>[-fast]` -> `delegate_task` `target.model: <model>`, `target.options` with the model's effort option (`effort`, `reasoningEffort`, or `thinking`) and its fast option for `-fast`.
-+# `inherit-parent` or `auto` as a value: the role runs on the parent chat model (omit `delegate_task` `target.model`). Alias entries in a panel list still count toward its fan-out.
- # defaults: 2
++# `inherit-parent` or `auto` as a value: the role runs on the parent chat model (omit `delegate_task` `target.model`, or omit Task `model` and spawn `generalPurpose`). Alias entries in a panel list still count toward its fan-out.
+ # defaults: 3
  # budget: large (xhigh)
- feature, refactoring: claude-opus-5-5-xhigh
+ feature, refactoring: claude-opus-5-5-xhigh-fast
 diff --git a/pstack/skills/swarm/SKILL.md b/pstack/skills/swarm/SKILL.md
-index f30da87..1ca8f8f 100644
+index cf1deb7..24b4eb3 100644
 --- a/pstack/skills/swarm/SKILL.md
 +++ b/pstack/skills/swarm/SKILL.md
 @@ -19,14 +19,14 @@ Open a todolist with one entry per phase before launching anything.
  
  1. State the done predicate and the artifact or report the swarm must return.
  2. Choose the shape. Partition into slices, race N workers on identical briefs, or mix both. For a race or mixed shape, declare `first pass`, `rank all`, or `best-of` before spawning.
--3. Pick the worker model from the `swarm workers` line in `~/.cursor/rules/pstack-models.mdc`. If the rule or that line is missing, use `claude-opus-5-5-high-fast`. For `auto` or `inherit-parent`, omit `model` so the workers run on the parent model. If the Task tool rejects a slug, use the default and say so. If it rejects the default, use the closest valid slug of the same family from its error message. For a model race, name each arm's model up front. Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill.
-+3. Pick the worker model from the `swarm workers` line in `~/.cursor/rules/pstack-models.mdc`. If the rule or that line is missing, use `claude-opus-5-5-high-fast`. For `auto` or `inherit-parent`, omit `model` so the workers run on the parent model. If `delegate_task` rejects a slug, use the default and say so. If it rejects the default, use the closest valid slug of the same family from its error message. For a model race, name each arm's model up front. Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill.
+-3. Pick the worker model from the `swarm workers` line in `~/.cursor/rules/pstack-models.mdc`. If the rule or that line is missing, use `claude-opus-5-5-high-fast`. For `auto` or `inherit-parent`, omit `model` so the workers run on the parent model. If the Task tool rejects a slug, use the default and say so. If it rejects the default, use the closest valid slug of the same family from its error message. For a model race, name each arm's model up front. Pick each subagent's reasoning level for the job, per the Subagents section of the **poteto-mode** skill.
++3. Pick the worker model from the `swarm workers` line in `~/.cursor/rules/pstack-models.mdc`. If the rule or that line is missing, use `claude-opus-5-5-high-fast`. For `auto` or `inherit-parent`, omit `model` so the workers run on the parent model. If `delegate_task` rejects a slug, use the default and say so. If it rejects the default, use the closest valid slug of the same family from its error message. For a model race, name each arm's model up front. Pick each subagent's reasoning level for the job, per the Subagents section of the **poteto-mode** skill.
  4. Give each worker its own writable output when it writes. When workers verify or measure commits, each brief names the exact SHAs. A measurement brief also names the method (sample count, what one sample is, order). The worker records both in its result.
  
  ## Phase B: Fan out
