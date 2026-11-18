@@ -1,0 +1,640 @@
+--- a/sc200pc.c	2026-11-18 21:56:41.039396500 +0100
++++ b/sc200pc.c	2026-11-18 21:56:41.041396490 +0100
+@@ -35,6 +35,8 @@
+ #include <linux/pm_runtime.h>
+ #include <linux/property.h>
+ #include <linux/regulator/consumer.h>
++#include <linux/workqueue.h>
++#include <media/mipi-csi2.h>
+ #include <media/v4l2-ctrls.h>
+ #include <media/v4l2-device.h>
+ #include <media/v4l2-fwnode.h>
+@@ -113,10 +115,14 @@
+ /*
+  * Frame timing. Measured on this sensor unless noted:
+  *   - V4L2_CID_EXPOSURE counts rows, registers 0x3e00-0x3e02 count half rows.
+- *   - The init table runs a two-exposure readout whose short exposure owns
+- *     SC200PC_SHORT_WINDOW rows of every frame (0x3e23/0x3e24), so the
+- *     exposure register must not exceed SC200PC_EXPOSURE_REG_MAX(VTS). Past
+- *     that the sensor lengthens the frame on its own, whatever VTS says.
++ *   - The sensor always reads two exposures. The short one owns a window of
++ *     rows in every frame (0x3e23/0x3e24, SC200PC_SHORT_WINDOW in the init
++ *     table): it may last 2 * window - 9 half rows, the long one
++ *     2 * (VTS - window) - 13. Past that the sensor lengthens the frame on
++ *     its own, whatever VTS says.
++ *   - With a short exposure set, the window splits the frame so that both
++ *     exposures keep the same share of their maximum, as in the OEM Windows
++ *     driver, and both streams take the same gain.
+  *   - VTS is even and never below the init table's, as in the OEM Windows
+  *     driver.
+  *   - Exposure, gain and VTS writes take effect on the next frame. Inside a
+@@ -128,6 +134,9 @@
+  * as far as the exposure needs.
+  */
+ #define SC200PC_SHORT_WINDOW		0x86
++/* Rows the two readouts take; what VTS has beyond them is spare. */
++#define SC200PC_VTS_READOUT		(2 * SC200PC_HEIGHT + 56)
++#define SC200PC_ROW_NS			14744
+ #define SC200PC_EXPOSURE_REG_MAX(vts)	(2 * ((vts) - SC200PC_SHORT_WINDOW) - 13)
+ 
+ #define SC200PC_EXPOSURE_MIN		1
+@@ -167,6 +176,25 @@
+ #define SC200PC_REG_VTS_H		0x320e
+ #define SC200PC_REG_VTS_L		0x320f
+ 
++/*
++ * The two exposures leave the sensor as two CSI-2 streams: the long one on
++ * virtual channel 0, the short one on virtual channel 1.
++ *
++ * The control ids are the ones Intel's camera HAL already sends: its WDR mode
++ * switch, and the short exposure of its multi-exposure sensors.
++ */
++#define SC200PC_STREAMS			2
++#define SC200PC_CID_HDR_STREAMS		(V4L2_CID_IMAGE_SOURCE_CLASS_BASE + 65)
++#define SC200PC_CID_SHORT_EXPOSURE	(V4L2_CID_USER_BASE + 0x2050 + 8)
++
++#define SC200PC_REG_GROUP_HOLD		0x3812
++#define SC200PC_REG_GROUP_LATCH		0x3802
++#define SC200PC_REG_SHORT_WINDOW_H	0x3e23
++#define SC200PC_REG_SHORT_EXPOSURE_H	0x3e22
++#define SC200PC_REG_SHORT_EXPOSURE_M	0x3e04
++#define SC200PC_REG_SHORT_GAIN_COARSE	0x3e12
++#define SC200PC_REG_SHORT_DIGITAL_GAIN_L	0x3e11
++
+ /* Init table terminators. */
+ #define SC200PC_REG_END			0xffff
+ #define SC200PC_REG_DELAY		0xfffe
+@@ -343,7 +371,6 @@
+ 	struct i2c_client *client;
+ 	struct v4l2_subdev sd;
+ 	struct media_pad pad;
+-	struct v4l2_mbus_framefmt fmt;
+ 	struct mutex lock;
+ 
+ 	struct regulator *avdd;
+@@ -359,14 +386,19 @@
+ 	struct v4l2_ctrl_handler ctrls;
+ 	struct v4l2_ctrl *link_freq;
+ 	struct v4l2_ctrl *pixel_rate;
++	/* One cluster, so that a frame never gets half of a new set. */
+ 	struct v4l2_ctrl *vblank;
+-	struct v4l2_ctrl *hblank;
+ 	struct v4l2_ctrl *exposure;
++	struct v4l2_ctrl *short_exposure;
++	struct v4l2_ctrl *hblank;
+ 	struct v4l2_ctrl *analogue_gain;
+ 	struct v4l2_ctrl *digital_gain;
+ 	struct v4l2_ctrl *test_pattern;
+ 
+-	bool streaming;
++	u64 streams;
++	u16 short_window;
++	u16 stretch;
++	struct delayed_work unstretch;
+ 	u32 xclk_freq;
+ 	u32 mipi_lanes;
+ 	u32 mipi_port;
+@@ -507,35 +539,149 @@
+ 
+ struct sc200pc_timing {
+ 	u16 vts;
+-	u16 exposure;	/* register value, in half rows */
++	u16 short_window;
++	u16 exposure;		/* register values, in half rows */
++	u16 short_exposure;
+ };
+ 
+-static struct sc200pc_timing sc200pc_timing(u32 vblank, u32 exposure)
++static struct sc200pc_timing sc200pc_timing(u32 vblank, u32 exposure,
++					    u32 short_exposure)
+ {
+-	struct sc200pc_timing t = { .exposure = 2 * exposure };
+-	u32 fit = DIV_ROUND_UP(t.exposure + 13, 2) + SC200PC_SHORT_WINDOW;
++	struct sc200pc_timing t = {
++		.short_window = SC200PC_SHORT_WINDOW,
++		.exposure = 2 * exposure,
++		.short_exposure = 2 * short_exposure,
++	};
++	u32 vts = SC200PC_HEIGHT + vblank;
+ 
+-	t.vts = round_up(max(SC200PC_HEIGHT + vblank, fit), 2);
++	if (short_exposure) {
++		u32 low = max_t(u32, round_up(short_exposure + 5, 2), 16);
++		u32 high;
++
++		vts = round_up(max(vts, exposure + low + 7), 2);
++		vts = min_t(u32, vts, SC200PC_VTS_MAX);
++		high = max(round_down(vts - exposure - 7, 2), low);
++		t.short_window = clamp(round_down(((2 * vts - 13) * short_exposure +
++						   9 * exposure) /
++						  (2 * (exposure + short_exposure)), 2),
++				       low, high);
++		t.short_exposure = min_t(u32, t.short_exposure,
++					 2 * t.short_window - 9);
++	} else {
++		vts = max(vts, DIV_ROUND_UP(t.exposure + 13, 2) + t.short_window);
++		vts = round_up(vts, 2);
++	}
++
++	t.vts = vts;
++	t.exposure = min_t(u32, t.exposure, 2 * (vts - t.short_window) - 13);
+ 	return t;
+ }
+ 
++static int sc200pc_write_short_window(struct sc200pc *sensor, u16 window,
++				      bool late)
++{
++	u8 rows[] = { window >> 8, window };
++	int ret;
++
++	if (window == sensor->short_window)
++		return 0;
++
++	ret = sc200pc_write_reg(sensor, SC200PC_REG_GROUP_LATCH, late);
++	if (!ret)
++		ret = sc200pc_write_reg(sensor, SC200PC_REG_GROUP_HOLD, 0x00);
++	if (!ret)
++		ret = sc200pc_write_regs(sensor, SC200PC_REG_SHORT_WINDOW_H,
++					 rows, sizeof(rows));
++	if (!ret)
++		ret = sc200pc_write_reg(sensor, SC200PC_REG_GROUP_HOLD, 0x30);
++	if (!ret)
++		sensor->short_window = window;
++
++	return ret;
++}
++
++static int sc200pc_write_short_exposure(struct sc200pc *sensor, u16 exposure)
++{
++	u8 low[] = { exposure >> 4, exposure << 4 };
++
++	if (!sensor->short_exposure->val)
++		return 0;
++
++	return sc200pc_write_reg(sensor, SC200PC_REG_SHORT_EXPOSURE_H,
++				 exposure >> 12) ?:
++	       sc200pc_write_regs(sensor, SC200PC_REG_SHORT_EXPOSURE_M,
++				  low, sizeof(low));
++}
++
++/*
++ * Measured: the short window, written in a register group, lands on the next
++ * frame with 0x3802 = 0 and a frame later with 0x3802 = 1; the other
++ * registers land on the next frame. A window that shrinks by more than the
++ * frame's spare rows costs one short frame, unless it lands a frame late and
++ * the frame before it is longer by the difference. That is the OEM Windows
++ * driver's sequence; sc200pc_unstretch() takes the extra rows back.
++ */
+ static int sc200pc_write_timing(struct sc200pc *sensor)
+ {
+ 	struct sc200pc_timing t = sc200pc_timing(sensor->vblank->val,
+-						 sensor->exposure->val);
++						 sensor->exposure->val,
++						 sensor->short_exposure->val);
+ 	/* The exposure registers hold a 12.4 fixed-point value. */
+ 	u8 exposure[] = { t.exposure >> 12, t.exposure >> 4, t.exposure << 4 };
+-	u8 vts[] = { t.vts >> 8, t.vts };
++	bool grows = t.short_window > sensor->short_window;
++	bool late = !grows && sensor->short_window - t.short_window >
++			      t.vts - SC200PC_VTS_READOUT;
++	u8 vts[2];
+ 	int ret;
+ 
++	if (late) {
++		sensor->stretch = sensor->short_window - t.short_window;
++		mod_delayed_work(system_wq, &sensor->unstretch,
++				 nsecs_to_jiffies((u64)(t.vts + sensor->stretch) *
++						  SC200PC_ROW_NS) + 1);
++	}
++
++	vts[0] = (t.vts + sensor->stretch) >> 8;
++	vts[1] = t.vts + sensor->stretch;
+ 	ret = sc200pc_write_regs(sensor, SC200PC_REG_VTS_H, vts, sizeof(vts));
+ 	if (ret)
+ 		return ret;
+ 
++	/*
++	 * Whichever exposure the new window leaves less room for goes first, so
++	 * a frame that starts between these writes still gets a legal set.
++	 */
++	if (grows)
++		ret = sc200pc_write_regs(sensor, SC200PC_REG_EXPOSURE_H,
++					 exposure, sizeof(exposure));
++	else
++		ret = sc200pc_write_short_exposure(sensor, t.short_exposure);
++	if (ret)
++		return ret;
++
++	ret = sc200pc_write_short_window(sensor, t.short_window, late);
++	if (ret)
++		return ret;
++
++	if (grows)
++		return sc200pc_write_short_exposure(sensor, t.short_exposure);
++
+ 	return sc200pc_write_regs(sensor, SC200PC_REG_EXPOSURE_H,
+ 				  exposure, sizeof(exposure));
+ }
+ 
++static void sc200pc_unstretch(struct work_struct *work)
++{
++	struct sc200pc *sensor = container_of(to_delayed_work(work),
++					      struct sc200pc, unstretch);
++
++	mutex_lock(&sensor->lock);
++	sensor->stretch = 0;
++	if (sensor->streams)
++		sc200pc_write_timing(sensor);
++	mutex_unlock(&sensor->lock);
++}
++
+ /*
+  * Analogue gain is a coarse octave times a fine step, not a linear code:
+  *   0x3e08 octave, thermometer-coded: 0x00/0x01/0x03/0x07 = 1/2/4/8x
+@@ -581,7 +727,10 @@
+ {
+ 	u8 gain[] = { octave, fine };
+ 
++	/* Both exposures share one gain, as in the OEM Windows driver. */
+ 	return sc200pc_write_regs(sensor, SC200PC_REG_ANALOGUE_GAIN_COARSE,
++				  gain, sizeof(gain)) ?:
++	       sc200pc_write_regs(sensor, SC200PC_REG_SHORT_GAIN_COARSE,
+ 				  gain, sizeof(gain));
+ }
+ 
+@@ -604,7 +753,8 @@
+ 
+ 	fine = DIV_ROUND_CLOSEST(gain, 4) * 4;
+ 
+-	return sc200pc_write_reg(sensor, SC200PC_REG_DIGITAL_GAIN_L, fine);
++	return sc200pc_write_reg(sensor, SC200PC_REG_DIGITAL_GAIN_L, fine) ?:
++	       sc200pc_write_reg(sensor, SC200PC_REG_SHORT_DIGITAL_GAIN_L, fine);
+ }
+ 
+ /*
+@@ -652,19 +802,88 @@
+ 	return sc200pc_set_total_gain(sensor, sensor->analogue_gain->val);
+ }
+ 
++static const struct v4l2_mbus_framefmt sc200pc_format = {
++	.width = SC200PC_WIDTH,
++	.height = SC200PC_HEIGHT,
++	.code = MEDIA_BUS_FMT_SBGGR10_1X10,
++	.field = V4L2_FIELD_NONE,
++	.colorspace = V4L2_COLORSPACE_RAW,
++};
++
++/*
++ * This kernel leaves the streams uAPI off, so user space cannot route the
++ * second stream through the CSI-2 receiver; the sensor does it on its behalf.
++ * Called with the control handler locked, and the receiver reads this
++ * sensor's link frequency with its own state locked, hence the trylock.
++ */
++static int sc200pc_route_receiver(struct sc200pc *sensor, unsigned int streams)
++{
++	struct v4l2_subdev_route routes[SC200PC_STREAMS] = {
++		{ .sink_pad = 0, .sink_stream = 0, .source_pad = 1,
++		  .flags = V4L2_SUBDEV_ROUTE_FL_ACTIVE },
++		{ .sink_pad = 0, .sink_stream = 1, .source_pad = 2,
++		  .flags = V4L2_SUBDEV_ROUTE_FL_ACTIVE },
++	};
++	struct v4l2_subdev_krouting routing = {
++		.len_routes = ARRAY_SIZE(routes),
++		.num_routes = streams,
++		.routes = routes,
++	};
++	struct v4l2_subdev_format fmt = {
++		.which = V4L2_SUBDEV_FORMAT_ACTIVE,
++		.pad = 0,
++		.format = sc200pc_format,
++	};
++	struct v4l2_subdev_state *state;
++	struct v4l2_subdev *csi;
++	struct media_pad *remote;
++	unsigned int i;
++	int ret;
++
++	remote = media_pad_remote_pad_first(&sensor->pad);
++	if (!remote)
++		return -ENOLINK;
++
++	csi = media_entity_to_v4l2_subdev(remote->entity);
++	if (!v4l2_subdev_has_op(csi, pad, set_routing) || !csi->active_state)
++		return -ENOTTY;
++
++	state = csi->active_state;
++	if (!mutex_trylock(state->lock))
++		return -EBUSY;
++
++	if (media_entity_is_streaming(remote->entity)) {
++		ret = -EBUSY;
++		goto unlock;
++	}
++
++	ret = csi->ops->pad->set_routing(csi, state, V4L2_SUBDEV_FORMAT_ACTIVE,
++					 &routing);
++	for (i = 0; !ret && i < routing.num_routes; i++) {
++		fmt.stream = i;
++		ret = csi->ops->pad->set_fmt(csi, state, &fmt);
++	}
++
++unlock:
++	mutex_unlock(state->lock);
++	return ret;
++}
++
+ static int sc200pc_s_ctrl(struct v4l2_ctrl *ctrl)
+ {
+ 	struct sc200pc *sensor = ctrl_to_sc200pc(ctrl);
+ 	int ret = 0;
+ 
++	if (ctrl->id == SC200PC_CID_HDR_STREAMS)
++		return sc200pc_route_receiver(sensor, ctrl->val ? 2 : 1);
++
+ 	mutex_lock(&sensor->lock);
+ 
+-	if (!sensor->streaming)
++	if (!sensor->streams)
+ 		goto out_unlock;
+ 
+ 	switch (ctrl->id) {
+ 	case V4L2_CID_VBLANK:
+-	case V4L2_CID_EXPOSURE:
+ 		ret = sc200pc_write_timing(sensor);
+ 		break;
+ 	case V4L2_CID_ANALOGUE_GAIN:
+@@ -816,6 +1035,8 @@
+ 	if (ret)
+ 		return ret;
+ 
++	sensor->short_window = SC200PC_SHORT_WINDOW;
++	sensor->stretch = 0;
+ 	sc200pc_log_key_regs(sensor, "post-init regs");
+ 
+ 	/*
+@@ -851,19 +1072,18 @@
+ 	return ret;
+ }
+ 
+-static int sc200pc_s_stream(struct v4l2_subdev *sd, int enable)
++static int sc200pc_enable_streams(struct v4l2_subdev *sd,
++				  struct v4l2_subdev_state *state, u32 pad,
++				  u64 streams_mask)
+ {
+ 	struct sc200pc *sensor = to_sc200pc(sd);
+ 	int ret = 0;
+ 
+-	dev_info(sensor->dev, "s_stream(enable=%d) called\n", enable);
++	dev_info(sensor->dev, "enable_streams(0x%llx) called\n", streams_mask);
+ 
+ 	mutex_lock(&sensor->lock);
+ 
+-	if (sensor->streaming == !!enable)
+-		goto out_unlock;
+-
+-	if (enable) {
++	if (!sensor->streams) {
+ 		ret = sc200pc_power_on(sensor);
+ 		if (ret)
+ 			goto out_unlock;
+@@ -873,17 +1093,77 @@
+ 			sc200pc_power_off(sensor);
+ 			goto out_unlock;
+ 		}
++	}
+ 
+-		sensor->streaming = true;
+-	} else {
++	sensor->streams |= streams_mask;
++
++out_unlock:
++	mutex_unlock(&sensor->lock);
++	return ret;
++}
++
++static int sc200pc_disable_streams(struct v4l2_subdev *sd,
++				   struct v4l2_subdev_state *state, u32 pad,
++				   u64 streams_mask)
++{
++	struct sc200pc *sensor = to_sc200pc(sd);
++
++	dev_info(sensor->dev, "disable_streams(0x%llx) called\n", streams_mask);
++
++	cancel_delayed_work_sync(&sensor->unstretch);
++
++	mutex_lock(&sensor->lock);
++
++	if (sensor->streams && !(sensor->streams & ~streams_mask)) {
+ 		sc200pc_stop_streaming(sensor);
+ 		sc200pc_power_off(sensor);
+-		sensor->streaming = false;
+ 	}
+ 
+-out_unlock:
++	sensor->streams &= ~streams_mask;
++
+ 	mutex_unlock(&sensor->lock);
+-	return ret;
++	return 0;
++}
++
++static int sc200pc_get_frame_desc(struct v4l2_subdev *sd, unsigned int pad,
++				  struct v4l2_mbus_frame_desc *fd)
++{
++	unsigned int i;
++
++	fd->type = V4L2_MBUS_FRAME_DESC_TYPE_CSI2;
++	fd->num_entries = SC200PC_STREAMS;
++
++	for (i = 0; i < SC200PC_STREAMS; i++) {
++		fd->entry[i].stream = i;
++		fd->entry[i].pixelcode = MEDIA_BUS_FMT_SBGGR10_1X10;
++		fd->entry[i].bus.csi2.vc = i;
++		fd->entry[i].bus.csi2.dt = MIPI_CSI2_DT_RAW10;
++	}
++
++	return 0;
++}
++
++/*
++ * This kernel has no internal pads, so each source stream is a route from the
++ * source pad to itself. Nothing validates a routing table set from here.
++ */
++static int sc200pc_init_state(struct v4l2_subdev *sd,
++			      struct v4l2_subdev_state *state)
++{
++	struct v4l2_subdev_route routes[SC200PC_STREAMS] = {
++		{ .sink_stream = 0, .source_stream = 0,
++		  .flags = V4L2_SUBDEV_ROUTE_FL_ACTIVE },
++		{ .sink_stream = 1, .source_stream = 1,
++		  .flags = V4L2_SUBDEV_ROUTE_FL_ACTIVE },
++	};
++	struct v4l2_subdev_krouting routing = {
++		.len_routes = ARRAY_SIZE(routes),
++		.num_routes = ARRAY_SIZE(routes),
++		.routes = routes,
++	};
++
++	return v4l2_subdev_set_routing_with_fmt(sd, state, &routing,
++						&sc200pc_format);
+ }
+ 
+ static int sc200pc_enum_mbus_code(struct v4l2_subdev *sd,
+@@ -967,50 +1247,20 @@
+ 	}
+ }
+ 
+-static int sc200pc_get_fmt(struct v4l2_subdev *sd,
+-			   struct v4l2_subdev_state *state,
+-			   struct v4l2_subdev_format *fmt)
+-{
+-	struct sc200pc *sensor = to_sc200pc(sd);
+-
+-	mutex_lock(&sensor->lock);
+-	fmt->format = sensor->fmt;
+-	mutex_unlock(&sensor->lock);
+-
+-	return 0;
+-}
+-
+-static int sc200pc_set_fmt(struct v4l2_subdev *sd,
+-			   struct v4l2_subdev_state *state,
+-			   struct v4l2_subdev_format *fmt)
+-{
+-	struct sc200pc *sensor = to_sc200pc(sd);
+-
+-	mutex_lock(&sensor->lock);
+-
+-	sensor->fmt.width = SC200PC_WIDTH;
+-	sensor->fmt.height = SC200PC_HEIGHT;
+-	sensor->fmt.code = MEDIA_BUS_FMT_SBGGR10_1X10;
+-	sensor->fmt.field = V4L2_FIELD_NONE;
+-	sensor->fmt.colorspace = V4L2_COLORSPACE_RAW;
+-
+-	fmt->format = sensor->fmt;
+-
+-	mutex_unlock(&sensor->lock);
+-	return 0;
+-}
+-
+ static const struct v4l2_subdev_video_ops sc200pc_video_ops = {
+-	.s_stream = sc200pc_s_stream,
++	.s_stream = v4l2_subdev_s_stream_helper,
+ };
+ 
+ static const struct v4l2_subdev_pad_ops sc200pc_pad_ops = {
+ 	.enum_mbus_code = sc200pc_enum_mbus_code,
+ 	.enum_frame_size = sc200pc_enum_frame_size,
+ 	.enum_frame_interval = sc200pc_enum_frame_interval,
+-	.get_fmt = sc200pc_get_fmt,
+-	.set_fmt = sc200pc_set_fmt,
++	.get_fmt = v4l2_subdev_get_fmt,
++	.set_fmt = v4l2_subdev_get_fmt,
+ 	.get_selection = sc200pc_get_selection,
++	.get_frame_desc = sc200pc_get_frame_desc,
++	.enable_streams = sc200pc_enable_streams,
++	.disable_streams = sc200pc_disable_streams,
+ };
+ 
+ static const struct v4l2_subdev_ops sc200pc_subdev_ops = {
+@@ -1018,6 +1268,10 @@
+ 	.pad = &sc200pc_pad_ops,
+ };
+ 
++static const struct v4l2_subdev_internal_ops sc200pc_internal_ops = {
++	.init_state = sc200pc_init_state,
++};
++
+ static int sc200pc_parse_firmware(struct sc200pc *sensor)
+ {
+ 	struct acpi_device *adev = ACPI_COMPANION(sensor->dev);
+@@ -1068,6 +1322,25 @@
+ 	return 0;
+ }
+ 
++static const struct v4l2_ctrl_config sc200pc_hdr_streams = {
++	.ops = &sc200pc_ctrl_ops,
++	.id = SC200PC_CID_HDR_STREAMS,
++	.name = "HDR Streams",
++	.type = V4L2_CTRL_TYPE_BOOLEAN,
++	.max = 1,
++	.step = 1,
++};
++
++/* 0 leaves the short exposure and its window as the init table set them. */
++static const struct v4l2_ctrl_config sc200pc_short_exposure = {
++	.ops = &sc200pc_ctrl_ops,
++	.id = SC200PC_CID_SHORT_EXPOSURE,
++	.name = "Short Exposure",
++	.type = V4L2_CTRL_TYPE_INTEGER,
++	.max = SC200PC_EXPOSURE_MAX / 2,
++	.step = 1,
++};
++
+ static int sc200pc_probe(struct i2c_client *client)
+ {
+ 	struct device *dev = &client->dev;
+@@ -1099,7 +1372,9 @@
+ 		return ret;
+ 
+ 	v4l2_i2c_subdev_init(&sensor->sd, client, &sc200pc_subdev_ops);
+-	sensor->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
++	sensor->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE | V4L2_SUBDEV_FL_STREAMS;
++	sensor->sd.internal_ops = &sc200pc_internal_ops;
++	INIT_DELAYED_WORK(&sensor->unstretch, sc200pc_unstretch);
+ 	sensor->pad.flags = MEDIA_PAD_FL_SOURCE;
+ 	sensor->sd.entity.function = MEDIA_ENT_F_CAM_SENSOR;
+ 
+@@ -1107,13 +1382,7 @@
+ 	if (ret)
+ 		return ret;
+ 
+-	sensor->fmt.width = SC200PC_WIDTH;
+-	sensor->fmt.height = SC200PC_HEIGHT;
+-	sensor->fmt.code = MEDIA_BUS_FMT_SBGGR10_1X10;
+-	sensor->fmt.field = V4L2_FIELD_NONE;
+-	sensor->fmt.colorspace = V4L2_COLORSPACE_RAW;
+-
+-	ret = v4l2_ctrl_handler_init(&sensor->ctrls, 11);
++	ret = v4l2_ctrl_handler_init(&sensor->ctrls, 13);
+ 	if (ret)
+ 		goto err_entity_cleanup;
+ 
+@@ -1185,6 +1454,13 @@
+ 					     ARRAY_SIZE(sc200pc_test_pattern_menu) - 1,
+ 					     0, 0, sc200pc_test_pattern_menu);
+ 
++	sensor->short_exposure = v4l2_ctrl_new_custom(&sensor->ctrls,
++						      &sc200pc_short_exposure,
++						      NULL);
++	v4l2_ctrl_new_custom(&sensor->ctrls, &sc200pc_hdr_streams, NULL);
++	if (!sensor->ctrls.error)
++		v4l2_ctrl_cluster(3, &sensor->vblank);
++
+ 	/*
+ 	 * Register V4L2_CID_CAMERA_ORIENTATION and
+ 	 * V4L2_CID_CAMERA_SENSOR_ROTATION from firmware-node properties.
+@@ -1240,9 +1516,14 @@
+ 	if (ret)
+ 		goto err_ctrls_free;
+ 
++	ret = v4l2_subdev_init_finalize(&sensor->sd);
++	if (ret)
++		goto err_ctrls_free;
++
+ 	ret = v4l2_async_register_subdev_sensor(&sensor->sd);
+ 	if (ret) {
+ 		dev_err(dev, "failed to register async sensor subdev: %d\n", ret);
++		v4l2_subdev_cleanup(&sensor->sd);
+ 		goto err_ctrls_free;
+ 	}
+ 
+@@ -1265,6 +1546,8 @@
+ 	struct sc200pc *sensor = i2c_get_clientdata(client);
+ 
+ 	v4l2_async_unregister_subdev(&sensor->sd);
++	cancel_delayed_work_sync(&sensor->unstretch);
++	v4l2_subdev_cleanup(&sensor->sd);
+ 	v4l2_ctrl_handler_free(&sensor->ctrls);
+ 	media_entity_cleanup(&sensor->sd.entity);
+ }
