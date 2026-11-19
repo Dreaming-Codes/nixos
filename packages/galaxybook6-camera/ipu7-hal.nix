@@ -45,13 +45,17 @@ in
       ./hal-aic-operation-mode-0.patch
       ./hal-yuv-range.patch
       ./hal-face-detection.patch
+      ./hal-two-exposures.patch
     ];
 
     cmakeFlags = old.cmakeFlags ++ ["-DFACE_DETECTION=ON"];
     buildInputs = old.buildInputs ++ [openvino];
     nativeBuildInputs = old.nativeBuildInputs ++ [(python3.withPackages (ps: [ps.numpy])) unzip];
 
-    # Upstream ipu7-hal/build.sh's graph conversion: Windows graph rebuilt as Linux graph 100002.
+    # Upstream's switch for graphs with two raw inputs.
+    env = (old.env or {}) // {NIX_CFLAGS_COMPILE = "${old.env.NIX_CFLAGS_COMPILE or ""} -DDOL_FEATURE";};
+
+    # The Windows graph settings, kept as the two-exposure graph 100032 they are.
     postInstall =
       old.postInstall
       + ''
@@ -79,7 +83,22 @@ in
           --replace-fail 'availableFaceDetectModes" : [0]' 'availableFaceDetectModes" : [0, 1]' \
           --replace-fail '"psysBundleWithAic": false,' '"psysBundleWithAic": false,
                 "faceAeEnabled": true, "faceEngineVendor": 2, "runFaceWithSyncMode": true,
-                "faceEngineRunningInterval": 3,'
+                "faceEngineRunningInterval": 3,' \
+          --replace-fail '"link": [' '"control": [
+              {
+                "name": "sc200pc $I2CBUS", "ctrlId": "V4L2_CID_WDR_MODE", "value": 1,
+                "ctrlName": "two exposure streams"
+              }
+            ],
+            "link": [
+              {
+                "srcName": "Intel IPU7 CSI2 $CSI_PORT", "srcPad": 2,
+                "sinkName": "Intel IPU7 ISYS Capture 1", "sinkPad": 0, "enable": true
+              },' \
+          --replace-fail '"videonode": [' '"videonode": [
+              {
+                "name": "Intel IPU7 ISYS Capture 1", "videoNodeType": "VIDEO_GENERIC_SHORT_EXPO"
+              },'
         python3 - $W/intelic_data.bin $C <<'EOF'
         import runpy, sys
         blobs = runpy.run_path("${./nntm/extract.py}")["blobs"]
@@ -89,21 +108,15 @@ in
                 open(f"{sys.argv[2]}/{names.pop(key)}", "wb").write(data)
         assert not names, names
         EOF
-        # Samsung's tuning as Windows uses it. Its ISP tuning is keyed to the Windows DOL
-        # stream ids; without the Linux ids AIC runs bnlm/xnr/TNR on library defaults.
-        python3 $U/aiqb-stream-ids.py $W/SC200PC_KAFC917_PTL.aiqb $W/sc200pc-ids.aiqb
-        # Upstream's stretched AE plan. Where the factory plan holds 16.7 ms and raises total gain
-        # from 25x to 37x, this one holds 25x and lengthens the exposure to 33 ms.
-        python3 $U/aiqb-ae-plan.py $W/sc200pc-ids.aiqb $C/SC200PC_KAFC917_PTL.aiqb
+        # Samsung's tuning as Windows uses it, with upstream's stretched AE plan. Where the
+        # factory plan holds 16.7 ms and raises total gain from 25x to 37x, this one holds 25x
+        # and lengthens the exposure to 33 ms.
+        python3 $U/aiqb-ae-plan.py $W/SC200PC_KAFC917_PTL.aiqb $C/SC200PC_KAFC917_PTL.aiqb
         python3 $U/patch-hashes.py $W/graph_settings_SC200PC_KAFC917_PTL.bin $W/sc200pc_patched.bin
         python3 $U/gen-kernel-meta.py $H/Ipu75xaStaticGraphAutogen.cpp $W/kernel_meta.h \
-          LbffDol2Inputs LbffBayer BbpsWithTnr
-        # Each setting keeps the Windows ISP tuning mode (0 at 1080p, 1 at 720p, 2 below), which
-        # PipeLine::updateIspTuningMode loads as the aiqb LISP block, as the Windows MFT does.
-        install -m644 $U/convert-100002.cpp $W/
-        patch -d $W -p2 < ${./convert-100002-keep-tuning-modes.patch}
-        $CXX -std=c++17 -w -I$H -I$W -o $W/convert-100002 $W/convert-100002.cpp
-        $W/convert-100002 $W/sc200pc_patched.bin $C/gcss/SC200PC_KAFC917.IPU75XA.bin
+          LbffDol2Inputs BbpsWithTnr
+        $CXX -std=c++17 -w -I$H -I$W -o $W/graph-two-inputs ${./graph-two-inputs.cpp}
+        $W/graph-two-inputs $W/sc200pc_patched.bin $C/gcss/SC200PC_KAFC917.IPU75XA.bin
 
         sed -i 's/"availableSensors": \[/"availableSensors": [\n            "sc200pc-uf-0",/' \
           $C/libcamhal_configs.json
@@ -114,7 +127,12 @@ in
       runHook preInstallCheck
       C=$out/etc/camera/ipu75xa
       H=$NIX_BUILD_TOP/$sourceRoot/modules/ipu_desc/ipu75xa
-      $CXX -std=c++17 -w -I$H -o check-graph ${upstream}/ipu7-hal/check-graph.cpp \
+      # Upstream's check wants graph 100002. Here the processed settings are graph 100032
+      # and the one raw-only setting is graph 100035.
+      sed 's/id != 100002/(id != 100032 \&\& id != 100035)/' \
+        ${upstream}/ipu7-hal/check-graph.cpp > check-graph.cpp
+      grep -q 100035 check-graph.cpp
+      $CXX -std=c++17 -w -I$H -o check-graph check-graph.cpp \
         $H/Ipu75xaStaticGraphReaderAutogen.cpp $H/Ipu75xaStaticGraphAutogen.cpp
       ./check-graph $C/gcss/SC200PC_KAFC917.IPU75XA.bin
       python3 - $C <<'EOF'
@@ -129,8 +147,8 @@ in
       print("configuration ok")
       EOF
       python3 ${upstream}/ipu7-hal/aiqb-lisp.py $C/SC200PC_KAFC917_PTL.aiqb > lisp.txt
-      if grep -E 'flags 0xea6[ef]' lisp.txt; then
-        echo "ISP tuning still keyed to Windows stream ids" >&2
+      if ! grep -qE 'flags 0xea6[ef]' lisp.txt; then
+        echo "ISP tuning is not keyed to the graph's stream ids" >&2
         exit 1
       fi
       runHook postInstallCheck
