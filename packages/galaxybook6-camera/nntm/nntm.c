@@ -14,9 +14,11 @@ enum { LANES = NNTM_STEP / 8 };
 
 typedef struct { __m256 l[LANES]; } vf;
 typedef struct { __m256i l[LANES]; } vi;
+typedef struct { __m128i l[LANES]; } vbytes;
 
 #define VF(expr) ({ vf r_; for (int n = 0; n < LANES; n++) r_.l[n] = (expr); r_; })
 #define VI(expr) ({ vi r_; for (int n = 0; n < LANES; n++) r_.l[n] = (expr); r_; })
+#define VBYTES(expr) ({ vbytes r_; for (int n = 0; n < LANES; n++) r_.l[n] = (expr); r_; })
 #define INLINE static inline __attribute__((always_inline))
 
 #define RN (_MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC)
@@ -42,7 +44,7 @@ const NntmParams nntm_samsung_params = {
 typedef struct {
   int *i0, *i1;
   float *w0, *w1;
-} Axis;
+} CornerAlignedLerp;
 
 typedef struct {
   int taps;
@@ -56,7 +58,7 @@ struct Nntm {
   int gtm_a;
   float offset[3], yuv2rgb[9], rgb2yuv[9], bp1, c, c1;
   float *depth;
-  Axis rows, cols;
+  CornerAlignedLerp rows, cols;
   uint8_t *uniform;
   uint16_t *blend;
   Reduce reduce_x, reduce_y;
@@ -90,8 +92,8 @@ static float half_of_double(double x) {
   return (float)ldexp(nearbyint(ldexp(x, -ulp)), ulp);
 }
 
-static Axis axis_new(float scale, int n, int last) {
-  Axis a = {malloc(n * sizeof(int)), malloc(n * sizeof(int)), malloc(n * sizeof(float)), malloc(n * sizeof(float))};
+static CornerAlignedLerp axis_new(float scale, int n, int last) {
+  CornerAlignedLerp a = {malloc(n * sizeof(int)), malloc(n * sizeof(int)), malloc(n * sizeof(float)), malloc(n * sizeof(float))};
   scale = r1(scale);
   for (int i = 0; i < n; i++) {
     float pos = r1(scale * (float)i), lo = floorf(pos);
@@ -103,7 +105,7 @@ static Axis axis_new(float scale, int n, int last) {
   return a;
 }
 
-static void axis_free(Axis *a) { free(a->i0); free(a->i1); free(a->w0); free(a->w1); }
+static void axis_free(CornerAlignedLerp *a) { free(a->i0); free(a->i1); free(a->w0); free(a->w1); }
 
 static Reduce reduce_new(int in) {
   const int out = NNTM_NET_SIZE;
@@ -140,7 +142,7 @@ static uint16_t *blend_new(const NntmParams *p, int w, int h) {
     float b = vmin > 1e-4f ? ((1.0f / (p->shading[i] / vmin)) * p->radial + (1.0f - p->radial)) * p->strength : p->strength;
     m[i] = r1((float)(int)(b * 65536.0f) * (1.0f / 65536.0f));
   }
-  Axis ys = axis_new((float)(bh - 1) / (float)(h - 1), h, bh - 1), xs = axis_new((float)(bw - 1) / (float)(w - 1), w, bw - 1);
+  CornerAlignedLerp ys = axis_new((float)(bh - 1) / (float)(h - 1), h, bh - 1), xs = axis_new((float)(bw - 1) / (float)(w - 1), w, bw - 1);
   uint16_t *blend = malloc((size_t)w * h * sizeof(uint16_t));
   for (int y = 0; y < h; y++) {
     const float *m0 = m + ys.i0[y] * bw, *m1 = m + ys.i1[y] * bw;
@@ -208,7 +210,7 @@ INLINE vf normalise(const Nntm *t, vf x, int ch, float k, float k0) {
   return mul(sub(x, set(t->offset[ch])), set(INV255));
 }
 
-typedef struct { vf u[3], v[3]; } Chroma;
+typedef struct { vf u_rgb[3], v_rgb[3]; } Chroma;
 
 INLINE Chroma chroma_load(const Nntm *t, const uint8_t *uv) {
   const __m128i pairs = _mm_setr_epi8(0, 0, 2, 2, 4, 4, 6, 6, 1, 1, 3, 3, 5, 5, 7, 7);
@@ -217,8 +219,8 @@ INLINE Chroma chroma_load(const Nntm *t, const uint8_t *uv) {
   vf vn = normalise(t, VF(_mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_srli_si128(_mm256_castsi256_si128(split.l[n]), 8)))), 2, K_C, K_C0);
   Chroma c;
   for (int i = 0; i < 3; i++) {
-    c.u[i] = mul(un, set(t->yuv2rgb[3 * i + 1]));
-    c.v[i] = mul(vn, set(t->yuv2rgb[3 * i + 2]));
+    c.u_rgb[i] = mul(un, set(t->yuv2rgb[3 * i + 1]));
+    c.v_rgb[i] = mul(vn, set(t->yuv2rgb[3 * i + 2]));
   }
   return c;
 }
@@ -228,7 +230,7 @@ typedef struct { vf ch[3], luma; } Rgb;
 INLINE Rgb to_rgb(const Nntm *t, const uint8_t *y, const Chroma *c) {
   vf yn = normalise(t, VF(_mm256_cvtepi32_ps(_mm256_cvtepu8_epi32(_mm_loadl_epi64((const __m128i *)(y + 8 * n))))), 0, K_Y, K_Y0);
   Rgb p;
-  for (int i = 0; i < 3; i++) p.ch[i] = clampv(add(c->v[i], add(c->u[i], mul(yn, set(t->yuv2rgb[3 * i])))), 0, 1);
+  for (int i = 0; i < 3; i++) p.ch[i] = clampv(add(c->v_rgb[i], add(c->u_rgb[i], mul(yn, set(t->yuv2rgb[3 * i])))), 0, 1);
   p.luma = mul(add(p.ch[2], add(p.ch[1], p.ch[0])), set(THIRD));
   return p;
 }
@@ -291,7 +293,7 @@ INLINE vf to_yuv(const Nntm *t, const Rgb *p, int row) {
   return mul(add(mul(set(m[2]), p->ch[2]), add(mul(set(m[1]), p->ch[1]), mul(set(m[0]), p->ch[0]))), set(255));
 }
 
-INLINE vi quantise(const Nntm *t, vf x, int ch) {
+INLINE vbytes quantise(const Nntm *t, vf x, int ch) {
   const __m256 sign = _mm256_set1_ps(-0.0f);
   vi q = VI(_mm256_add_epi32(
     _mm256_cvttps_epi32(_mm256_or_ps(_mm256_floor_ps(_mm256_andnot_ps(sign, x.l[n]) + _mm256_set1_ps(0.5f)),
@@ -304,8 +306,8 @@ INLINE vi quantise(const Nntm *t, vf x, int ch) {
     vi whole = VI(_mm256_andnot_si256(_mm256_and_si256(tie.l[n], _mm256_set1_epi32(1)), _mm256_srli_epi32(scaled.l[n], 8)));
     q = clampi(VI(_mm256_add_epi32(whole.l[n], _mm256_set1_epi32(16))), 16, ch ? 240 : 235);
   }
-  return VI(_mm256_castsi128_si256(_mm_packus_epi16(
-    _mm_packus_epi32(_mm256_castsi256_si128(q.l[n]), _mm256_extracti128_si256(q.l[n], 1)), _mm_setzero_si128())));
+  return VBYTES(_mm_packus_epi16(
+    _mm_packus_epi32(_mm256_castsi256_si128(q.l[n]), _mm256_extracti128_si256(q.l[n], 1)), _mm_setzero_si128()));
 }
 
 INLINE vf block_mean(vf top, vf bottom) {
@@ -326,15 +328,14 @@ void nntm_apply_rows(const Nntm *t, const NntmGrid grid, NntmFrame *f, int row0,
         uint8_t *luma = f->y + (size_t)(y + k) * f->y_stride + x;
         Rgb p = to_rgb(t, luma, &c);
         apply_gain(t, &p, gain(t, grid, y + k, x, p.luma));
-        vi bytes = quantise(t, to_yuv(t, &p, 0), 0);
-        for (int n = 0; n < LANES; n++) _mm_storel_epi64((__m128i *)(luma + 8 * n), _mm256_castsi256_si128(bytes.l[n]));
+        vbytes bytes = quantise(t, to_yuv(t, &p, 0), 0);
+        for (int n = 0; n < LANES; n++) _mm_storel_epi64((__m128i *)(luma + 8 * n), bytes.l[n]);
         u[k] = to_yuv(t, &p, 1);
         v[k] = to_yuv(t, &p, 2);
       }
-      vi ub = quantise(t, block_mean(u[0], u[1]), 1), vb = quantise(t, block_mean(v[0], v[1]), 2);
+      vbytes ub = quantise(t, block_mean(u[0], u[1]), 1), vb = quantise(t, block_mean(v[0], v[1]), 2);
       for (int n = 0; n < LANES; n++)
-        _mm_storel_epi64((__m128i *)(uv + x + 8 * n),
-                         _mm_unpacklo_epi8(_mm256_castsi256_si128(ub.l[n]), _mm256_castsi256_si128(vb.l[n])));
+        _mm_storel_epi64((__m128i *)(uv + x + 8 * n), _mm_unpacklo_epi8(ub.l[n], vb.l[n]));
     }
   }
 }

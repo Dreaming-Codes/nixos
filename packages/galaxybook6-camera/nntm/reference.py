@@ -42,7 +42,7 @@ class Params:
         m = np.array(self.rgb2yuv, F)
         return (m / ((m[1] + m[0]) + m[2])).astype(H)
 
-    def blend_map(self):
+    def blend_map_q16(self):
         v = self.shading
         vmin = min(F(2), v.min())
         strength, radial = F(self.strength), F(self.radial)
@@ -181,7 +181,7 @@ def ltm_gain(luma, grid, p):
         coeff.append(acc)
     mapped = clamp(coeff[1] + coeff[0] * luma, 0, 1)
 
-    bmap = p.blend_map()
+    bmap = p.blend_map_q16()
     bh, bw = bmap.shape
     m = (bmap.astype(F) * F(1 / 65536)).astype(H)
     by0, by1, wby0, wby1 = axis(F(bh - 1) / F(h - 1), h, bh - 1)
