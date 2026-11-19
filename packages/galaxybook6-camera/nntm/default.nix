@@ -9,10 +9,7 @@
 }: let
   # The network and the tuning file are proprietary: they are extracted at build time and
   # never enter this repository.
-  windowsDriver = fetchurl {
-    url = "https://downloadcenter.samsung.com/content/DR/202608/20260811081131834/BASW-A4296A0R_1063.ZIP";
-    hash = "sha256-mZnTw8woT12RXuDnrfZWvqAA4YdY7NIU6Uk8w/tPqNY=";
-  };
+  windowsDriver = import ../windows-driver.nix {inherit fetchurl;};
 in
   stdenv.mkDerivation {
     pname = "gst-nntm";
