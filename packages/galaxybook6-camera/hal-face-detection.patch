@@ -51,7 +51,7 @@ diff -ruN a/src/core/CameraDevice.cpp b/src/core/CameraDevice.cpp
 -    if (!PlatformData::isFaceDetectionSupported(mCameraId)) {
 -        *preStreamIdForFace = -1;
 -    }
-+    // Face detection reads the preview stream; the graph cannot bind an extra output for it.
++    // The static graph has no spare output to bind a face stream to.
 +    *preStreamIdForFace = -1;
  
      return OK;

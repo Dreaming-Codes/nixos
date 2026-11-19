@@ -59,11 +59,10 @@ diff -ruN a/modules/v4l2/v4l2_device.cc b/modules/v4l2/v4l2_device.cc
 diff -ruN a/modules/v4l2/v4l2_device.h b/modules/v4l2/v4l2_device.h
 --- a/modules/v4l2/v4l2_device.h
 +++ b/modules/v4l2/v4l2_device.h
-@@ -169,6 +169,9 @@
+@@ -169,6 +169,8 @@
      int SetControl(int id, const std::string& value);
      int SetControl(struct v4l2_control* control);
  
-+    // Sets several controls as one update.
 +    int SetControls(struct v4l2_ext_control* ext_controls, uint32_t count);
 +
      // These methods gets the control of V4L2 device.
@@ -115,11 +114,10 @@ diff -ruN a/src/3a/AiqCore.cpp b/src/3a/AiqCore.cpp
 diff -ruN a/src/3a/AiqEngine.cpp b/src/3a/AiqEngine.cpp
 --- a/src/3a/AiqEngine.cpp
 +++ b/src/3a/AiqEngine.cpp
-@@ -328,6 +328,11 @@
+@@ -328,6 +328,10 @@
          LOG2("@%s, sensor ae is enabled", __func__);
          statsParams.using_rgbs_for_aec = true;
      }
-+    // The ISP's AE histogram covers one exposure; the RGBS path builds one per exposure.
 +    if (PlatformData::getExposureNum(
 +            mCameraId, PlatformData::isMultiExposureCase(mCameraId, aiqParams.tuningMode)) > 1) {
 +        statsParams.using_rgbs_for_aec = true;
@@ -225,11 +223,10 @@ diff -ruN a/src/core/processingUnit/PipeManager.h b/src/core/processingUnit/Pipe
  
  namespace icamera {
  
-@@ -100,6 +103,9 @@
+@@ -100,6 +103,8 @@
      // Stage input ports fed from an already-bound frame (DOL long input with a
      // linear sensor), each with its own ring of buffers holding a copy.
      std::map<uuid, std::vector<std::shared_ptr<CameraBuffer>>> mDolCopyBuffers;
-+    // The sensor's short exposure, when it has its own capture node.
 +    ShortExposureSource mShortSource;
 +    std::shared_ptr<CameraBuffer> mLastShortFrame;
  #endif
@@ -238,10 +235,8 @@ diff -ruN a/src/core/processingUnit/PipeManager.h b/src/core/processingUnit/Pipe
 diff -ruN a/src/core/processingUnit/ShortExposureSource.h b/src/core/processingUnit/ShortExposureSource.h
 --- a/src/core/processingUnit/ShortExposureSource.h
 +++ b/src/core/processingUnit/ShortExposureSource.h
-@@ -0,0 +1,228 @@
+@@ -0,0 +1,221 @@
 +/*
-+ * Copyright (C) 2026 Intel Corporation.
-+ *
 + * Licensed under the Apache License, Version 2.0 (the "License");
 + * you may not use this file except in compliance with the License.
 + * You may obtain a copy of the License at
@@ -278,8 +273,6 @@ diff -ruN a/src/core/processingUnit/ShortExposureSource.h b/src/core/processingU
 +namespace icamera {
 +
 +/**
-+ * The short exposure of a staggered-HDR sensor, captured from its own ISYS node.
-+ *
 + * The sensor ends the short frame of an exposure pair a fixed number of rows
 + * after the long one, less than half a frame period, so frames pair by timestamp.
 + */
@@ -367,7 +360,7 @@ diff -ruN a/src/core/processingUnit/ShortExposureSource.h b/src/core/processingU
 +
 +        std::unique_lock<std::mutex> lock(mLock);
 +        while (true) {
-+            while (!mReady.empty() && (mReady.front().us < longUs - kEarlyUs)) {
++            while (!mReady.empty() && (mReady.front().us < longUs - kPairJitterUs)) {
 +                queueBuffer(mReady.front().index);
 +                mReady.pop_front();
 +            }
@@ -431,7 +424,6 @@ diff -ruN a/src/core/processingUnit/ShortExposureSource.h b/src/core/processingU
 +            if (ioctl(mFd, VIDIOC_DQBUF, &buf) != 0) continue;
 +
 +            std::lock_guard<std::mutex> lock(mLock);
-+            // ISYS flags a frame the sensor cut short while it moved the short window.
 +            if ((buf.flags & V4L2_BUF_FLAG_ERROR) != 0U) {
 +                queueBuffer(buf.index);
 +                continue;
@@ -442,7 +434,6 @@ diff -ruN a/src/core/processingUnit/ShortExposureSource.h b/src/core/processingU
 +            lastUs = us;
 +
 +            mReady.push_back({buf.index, us, buf.bytesused});
-+            // ISYS needs free buffers to keep capturing.
 +            if (mReady.size() > kHeldFrames) {
 +                queueBuffer(mReady.front().index);
 +                mReady.pop_front();
@@ -453,8 +444,7 @@ diff -ruN a/src/core/processingUnit/ShortExposureSource.h b/src/core/processingU
 +
 +    static const uint32_t kBufferCount = 8U;
 +    static const size_t kHeldFrames = 4U;
-+    // Timestamps of one exposure pair never run backwards by more than jitter.
-+    static const int64_t kEarlyUs = 1000;
++    static const int64_t kPairJitterUs = 1000;
 +
 +    int mFd = -1;
 +    std::vector<Buffer> mBuffers;
@@ -476,7 +466,7 @@ diff -ruN a/src/core/SensorHwCtrl.cpp b/src/core/SensorHwCtrl.cpp
  
 +#ifdef DOL_FEATURE
 +    if (coarseExposures.size() > 1) {
-+        // AE lists the short exposure first. One update, so that no frame gets half of a pair.
++        // AE lists the short exposure first.
 +        struct v4l2_ext_control exposures[2] = {};
 +        exposures[0].id = CRL_CID_EXPOSURE_SHS1;
 +        exposures[0].value = coarseExposures[0];
@@ -500,7 +490,7 @@ diff -ruN a/src/core/SensorHwCtrl.cpp b/src/core/SensorHwCtrl.cpp
 -    LOG2("%s analogGain=%d", __func__, analogGains[0]);
 -    int status = mPixelArraySubdev->SetControl(V4L2_CID_ANALOGUE_GAIN, analogGains[0]);
 -    CheckAndLogError((status != 0), status, "failed to set analog gain %d.", analogGains[0]);
-+    // The exposures of a staggered-HDR frame share the sensor's gain; AE lists the long one last.
++    // AE lists the long exposure last.
 +    LOG2("%s analogGain=%d", __func__, analogGains.back());
 +    int status = mPixelArraySubdev->SetControl(V4L2_CID_ANALOGUE_GAIN, analogGains.back());
 +    CheckAndLogError((status != 0), status, "failed to set analog gain %d.", analogGains.back());
@@ -530,7 +520,15 @@ diff -ruN a/src/platformdata/PlatformData.cpp b/src/platformdata/PlatformData.cp
  bool PlatformData::isMultiExposureCase(int cameraId, TuningMode tuningMode) {
 +#ifdef DOL_FEATURE
 +    return true;
-+#endif
++#else
      // HDR_FEATURE_S
      if ((tuningMode == TUNING_MODE_VIDEO_HDR) || (tuningMode == TUNING_MODE_VIDEO_HDR2) ||
          (tuningMode == TUNING_MODE_VIDEO_HLC)) {
+@@ -329,6 +332,7 @@
+     // HDR_FEATURE_E
+ 
+     return false;
++#endif
+ }
+ 
+ int PlatformData::getSensorExposureType(int cameraId) {
