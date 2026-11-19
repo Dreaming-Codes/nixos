@@ -39,13 +39,11 @@ const NntmParams nntm_samsung_params = {
   .strength = 500.f / 1023.f, .radial = 540.f / 1023.f,
 };
 
-/* Corner-aligned linear interpolation along one image axis. */
 typedef struct {
   int *i0, *i1;
   float *w0, *w1;
 } Axis;
 
-/* Antialiased reduction of one axis to NNTM_NET_SIZE samples, stored [tap][output]. */
 typedef struct {
   int taps;
   int *index;
@@ -210,7 +208,6 @@ INLINE vf normalise(const Nntm *t, vf x, int ch, float k, float k0) {
   return mul(sub(x, set(t->offset[ch])), set(INV255));
 }
 
-/* Chroma of the 2x1 pixel pairs of one batch, already multiplied into each RGB row. */
 typedef struct { vf u[3], v[3]; } Chroma;
 
 INLINE Chroma chroma_load(const Nntm *t, const uint8_t *uv) {
@@ -294,8 +291,6 @@ INLINE vf to_yuv(const Nntm *t, const Rgb *p, int row) {
   return mul(add(mul(set(m[2]), p->ch[2]), add(mul(set(m[1]), p->ch[1]), mul(set(m[0]), p->ch[0]))), set(255));
 }
 
-/* Round halves away from zero, add the offset, clamp to a byte, optionally squeeze to video
- * range; each lane comes back as 8 bytes. */
 INLINE vi quantise(const Nntm *t, vf x, int ch) {
   const __m256 sign = _mm256_set1_ps(-0.0f);
   vi q = VI(_mm256_add_epi32(

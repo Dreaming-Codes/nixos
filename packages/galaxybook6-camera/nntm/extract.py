@@ -51,7 +51,6 @@ def cmc_record(aiqb, name_id):
 
 
 def shading(aiqb):
-    """The parameter kernel's shading term: per-channel gains over their largest corner, R and B halved."""
     rec = cmc_record(aiqb, LENS_SHADING_RECORD)
     sources, channels, w, h = struct.unpack_from("<4H", rec, 16)
     assert channels == 4

@@ -1,5 +1,3 @@
-/* Pixel math of the Windows neural tone-mapping stage, in IEEE half precision.
- * DERIVATION.md says what each step computes and where it was read from. */
 #ifndef NNTM_H
 #define NNTM_H
 

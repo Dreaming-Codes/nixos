@@ -7,8 +7,8 @@
   python3,
   unzip,
 }: let
-  # Samsung's camera driver, as ipu7-hal.nix fetches it. The network and the tuning file are
-  # proprietary, so they are extracted at build time and never enter this repository.
+  # The network and the tuning file are proprietary: they are extracted at build time and
+  # never enter this repository.
   windowsDriver = fetchurl {
     url = "https://downloadcenter.samsung.com/content/DR/202608/20260811081131834/BASW-A4296A0R_1063.ZIP";
     hash = "sha256-mZnTw8woT12RXuDnrfZWvqAA4YdY7NIU6Uk8w/tPqNY=";
@@ -52,7 +52,6 @@ in
       runHook postInstall
     '';
 
-    # The element against the half-precision reference on a synthetic clip.
     doInstallCheck = true;
     installCheckPhase = ''
       runHook preInstallCheck

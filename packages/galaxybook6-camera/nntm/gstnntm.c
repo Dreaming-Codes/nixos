@@ -1,4 +1,3 @@
-/* nntm: Samsung's Windows neural tone-mapping stage as an in-place NV12 video filter. */
 #include <gst/gst.h>
 #include <gst/video/gstvideofilter.h>
 #include <gst/video/video.h>
@@ -16,7 +15,6 @@ enum { SWEEP_ROWS = 16 };
 enum { RANGE_FULL, RANGE_LIMITED };
 enum { PROP_0, PROP_RANGE, PROP_STRENGTH, PROP_RADIAL, PROP_BYPASS, PROP_THREADS, PROP_IDENTITY_GRID, PROP_DATA_DIR };
 
-/* One pass over the rows of the current frame, shared between the streaming thread and the pool. */
 typedef struct {
   GstNntm *self;
   void (*rows)(GstNntm *self, int row0, int row1);

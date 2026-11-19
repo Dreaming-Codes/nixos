@@ -1,11 +1,4 @@
-"""Check the nntm element against reference.py on a small synthetic clip.
-
-usage: check.py <datadir> <workdir>      (GST_PLUGIN_PATH must reach libgstnntm.so)
-
-For both ranges: the element must equal the reference within one code value with the network
-and with an identity grid, must change the picture with the network, must return its input
-within one code value under the identity grid, and must return it untouched on bypass.
-"""
+"""usage: check.py <datadir> <workdir>      (GST_PLUGIN_PATH must reach libgstnntm.so)"""
 import subprocess
 import sys
 
@@ -23,7 +16,6 @@ def noise(a, b, k):
 
 
 def clip(restricted):
-    """Frames inside the RGB gamut: colour constant over each 2x2 block, luma varying per pixel."""
     j, i = np.meshgrid(np.arange(W), np.arange(H))
     bj, bi = j // 2, i // 2
     frames = []

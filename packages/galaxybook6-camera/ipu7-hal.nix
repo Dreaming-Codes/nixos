@@ -52,10 +52,8 @@ in
     buildInputs = old.buildInputs ++ [openvino];
     nativeBuildInputs = old.nativeBuildInputs ++ [(python3.withPackages (ps: [ps.numpy])) unzip];
 
-    # Upstream's switch for graphs with two raw inputs.
     env = (old.env or {}) // {NIX_CFLAGS_COMPILE = "${old.env.NIX_CFLAGS_COMPILE or ""} -DDOL_FEATURE";};
 
-    # The Windows graph settings, kept as the two-exposure graph 100032 they are.
     postInstall =
       old.postInstall
       + ''
@@ -72,9 +70,8 @@ in
         65b75702f33e880f9976cf51a3afa41e577dd33c1f1995e9a9fdfd1e29e5c99e  SC200PC_KAFC917_PTL.aiqb
         EOF
 
-        # The driver writes exposure and gain as plain registers, which the sensor applies one
-        # frame later, not two. v4l2loopback consumers assume limited-range YUV, which is also
-        # what the tuning's media format record asks for.
+        # The sensor applies exposure and gain written as plain registers on the next frame.
+        # v4l2loopback consumers assume limited-range YUV.
         substitute $U/sc200pc-uf.json $C/sensors/sc200pc-uf.json \
           --replace-fail '"exposureLag":  2' '"exposureLag": 1' \
           --replace-fail '"gainLag": 2' '"gainLag": 1' \
@@ -108,9 +105,6 @@ in
                 open(f"{sys.argv[2]}/{names.pop(key)}", "wb").write(data)
         assert not names, names
         EOF
-        # Samsung's tuning as Windows uses it, with upstream's stretched AE plan. Where the
-        # factory plan holds 16.7 ms and raises total gain from 25x to 37x, this one holds 25x
-        # and lengthens the exposure to 33 ms.
         python3 $U/aiqb-ae-plan.py $W/SC200PC_KAFC917_PTL.aiqb $C/SC200PC_KAFC917_PTL.aiqb
         python3 $U/patch-hashes.py $W/graph_settings_SC200PC_KAFC917_PTL.bin $W/sc200pc_patched.bin
         python3 $U/gen-kernel-meta.py $H/Ipu75xaStaticGraphAutogen.cpp $W/kernel_meta.h \
@@ -127,8 +121,6 @@ in
       runHook preInstallCheck
       C=$out/etc/camera/ipu75xa
       H=$NIX_BUILD_TOP/$sourceRoot/modules/ipu_desc/ipu75xa
-      # Upstream's check wants graph 100002. Here the processed settings are graph 100032
-      # and the one raw-only setting is graph 100035.
       sed 's/id != 100002/(id != 100032 \&\& id != 100035)/' \
         ${upstream}/ipu7-hal/check-graph.cpp > check-graph.cpp
       grep -q 100035 check-graph.cpp

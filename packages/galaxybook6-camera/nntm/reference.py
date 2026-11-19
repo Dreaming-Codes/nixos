@@ -1,6 +1,4 @@
-"""Slow reference for the nntm element: Samsung's Windows tone-mapping stage, operation by operation.
-
-Every pixel operation is IEEE half precision in the order the Windows kernels perform it;
+"""Every pixel operation is IEEE half precision in the order the Windows kernels perform it;
 DERIVATION.md maps each function here to the kernel it mirrors.
 
 usage: reference.py <datadir> <in.nv12> <out.nv12> <width> <height> [--range full|limited]
@@ -45,7 +43,6 @@ class Params:
         return (m / ((m[1] + m[0]) + m[2])).astype(H)
 
     def blend_map(self):
-        """The parameter kernel's blend map, Q16, without a face region."""
         v = self.shading
         vmin = min(F(2), v.min())
         strength, radial = F(self.strength), F(self.radial)
@@ -76,7 +73,6 @@ def cl_round(x):
 
 
 def to_rgb(y, u, v, p):
-    """YUV code values (half arrays of one shape) to clamped RGB and their mean."""
     if p.restricted:
         y = clamp(y * H(1.1640625) + H(-18.625), 0, 255)
         u = clamp(u * H(1.142578125) + H(-18.28125), 0, 255)
@@ -124,7 +120,7 @@ def resize_coeffs(in_size, out_size):
 
 
 def resize(img, out_w, out_h):
-    """Pillow-style antialiased bilinear reduction, horizontal pass then vertical, in half precision."""
+    """Pillow's antialiased bilinear reduction."""
     in_h, in_w = img.shape
     bounds, coeffs = resize_coeffs(in_w, out_w)
     tmp = np.zeros((in_h, out_w), H)
@@ -144,7 +140,6 @@ def resize(img, out_w, out_h):
 
 
 def temporal_filter(state, grid):
-    """First grid passes through; later ones move the state 0.3 of the way."""
     if state is None:
         return grid.copy()
     alpha = H(F(FILTER_STRENGTH))
@@ -160,7 +155,6 @@ def axis(scale, n, last):
 
 
 def ltm_gain(luma, grid, p):
-    """Slice the bilateral grid at every pixel and turn the mapped luma into a gain."""
     h, w = luma.shape
     g = grid.reshape(GRID_Y, GRID_X, GRID_Z, 2)
     y0, y1, wy0, wy1 = axis(F(15) / F(h - 1), h, GRID_Y - 1)
@@ -205,7 +199,6 @@ def ltm_gain(luma, grid, p):
 
 
 def apply_gain(r, g, b, luma, gain, p):
-    """Scale RGB by the gain; above 1, scale chroma by less so highlights keep their hue."""
     bp, c = H(F(p.gtm_b) / F(255)), H(F(p.gtm_c) / F(255))
     one = H(1)
     lg = gain * luma

@@ -55,8 +55,7 @@ in {
       cardLabel = cameraLabel;
       extraPackages = [icamerasrc] ++ lib.optional cfg.neuralToneMap nntm;
       input = {
-        # Caps come from the relay's appsink, built from the fields below. fps-range lets AE
-        # lengthen the frame in dim light, down to 15 fps, instead of adding gain.
+        # Caps come from the relay's appsink, built from the fields below.
         pipeline =
           "icamerasrc device-name=sc200pc-uf fps-range=15~30"
           + lib.optionalString cfg.neuralToneMap " ! nntm range=limited";

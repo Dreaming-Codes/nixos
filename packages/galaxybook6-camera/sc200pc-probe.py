@@ -69,8 +69,7 @@ def read_control(fd, name):
 
 
 class FrameStart:
-    """Start-of-frame events of the long stream. An exposure written late in a frame
-    lands a frame after the frame length written with it."""
+    """An exposure written late in a frame lands a frame after the frame length written with it."""
 
     def __init__(self, subdev):
         self.fd = os.open(subdev, os.O_RDWR | os.O_NONBLOCK)
