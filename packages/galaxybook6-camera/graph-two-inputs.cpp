@@ -13,6 +13,31 @@ static constexpr uint32_t kIsysHeight = 1088;
 // declared output depth says, and dol_lite expects 12-bit pixels (black level 256).
 static constexpr uint8_t kFeederOutputBpp = 13;
 
+static constexpr uint16_t kIfdPipe = 55223;
+static constexpr uint16_t kIfdPipeLong = 52982;
+static constexpr int kIfdStrideWords[] = {11, 24};
+struct Word {
+    int index;
+    uint32_t value;
+};
+static constexpr Word kIfdUnpackedLineFormat[] = {
+    {15, 0xffff0101U}, {18, 0x20000004U}, {19, 0x00000101U}, {36, 0x00010000U}};
+
+static constexpr uint16_t kSlimTnrSpBcBifdYuv4nm1 = 25579;
+static constexpr uint16_t kTnrScaleFpBodrYuv4n = 20865;
+static constexpr int kIntelLinuxGraphFlagWord = 34;
+static constexpr uint32_t kIntelLinuxGraphFlag = 0x00020000U;
+
+static constexpr int kLinkIsysToLbffMain = 3;
+static constexpr int kLinkIsysToLbffLong = 4;
+static constexpr int kLinkTnrScaleFeedback = 13;
+static constexpr int kLinkBbpsToImageMp = 16;
+static constexpr int kLinkBbpsToImageDp = 17;
+static constexpr int kLinkBbpsMpToSwNntm = 18;
+static constexpr int kLinkBbpsDpToSwNntm = 19;
+static constexpr int kLinkSwScalerToProcessedSecondary = 22;
+static constexpr uint8_t kStreamingModeBclm = 2;
+
 template <class M> static int findKernel(uint16_t uuid) {
     for (uint32_t i = 0; i < M::count; i++)
         if (M::uuids[i] == uuid)
@@ -45,33 +70,32 @@ static void patchBlock(GraphConfiguration100032& g) {
     if (sink.video == static_cast<uint8_t>(HwSink::ProcessedSecondarySink))
         sink.video = static_cast<uint8_t>(HwSink::ImageDpSink);
 
-    if (g.linkConfigurations[16].bufferSize == 0)
-        g.linkConfigurations[16] = g.linkConfigurations[18];
-    if (g.linkConfigurations[17].bufferSize == 0)
-        g.linkConfigurations[17] = g.linkConfigurations[19];
-    for (int k = 18; k <= 22; k++)
+    if (g.linkConfigurations[kLinkBbpsToImageMp].bufferSize == 0)
+        g.linkConfigurations[kLinkBbpsToImageMp] = g.linkConfigurations[kLinkBbpsMpToSwNntm];
+    if (g.linkConfigurations[kLinkBbpsToImageDp].bufferSize == 0)
+        g.linkConfigurations[kLinkBbpsToImageDp] = g.linkConfigurations[kLinkBbpsDpToSwNntm];
+    for (int k = kLinkBbpsMpToSwNntm; k <= kLinkSwScalerToProcessedSecondary; k++)
         g.linkConfigurations[k] = StaticGraphLinkConfiguration();
 
     auto& lb = g.lbffDol2InputsOuterNodeConfiguration;
-    for (uint16_t uuid : {55223, 52982}) {
+    for (uint16_t uuid : {kIfdPipe, kIfdPipeLong}) {
         uint8_t* ifd = kernelApi<LbffDol2InputsMeta>(lb.systemApiConfiguration, uuid);
-        setWord(ifd, 11, (getWord(ifd, 11) & 0xffffU) | (kIsysStride << 16));
-        setWord(ifd, 24, (getWord(ifd, 24) & 0xffffU) | (kIsysStride << 16));
-        setWord(ifd, 15, 0xffff0101U);
-        setWord(ifd, 18, 0x20000004U);
-        setWord(ifd, 19, 0x00000101U);
-        setWord(ifd, 36, 0x00010000U);
+        for (int word : kIfdStrideWords)
+            setWord(ifd, word, (getWord(ifd, word) & 0xffffU) | (kIsysStride << 16));
+        for (const Word& w : kIfdUnpackedLineFormat)
+            setWord(ifd, w.index, w.value);
         lb.bppInfos[findKernel<LbffDol2InputsMeta>(uuid)].output_bpp = kFeederOutputBpp;
     }
-    g.linkConfigurations[3].bufferSize = kIsysStride * kIsysHeight;
-    g.linkConfigurations[4].bufferSize = kIsysStride * kIsysHeight;
+    g.linkConfigurations[kLinkIsysToLbffMain].bufferSize = kIsysStride * kIsysHeight;
+    g.linkConfigurations[kLinkIsysToLbffLong].bufferSize = kIsysStride * kIsysHeight;
 
     auto& bb = g.bbpsWithTnrOuterNodeConfiguration;
-    for (uint16_t uuid : {25579, 20865}) {
+    for (uint16_t uuid : {kSlimTnrSpBcBifdYuv4nm1, kTnrScaleFpBodrYuv4n}) {
         uint8_t* r = kernelApi<BbpsWithTnrMeta>(bb.systemApiConfiguration, uuid);
-        setWord(r, 34, getWord(r, 34) | 0x00020000U);
+        setWord(r, kIntelLinuxGraphFlagWord,
+                getWord(r, kIntelLinuxGraphFlagWord) | kIntelLinuxGraphFlag);
     }
-    g.linkConfigurations[13].streamingMode = 2;
+    g.linkConfigurations[kLinkTnrScaleFeedback].streamingMode = kStreamingModeBclm;
 }
 
 int main(int argc, char** argv) {
