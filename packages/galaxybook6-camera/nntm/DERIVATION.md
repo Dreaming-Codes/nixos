@@ -212,7 +212,7 @@ limit): total sensor gain.
 ### Per frame
 
 - **Range flags** (0x18036fa70): both are 1 when a format field of the run request is 0x20
-  or 0x30, else both are 0. The two always agree, so the element has one `range` property.
+  or 0x30, else both are 0.
 - **Blend map** (0x180370b60), from the 63x47 four-channel lens-shading grid `p`:
   `v = ((p3/c3 + p0/c0) * 0.5 + p1/c1 + p2/c2) / 3` with `c_k` the largest corner value of
   channel `k`, `vmin = min(v)`, and
@@ -224,18 +224,38 @@ limit): total sensor gain.
 
 ### What the element uses
 
-Constants are Samsung's. For what varies with things the element cannot see:
+The Linux parameter library runs the same kernel. The camera HAL configures it (the `SwNntm`
+node of the graph, group 3, `hal-nntm-params.patch`), keeps its PAL record per frame and
+exports it as `camera_get_nntm_params`; `icamerasrc` attaches the record to the frame as the
+custom meta `GstNntmParamsMeta` (`icamerasrc-nntm-params.patch`). The record is a 24-byte
+header (uuid 46539, record size 73888, ...) followed by `ia_pal_isp_nntm_1_0_t`:
 
-- `strength` (global_weight / 1023), default 500/1023: the value for sensor gain 2 and above,
-  which is every indoor scene. At gain 1 (bright daylight) Windows uses 350/1023.
-- `radial` (radial_dependency_weight / 1023), default 540/1023: the value for gains 2 to 8.
-  Windows moves to 500/1023 by gain 16.
-- Lens shading: the F11 (4000 K fluorescent) table of the aiqb. The five light-source tables
-  give blend maps within 0.005 of each other. Windows uses the grid the shading adaptor
-  produced for the frame; if that adaptor lowers shading correction in low light, the map is
-  flatter than the one used here.
-- No face region: Linux runs no face detector, so faces get the full tone mapping where
-  Windows would hold back 30 to 40 percent.
+| offset | field |
+| --- | --- |
+| 0x00000 | bypass, mode |
+| 0x00008 | offset_yuv2rgb[3] |
+| 0x00014 | yuv2rgb[9] |
+| 0x00038 | rgb2yuv[9] |
+| 0x0005c | input_range_restricted, output_range_restricted |
+| 0x00064 | blending_map[16384], rows of blending_width |
+| 0x10064 | blending_width, blending_height (63, 47) |
+| 0x1006c | guidence_weight, guidence_bias |
+| 0x10074 | gtm_a, gtm_b, gtm_c |
+| 0x10080 | tm_lut[2049] |
+
+The element takes from it what Windows' executor forwards (range flags, offsets, both
+matrices, `a`, `b`, `c`, the blend map and its size) and keeps Samsung's guide weight and bias.
+A frame without a record, or with a record of another size or uuid, gets Samsung's constants
+and the blend map built from the F11 (4000 K fluorescent) lens-shading table of the aiqb with
+the `strength` and `radial` properties (500/1023 and 540/1023, the values for sensor gain 2
+to 8); the element says so once on stderr.
+
+Measured on the camera: the global weight follows sensor gain (350/1023 at gain 1, 412 at 1.4,
+499 at 1.94, 500 from 2), and the dim room's map fits a radial weight of 500/1023. The kernel's
+blend map is flatter than the one built from the F11 table: the relative shading at the
+corners is 0.25 where the table gives 0.16, the same at every gain, so the map differs by up to
+5 percent of its maximum at the corners. The kernel's map is the one Windows applies: it is
+built from the shading grid of the frame. The HAL does not hand the kernel faces yet.
 
 ## 8. Where the reference could differ from Windows
 
@@ -245,11 +265,9 @@ Constants are Samsung's. For what varies with things the element cannot see:
    approximation of unknown rounding.
 3. The reference runs the network in FP32 on the CPU plugin instead of FP16 on the GPU.
 4. The grid is assumed to be applied to the frame it was computed from.
-5. The interpolation variable of the weight curves is taken to be total sensor gain.
-6. The lens-shading grid given to the parameter kernel is taken to be the plain table for
-   the light source, in the aiqb's channel order (greens in the middle).
-7. The range flags are tied to a format field whose meaning was not traced.
-8. No face region.
+5. Without a parameter record: the weights are those of sensor gain 2 to 8, the lens-shading
+   grid is the plain F11 table (flatter on the camera, see section 7) and there is no face
+   region.
 
 ## 9. The element
 
@@ -265,11 +283,12 @@ Frames are processed 64 pixels at a time, so the width must be a multiple of 64.
 The element has two back ends, chosen by the `backend` property. The CPU back end is
 `nntm.c`. The GPU back end (`backend_gpu.c`) runs Samsung's own SPIR-V kernels, extracted from
 the driver at build time, through OpenCL, and the network through OpenVINO's GPU plugin in
-FP16, as Windows does. Both use the same parameters, blend map and temporal filter. The GPU
+FP16, as Windows does. Both take a parameter set per frame and use the same temporal filter. The GPU
 output differs from the reference by at most one code value: Intel's compiler fuses
 multiply-adds where the kernels' fast-math flags allow it (item 1 above), and in 5 percent of
 bytes on recorded frames the result rounds the other way. `check.py <datadir> <workdir> gpu`
-checks it on a machine with the GPU.
+checks it on a machine with the GPU (`<workdir>/feed` is `feed.c` built, as the install check
+does).
 
 The GPU back end works on the frame's own memory. A frame from a buffer pool is wrapped once
 and reused; the host rewrites it between uses, so each use starts with a map that tells the

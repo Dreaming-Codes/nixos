@@ -13,6 +13,10 @@ G_DECLARE_FINAL_TYPE(GstNntm, gst_nntm, GST, NNTM, GstVideoFilter)
 GST_DEBUG_CATEGORY_STATIC(nntm_debug);
 #define GST_CAT_DEFAULT nntm_debug
 
+/* The camera source attaches the HAL's camera_get_nntm_params record for the frame as a GBytes field
+ * "record" of this custom meta. */
+#define NNTM_PARAMS_META "GstNntmParamsMeta"
+
 enum { RANGE_FULL, RANGE_LIMITED };
 enum { BACKEND_AUTO, BACKEND_GPU, BACKEND_CPU };
 enum { PROP_0, PROP_RANGE, PROP_STRENGTH, PROP_RADIAL, PROP_BYPASS, PROP_THREADS, PROP_IDENTITY_GRID, PROP_DATA_DIR, PROP_BACKEND };
@@ -26,8 +30,10 @@ struct _GstNntm {
   guint threads;
   gchar *data_dir;
 
-  NntmParams params;
   gfloat *shading;
+  gint shading_w, shading_h;
+  NntmParams *fallback, *frame_params;
+  gboolean warned;
   NntmBackend *backend;
   gboolean stale, first;
   gfloat *grid;
@@ -37,7 +43,7 @@ struct _GstNntm {
   ov_compiled_model_t *compiled;
   ov_infer_request_t *request;
   ov_tensor_t *input;
-  guint64 frames, usec[3];
+  guint64 frames, recorded, usec[3];
 };
 
 G_DEFINE_TYPE(GstNntm, gst_nntm, GST_TYPE_VIDEO_FILTER)
@@ -71,10 +77,10 @@ static gboolean load_shading(GstNntm *self) {
   if (!g_file_get_contents(path, &data, &len, NULL) || len < 8) return FALSE;
   guint32 w = GST_READ_UINT32_LE(data), h = GST_READ_UINT32_LE(data + 4);
   if (len != 8 + (gsize)w * h * sizeof(gfloat)) return FALSE;
+  if ((gsize)w * h > NNTM_BLEND_MAX) return FALSE;
   self->shading = g_memdup2(data + 8, len - 8);
-  self->params.shading_w = w;
-  self->params.shading_h = h;
-  self->params.shading = self->shading;
+  self->shading_w = w;
+  self->shading_h = h;
   return TRUE;
 }
 
@@ -116,6 +122,8 @@ static void release(GstNntm *self) {
   if (self->backend) self->backend->klass->free(self->backend);
   self->backend = NULL;
   g_clear_pointer(&self->shading, g_free);
+  g_clear_pointer(&self->fallback, g_free);
+  g_clear_pointer(&self->frame_params, g_free);
   g_clear_pointer(&self->grid, g_free);
   g_clear_pointer(&self->net_input, g_free);
 }
@@ -159,19 +167,41 @@ static gboolean gst_nntm_start(GstBaseTransform *trans) {
   }
   GST_INFO_OBJECT(self, "tone mapping on the %s", self->backend->klass->name);
   self->grid = g_new(gfloat, NNTM_GRID_LEN);
+  self->fallback = g_new(NntmParams, 1);
+  self->frame_params = g_new(NntmParams, 1);
   self->first = self->stale = TRUE;
-  self->frames = self->usec[0] = self->usec[1] = self->usec[2] = 0;
+  self->warned = FALSE;
+  self->frames = self->recorded = self->usec[0] = self->usec[1] = self->usec[2] = 0;
   return TRUE;
 }
 
 static gboolean gst_nntm_stop(GstBaseTransform *trans) {
   GstNntm *self = GST_NNTM(trans);
   if (self->frames)
-    GST_INFO_OBJECT(self, "%s: %" G_GUINT64_FORMAT " frames, mean ms: luma %.2f network %.2f apply %.2f",
-                    self->backend->klass->name, self->frames, self->usec[0] / 1e3 / self->frames,
+    GST_INFO_OBJECT(self, "%s: %" G_GUINT64_FORMAT " frames, %" G_GUINT64_FORMAT " with parameters, mean ms: luma %.2f network %.2f apply %.2f",
+                    self->backend->klass->name, self->frames, self->recorded, self->usec[0] / 1e3 / self->frames,
                     self->usec[1] / 1e3 / self->frames, self->usec[2] / 1e3 / self->frames);
   release(self);
   return TRUE;
+}
+
+static const NntmParams *params_for(GstNntm *self, GstBuffer *buffer) {
+  GstCustomMeta *meta = gst_buffer_get_custom_meta(buffer, NNTM_PARAMS_META);
+  const GValue *value = meta ? gst_structure_get_value(gst_custom_meta_get_structure(meta), "record") : NULL;
+  GBytes *record = value && G_VALUE_HOLDS(value, G_TYPE_BYTES) ? g_value_get_boxed(value) : NULL;
+  gsize size = 0;
+  const guint8 *data = record ? g_bytes_get_data(record, &size) : NULL;
+  if (data && nntm_params_from_record(self->frame_params, data, size)) {
+    self->recorded++;
+    return self->frame_params;
+  }
+  if (!self->warned) {
+    /* v4l2-relayd drops warning messages from the bus; stderr reaches its journal. */
+    g_warning("%s: %s, tone mapping with Samsung's constants", GST_OBJECT_NAME(self),
+              data ? "a frame's parameter record is not nntm_1_0's" : "frames carry no parameter record");
+    self->warned = TRUE;
+  }
+  return self->fallback;
 }
 
 static GstFlowReturn gst_nntm_transform_frame_ip(GstVideoFilter *filter, GstVideoFrame *frame) {
@@ -193,10 +223,9 @@ static GstFlowReturn gst_nntm_transform_frame_ip(GstVideoFilter *filter, GstVide
   GST_OBJECT_LOCK(self);
   gboolean bypass = self->bypass, identity_grid = self->identity_grid, configured = TRUE;
   if (self->stale && !bypass) {
-    self->params.restricted = self->range == RANGE_LIMITED;
-    self->params.strength = self->strength;
-    self->params.radial = self->radial;
-    configured = k->configure(self->backend, &self->params, f.width, f.height);
+    nntm_params_samsung(self->fallback, self->range == RANGE_LIMITED, self->shading, self->shading_w, self->shading_h,
+                        self->strength, self->radial);
+    configured = k->configure(self->backend, f.width, f.height);
     self->stale = FALSE;
   }
   GST_OBJECT_UNLOCK(self);
@@ -208,6 +237,7 @@ static GstFlowReturn gst_nntm_transform_frame_ip(GstVideoFilter *filter, GstVide
 
   t[0] = g_get_monotonic_time();
   gboolean pooled = frame->buffer->pool != NULL;
+  if (!k->set_params(self->backend, params_for(self, frame->buffer))) goto failed;
   if (!k->prepare(self->backend, &f, pooled, identity_grid ? NULL : self->net_input)) goto failed;
   t[1] = g_get_monotonic_time();
   if (identity_grid) {
@@ -298,16 +328,16 @@ static void gst_nntm_class_init(GstNntmClass *klass) {
   object->get_property = gst_nntm_get_property;
   object->finalize = gst_nntm_finalize;
   g_object_class_install_property(object, PROP_RANGE,
-      g_param_spec_enum("range", "Range", "Quantisation range of the NV12 stream, in and out", range_type(),
+      g_param_spec_enum("range", "Range", "Quantisation range of the NV12 stream, in and out, for frames without a parameter record", range_type(),
                         RANGE_LIMITED, flags));
   g_object_class_install_property(object, PROP_STRENGTH,
       g_param_spec_float("strength", "Strength",
-                         "Weight of the tone-mapped luma in the image centre (Samsung: 500/1023 at sensor gain 2 and above, 350/1023 at gain 1)",
-                         0, 1, nntm_samsung_params.strength, flags));
+                         "Weight of the tone-mapped luma in the image centre for frames without a parameter record (Samsung: 500/1023 at sensor gain 2 and above, 350/1023 at gain 1)",
+                         0, 1, NNTM_STRENGTH, flags));
   g_object_class_install_property(object, PROP_RADIAL,
       g_param_spec_float("radial", "Radial",
-                         "How far the weight follows lens shading towards the corners (Samsung: 540/1023 at sensor gain 2 to 8, 500/1023 from 16)",
-                         0, 1, nntm_samsung_params.radial, flags));
+                         "How far the weight follows lens shading towards the corners for frames without a parameter record (Samsung: 540/1023 at sensor gain 2 to 8, 500/1023 from 16)",
+                         0, 1, NNTM_RADIAL, flags));
   g_object_class_install_property(object, PROP_BYPASS,
       g_param_spec_boolean("bypass", "Bypass", "Pass frames through untouched", FALSE, flags));
   g_object_class_install_property(object, PROP_THREADS,
@@ -337,10 +367,9 @@ static void gst_nntm_class_init(GstNntmClass *klass) {
 }
 
 static void gst_nntm_init(GstNntm *self) {
-  self->params = nntm_samsung_params;
   self->range = RANGE_LIMITED;
-  self->strength = self->params.strength;
-  self->radial = self->params.radial;
+  self->strength = NNTM_STRENGTH;
+  self->radial = NNTM_RADIAL;
   self->threads = 4;
   self->data_dir = g_strdup(NNTM_DATA_DIR);
 }

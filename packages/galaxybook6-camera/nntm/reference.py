@@ -2,7 +2,10 @@
 DERIVATION.md maps each function here to the kernel it mirrors.
 
 usage: reference.py <datadir> <in.nv12> <out.nv12> <width> <height> [--range full|limited]
-           [--strength S] [--radial R] [--identity-grid] [--frame-bytes N] [--frames N]
+           [--strength S] [--radial R] [--records FILE] [--identity-grid] [--frame-bytes N] [--frames N]
+
+--records: one nntm_1_0 PAL record per frame, back to back, as the camera HAL exports them; without it every
+frame uses Samsung's constants with the blend map of shading.f32.
 """
 import argparse
 import struct
@@ -16,12 +19,16 @@ F = np.float32
 GRID_Y, GRID_X, GRID_Z = 16, 16, 8
 NET_SIZE = 256
 FILTER_STRENGTH = 0.3
+STRENGTH = float(F(500) / F(1023))
+RADIAL = float(F(540) / F(1023))
+RECORD_UUID, RECORD_HEADER, KERNEL_SIZE = 46539, 0x18, 0x12084
 
 
 @dataclass
 class Params:
-    """Per-stream parameters as the Windows calculators hold them after scaling."""
-    restricted: bool = True
+    """What the Windows parameter kernel nntm_1_0 hands the stage each frame (nntm.h NntmParams)."""
+    input_restricted: bool = True
+    output_restricted: bool = True
     offset: tuple = (0, 128, 128)
     yuv2rgb: tuple = (8192, -2, 11218, 8192, -1334, -3336, 8192, 13220, -2)
     rgb2yuv: tuple = (3484, 11716, 1183, -2158, -7262, 9420, 9420, -8557, -863)
@@ -30,9 +37,30 @@ class Params:
     gtm_c: int = 0
     guide_weight: int = 27955
     guide_bias: int = -12919
-    strength: float = float(F(500) / F(1023))
-    radial: float = float(F(540) / F(1023))
-    shading: np.ndarray = field(default=None, repr=False)
+    blend: np.ndarray = field(default=None, repr=False)  # blend * 65536, int32, rows x columns
+
+    @classmethod
+    def samsung(cls, shading, restricted=True, strength=STRENGTH, radial=RADIAL):
+        v = shading
+        vmin = min(F(2), v.min())
+        strength, radial = F(strength), F(radial)
+        if vmin > F(1e-4):
+            blend = ((F(1) / (v / vmin)) * radial + (F(1) - radial)) * strength
+        else:
+            blend = np.full_like(v, strength)
+        return cls(input_restricted=restricted, output_restricted=restricted, blend=(blend * F(65536)).astype(np.int32))
+
+    @classmethod
+    def from_record(cls, record):
+        """The guide weight and bias keep Samsung's values: Windows' executor never forwards them."""
+        uuid, size = struct.unpack_from("<2i", record)
+        assert uuid == RECORD_UUID and size == len(record) >= RECORD_HEADER + KERNEL_SIZE, (uuid, size, len(record))
+        i = lambda at, n: struct.unpack_from(f"<{n}i", record, RECORD_HEADER + at)
+        w, h = i(0x10064, 2)
+        a, b, c = i(0x10074, 3)
+        return cls(input_restricted=i(0x5c, 1)[0] != 0, output_restricted=i(0x60, 1)[0] != 0, offset=i(0x8, 3),
+                   yuv2rgb=i(0x14, 9), rgb2yuv=i(0x38, 9), gtm_a=a, gtm_b=b, gtm_c=c,
+                   blend=np.array(i(0x64, w * h), np.int32).reshape(h, w))
 
     def yuv2rgb_h(self):
         m = np.array(self.yuv2rgb, F)
@@ -42,15 +70,15 @@ class Params:
         m = np.array(self.rgb2yuv, F)
         return (m / ((m[1] + m[0]) + m[2])).astype(H)
 
-    def blend_map_q16(self):
-        v = self.shading
-        vmin = min(F(2), v.min())
-        strength, radial = F(self.strength), F(self.radial)
-        if vmin > F(1e-4):
-            blend = ((F(1) / (v / vmin)) * radial + (F(1) - radial)) * strength
-        else:
-            blend = np.full_like(v, strength)
-        return (blend * F(65536)).astype(np.int32)
+
+
+def records(path):
+    data = open(path, "rb").read()
+    at = 0
+    while at < len(data):
+        size = struct.unpack_from("<i", data, at + 4)[0]
+        yield data[at:at + size]
+        at += size
 
 
 def load_shading(path):
@@ -73,7 +101,7 @@ def cl_round(x):
 
 
 def to_rgb(y, u, v, p):
-    if p.restricted:
+    if p.input_restricted:
         y = clamp(y * H(1.1640625) + H(-18.625), 0, 255)
         u = clamp(u * H(1.142578125) + H(-18.28125), 0, 255)
         v = clamp(v * H(1.142578125) + H(-18.28125), 0, 255)
@@ -181,7 +209,7 @@ def ltm_gain(luma, grid, p):
         coeff.append(acc)
     mapped = clamp(coeff[1] + coeff[0] * luma, 0, 1)
 
-    bmap = p.blend_map_q16()
+    bmap = p.blend
     bh, bw = bmap.shape
     m = (bmap.astype(F) * F(1 / 65536)).astype(H)
     by0, by1, wby0, wby1 = axis(F(bh - 1) / F(h - 1), h, bh - 1)
@@ -236,7 +264,7 @@ def postprocess(nv12, w, h, gain, p):
 
     yq = np.clip(cl_round(yo) + p.offset[0], 0, 255)
     uq, vq = chroma(uo, p.offset[1]), chroma(vo, p.offset[2])
-    if p.restricted:
+    if p.output_restricted:
         def narrow(x, span, top):
             t = x * span + 128
             q = np.where(t & 255 == 0, (t >> 8) & 254, t >> 8)
@@ -249,8 +277,7 @@ def postprocess(nv12, w, h, gain, p):
 
 
 class Reference:
-    def __init__(self, datadir, params, identity_grid=False):
-        self.p = params
+    def __init__(self, datadir, identity_grid=False):
         self.state = None
         self.net = None
         if not identity_grid:
@@ -266,11 +293,11 @@ class Reference:
         self.net.infer({0: small.reshape(1, 1, NET_SIZE, NET_SIZE)})
         return self.net.get_output_tensor(0).data.astype(H).ravel().copy()
 
-    def frame(self, nv12, w, h):
+    def frame(self, nv12, w, h, p):
         y, u, v = planes(nv12, w, h)
-        luma = to_rgb(y, u, v, self.p)[3]
+        luma = to_rgb(y, u, v, p)[3]
         self.state = temporal_filter(self.state, self.grid(luma))
-        return postprocess(nv12, w, h, ltm_gain(luma, self.state, self.p), self.p)
+        return postprocess(nv12, w, h, ltm_gain(luma, self.state, p), p)
 
 
 def main():
@@ -278,15 +305,16 @@ def main():
     ap.add_argument("datadir"); ap.add_argument("src"); ap.add_argument("dst")
     ap.add_argument("width", type=int); ap.add_argument("height", type=int)
     ap.add_argument("--range", choices=("full", "limited"), default="limited")
-    ap.add_argument("--strength", type=float, default=Params.strength)
-    ap.add_argument("--radial", type=float, default=Params.radial)
+    ap.add_argument("--strength", type=float, default=STRENGTH)
+    ap.add_argument("--radial", type=float, default=RADIAL)
+    ap.add_argument("--records")
     ap.add_argument("--identity-grid", action="store_true")
     ap.add_argument("--frame-bytes", type=int)
     ap.add_argument("--frames", type=int)
     a = ap.parse_args()
-    params = Params(restricted=a.range == "limited", strength=a.strength, radial=a.radial,
-                    shading=load_shading(f"{a.datadir}/shading.f32"))
-    ref = Reference(a.datadir, params, a.identity_grid)
+    fallback = Params.samsung(load_shading(f"{a.datadir}/shading.f32"), a.range == "limited", a.strength, a.radial)
+    per_frame = [Params.from_record(r) for r in records(a.records)] if a.records else []
+    ref = Reference(a.datadir, a.identity_grid)
     size = a.frame_bytes or a.width * a.height * 3 // 2
     with open(a.src, "rb") as src, open(a.dst, "wb") as dst:
         n = 0
@@ -294,7 +322,8 @@ def main():
             buf = src.read(size)
             if len(buf) < size:
                 break
-            dst.write(ref.frame(np.frombuffer(buf, np.uint8), a.width, a.height).tobytes())
+            p = per_frame[n] if n < len(per_frame) else fallback
+            dst.write(ref.frame(np.frombuffer(buf, np.uint8), a.width, a.height, p).tobytes())
             n += 1
 
 

@@ -11,8 +11,10 @@ typedef struct {
   const char *name;
   /* OpenVINO device for the network and one compile property. */
   const char *net_device, *net_key, *net_value;
-  /* Called before the first frame and after every change of parameters or frame size. */
-  bool (*configure)(NntmBackend *b, const NntmParams *params, int width, int height);
+  /* Called before the first frame and after every change of frame size. */
+  bool (*configure)(NntmBackend *b, int width, int height);
+  /* Called before every frame's prepare. */
+  bool (*set_params)(NntmBackend *b, const NntmParams *params);
   /* `persistent`: the frame's memory comes back in later frames and stays mapped until the next
    * configure or free. `net_input` is NULL when no network runs on this frame. */
   bool (*prepare)(NntmBackend *b, NntmFrame *f, bool persistent, uint16_t *net_input);

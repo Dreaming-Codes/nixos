@@ -57,6 +57,7 @@ in
     installCheckPhase = ''
       runHook preInstallCheck
       mkdir check
+      $CC -Wall -Werror feed.c $(pkg-config --cflags --libs gstreamer-app-1.0) -o check/feed
       GST_REGISTRY=$PWD/check/registry.bin GST_PLUGIN_PATH=$out/lib/gstreamer-1.0 \
         python3 check.py $out/share/nntm check
       runHook postInstallCheck

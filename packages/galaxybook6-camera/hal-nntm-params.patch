@@ -258,6 +258,40 @@ diff -ruN a/src/core/processingUnit/PipeLine.h b/src/core/processingUnit/PipeLin
      status_t createPSysGraph(int32_t numLinks, GraphLink** links);
  
      void dumpPSysGraph();
+diff -ruN a/src/hal/hal_adaptor/HalAdaptor.cpp b/src/hal/hal_adaptor/HalAdaptor.cpp
+--- a/src/hal/hal_adaptor/HalAdaptor.cpp
++++ b/src/hal/hal_adaptor/HalAdaptor.cpp
+@@ -142,6 +142,7 @@
+     GET_FUNC_CALL(cameraStreamDqbuf, camera_stream_dqbuf);
+     GET_FUNC_CALL(cameraSetParameters, camera_set_parameters);
+     GET_FUNC_CALL(cameraGetParameters, camera_get_parameters);
++    GET_FUNC_CALL(cameraGetNntmParams, camera_get_nntm_params);
+     GET_FUNC_CALL(getHalFrameSize, get_frame_size);
+ }
+ 
+@@ -239,6 +240,11 @@
+     return gCameraHalAdaptor.cameraGetParameters(camera_id, param, sequence);
+ }
+ 
++int camera_get_nntm_params(int camera_id, int64_t sequence, void* data, size_t size) {
++    CheckFuncCall(gCameraHalAdaptor.cameraGetNntmParams);
++    return gCameraHalAdaptor.cameraGetNntmParams(camera_id, sequence, data, size);
++}
++
+ int get_frame_size(int camera_id, int format, int width, int height, int field, int* bpp) {
+     CheckFuncCall(gCameraHalAdaptor.getHalFrameSize);
+     return gCameraHalAdaptor.getHalFrameSize(camera_id, format, width, height, field, bpp);
+diff -ruN a/src/hal/hal_adaptor/HalAdaptor.h b/src/hal/hal_adaptor/HalAdaptor.h
+--- a/src/hal/hal_adaptor/HalAdaptor.h
++++ b/src/hal/hal_adaptor/HalAdaptor.h
+@@ -43,6 +43,7 @@
+                   Parameters* settings);
+     _DEF_HAL_FUNC(int, cameraSetParameters, int camera_id, const Parameters& param);
+     _DEF_HAL_FUNC(int, cameraGetParameters, int camera_id, Parameters& param, int64_t sequence);
++    _DEF_HAL_FUNC(int, cameraGetNntmParams, int camera_id, int64_t sequence, void* data, size_t size);
+     _DEF_HAL_FUNC(int, getHalFrameSize, int camera_id, int format, int width, int height,
+                   int field, int* bpp);
+ };
 diff -ruN a/src/hal/ICamera.cpp b/src/hal/ICamera.cpp
 --- a/src/hal/ICamera.cpp
 +++ b/src/hal/ICamera.cpp

@@ -95,14 +95,12 @@ static bool coefficients(Gpu *g, cl_mem coeff, cl_mem bounds, int in) {
   return run(g, g->coeffs, 1, NNTM_NET_SIZE, 1);
 }
 
-static bool configure(Gpu *g, const NntmParams *p, int width, int height) {
+static bool configure(Gpu *g, int width, int height) {
   release_sized(g);
   g->width = width;
   g->height = height;
-  const int net = NNTM_NET_SIZE, taps_w = taps(width), taps_h = taps(height), restricted = p->restricted;
+  const int net = NNTM_NET_SIZE, taps_w = taps(width), taps_h = taps(height);
   const size_t px = (size_t)width * height;
-  int32_t *blend_q16 = malloc((size_t)p->shading_w * p->shading_h * sizeof(int32_t));
-  nntm_blend_q16(p, blend_q16);
   bool made = buffer(g, &g->luma, CL_MEM_READ_WRITE, px * 2, NULL) && buffer(g, &g->gain, CL_MEM_READ_WRITE, px * 2, NULL) &&
               buffer(g, &g->narrow, CL_MEM_READ_WRITE, (size_t)height * net * 2, NULL) &&
               buffer(g, &g->small, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, (size_t)net * net * 2, NULL) &&
@@ -111,28 +109,15 @@ static bool configure(Gpu *g, const NntmParams *p, int width, int height) {
               buffer(g, &g->coeff_h, CL_MEM_READ_WRITE, (size_t)net * taps_h * 2, NULL) &&
               buffer(g, &g->bounds_h, CL_MEM_READ_WRITE, (size_t)net * 2 * 4, NULL) &&
               buffer(g, &g->grid, CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR, NNTM_GRID_LEN * 2, NULL) &&
-              buffer(g, &g->blend, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, (size_t)p->shading_w * p->shading_h * 4, blend_q16);
-  free(blend_q16);
+              buffer(g, &g->blend, CL_MEM_READ_ONLY, NNTM_BLEND_MAX * sizeof(int32_t), NULL);
   if (!made || posix_memalign((void **)&g->staging, 4096, frame_bytes(g))) return false;
   if (!coefficients(g, g->coeff_w, g->bounds_w, width) || !coefficients(g, g->coeff_h, g->bounds_h, height)) return false;
 
   const SyclRange zero = {0}, whole = {(int64_t)frame_bytes(g)}, plane = {(int64_t)px};
-  Int3 offset = {{p->offset[0], p->offset[1], p->offset[2]}};
-  Float9 yuv2rgb, rgb2yuv;
-  float luma_row = (float)((p->rgb2yuv[1] + p->rgb2yuv[0]) + p->rgb2yuv[2]);
-  for (int i = 0; i < 9; i++) {
-    yuv2rgb.v[i] = (float)p->yuv2rgb[i] / (float)p->yuv2rgb[0];
-    rgb2yuv.v[i] = (float)p->rgb2yuv[i] / luma_row;
-  }
-  float weight = (float)p->guide_weight * (1.0f / 8192.0f), bias = (float)p->guide_bias * (1.0f / 8192.0f);
   float row_scale = 15.0f / (float)(height - 1), col_scale = 15.0f / (float)(width - 1);
-  float blend_rows = (float)(p->shading_h - 1) / (float)(height - 1), blend_cols = (float)(p->shading_w - 1) / (float)(width - 1);
-  float gtm_b = (float)p->gtm_b / 255.0f, gtm_c = (float)p->gtm_c / 255.0f;
-  int gtm_a = p->gtm_a;
 
   cl_kernel k = g->preprocess;
-  ARG(k, 1, zero); ARG(k, 2, g->luma); ARG(k, 3, zero); ARG(k, 4, offset); ARG(k, 5, yuv2rgb);
-  ARG(k, 6, restricted); ARG(k, 7, width); ARG(k, 8, height);
+  ARG(k, 1, zero); ARG(k, 2, g->luma); ARG(k, 3, zero); ARG(k, 7, width); ARG(k, 8, height);
   k = g->resample_w;
   ARG(k, 0, g->luma); ARG(k, 1, zero); ARG(k, 2, g->narrow); ARG(k, 3, zero); ARG(k, 4, g->bounds_w); ARG(k, 5, zero);
   ARG(k, 6, g->coeff_w); ARG(k, 7, zero); ARG(k, 8, width); ARG(k, 9, net); ARG(k, 10, taps_w);
@@ -141,14 +126,35 @@ static bool configure(Gpu *g, const NntmParams *p, int width, int height) {
   ARG(k, 6, g->coeff_h); ARG(k, 7, zero); ARG(k, 8, net); ARG(k, 9, net); ARG(k, 10, taps_h);
   k = g->ltm_gain;
   ARG(k, 0, g->luma); ARG(k, 1, zero); ARG(k, 2, g->grid); ARG(k, 3, zero); ARG(k, 4, g->blend); ARG(k, 5, zero);
-  ARG(k, 6, g->gain); ARG(k, 7, zero); ARG(k, 8, weight); ARG(k, 9, bias); ARG(k, 10, row_scale); ARG(k, 11, col_scale);
-  ARG(k, 12, blend_rows); ARG(k, 13, blend_cols); ARG(k, 14, p->shading_h); ARG(k, 15, p->shading_w); ARG(k, 16, width);
+  ARG(k, 6, g->gain); ARG(k, 7, zero); ARG(k, 10, row_scale); ARG(k, 11, col_scale); ARG(k, 16, width);
   k = g->postprocess;
   ARG(k, 1, whole); ARG(k, 2, whole); ARG(k, 3, zero); ARG(k, 4, g->gain); ARG(k, 5, plane); ARG(k, 6, plane); ARG(k, 7, zero);
-  ARG(k, 9, whole); ARG(k, 10, whole); ARG(k, 11, zero); ARG(k, 12, offset); ARG(k, 13, yuv2rgb); ARG(k, 14, offset);
-  ARG(k, 15, rgb2yuv); ARG(k, 16, restricted); ARG(k, 17, restricted); ARG(k, 18, gtm_a); ARG(k, 19, gtm_b);
-  ARG(k, 20, gtm_c); ARG(k, 21, width); ARG(k, 22, height);
+  ARG(k, 9, whole); ARG(k, 10, whole); ARG(k, 11, zero); ARG(k, 21, width); ARG(k, 22, height);
   return clFinish(g->queue) == CL_SUCCESS;
+}
+
+static bool set_params(Gpu *g, const NntmParams *p) {
+  Int3 offset = {{p->offset[0], p->offset[1], p->offset[2]}};
+  Float9 yuv2rgb, rgb2yuv;
+  float luma_row = (float)((p->rgb2yuv[1] + p->rgb2yuv[0]) + p->rgb2yuv[2]);
+  for (int i = 0; i < 9; i++) {
+    yuv2rgb.v[i] = (float)p->yuv2rgb[i] / (float)p->yuv2rgb[0];
+    rgb2yuv.v[i] = (float)p->rgb2yuv[i] / luma_row;
+  }
+  const int input_restricted = p->input_restricted, output_restricted = p->output_restricted;
+  float weight = (float)p->guide_weight * (1.0f / 8192.0f), bias = (float)p->guide_bias * (1.0f / 8192.0f);
+  float blend_rows = (float)(p->blend_h - 1) / (float)(g->height - 1), blend_cols = (float)(p->blend_w - 1) / (float)(g->width - 1);
+  float gtm_b = (float)p->gtm_b / 255.0f, gtm_c = (float)p->gtm_c / 255.0f;
+  TRY(clEnqueueWriteBuffer(g->queue, g->blend, CL_TRUE, 0, (size_t)p->blend_w * p->blend_h * sizeof(int32_t), p->blend, 0, NULL, NULL));
+
+  cl_kernel k = g->preprocess;
+  ARG(k, 4, offset); ARG(k, 5, yuv2rgb); ARG(k, 6, input_restricted);
+  k = g->ltm_gain;
+  ARG(k, 8, weight); ARG(k, 9, bias); ARG(k, 12, blend_rows); ARG(k, 13, blend_cols); ARG(k, 14, p->blend_h); ARG(k, 15, p->blend_w);
+  k = g->postprocess;
+  ARG(k, 12, offset); ARG(k, 13, yuv2rgb); ARG(k, 14, offset); ARG(k, 15, rgb2yuv); ARG(k, 16, input_restricted);
+  ARG(k, 17, output_restricted); ARG(k, 18, p->gtm_a); ARG(k, 19, gtm_b); ARG(k, 20, gtm_c);
+  return true;
 }
 
 static cl_mem wrap(Gpu *g, const void *host) {
@@ -234,7 +240,8 @@ static void gpu_free(NntmBackend *b) {
   free(g);
 }
 
-static bool gpu_configure(NntmBackend *b, const NntmParams *p, int width, int height) { return configure((Gpu *)b, p, width, height); }
+static bool gpu_configure(NntmBackend *b, int width, int height) { return configure((Gpu *)b, width, height); }
+static bool gpu_set_params(NntmBackend *b, const NntmParams *p) { return set_params((Gpu *)b, p); }
 static bool gpu_prepare(NntmBackend *b, NntmFrame *f, bool persistent, uint16_t *net_input) { return prepare((Gpu *)b, f, persistent, net_input); }
 static bool gpu_apply(NntmBackend *b, const NntmGrid grid, NntmFrame *f) { return apply((Gpu *)b, grid, f); }
 
@@ -244,6 +251,7 @@ static const NntmBackendClass gpu_class = {
   .net_key = "INFERENCE_PRECISION_HINT",
   .net_value = "f16",
   .configure = gpu_configure,
+  .set_params = gpu_set_params,
   .prepare = gpu_prepare,
   .apply = gpu_apply,
   .free = gpu_free,

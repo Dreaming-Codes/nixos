@@ -3,6 +3,7 @@
 #include <immintrin.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
 /* Values live in float lanes but are always half-representable: every operation is done in
  * single precision and rounded to half, which equals a half-precision operation for add,
@@ -31,14 +32,25 @@ typedef struct { __m128i l[LANES]; } vbytes;
 #define FILTER_STRENGTH 0.3
 #define LUMA_ONE 0x3c00
 
-const NntmParams nntm_samsung_params = {
-  .restricted = true,
-  .offset = {0, 128, 128},
-  .yuv2rgb = {8192, -2, 11218, 8192, -1334, -3336, 8192, 13220, -2},
-  .rgb2yuv = {3484, 11716, 1183, -2158, -7262, 9420, 9420, -8557, -863},
-  .gtm_a = 2, .gtm_b = 512, .gtm_c = 0,
-  .guide_weight = 27955, .guide_bias = -12919,
-  .strength = 500.f / 1023.f, .radial = 540.f / 1023.f,
+static const int SAMSUNG_OFFSET[3] = {0, 128, 128};
+static const int SAMSUNG_YUV2RGB[9] = {8192, -2, 11218, 8192, -1334, -3336, 8192, 13220, -2};
+static const int SAMSUNG_RGB2YUV[9] = {3484, 11716, 1183, -2158, -7262, 9420, 9420, -8557, -863};
+enum { SAMSUNG_GTM_A = 2, SAMSUNG_GTM_B = 512, SAMSUNG_GTM_C = 0, SAMSUNG_GUIDE_WEIGHT = 27955, SAMSUNG_GUIDE_BIAS = -12919 };
+
+/* PAL record: a header of six words (uuid, record size, ...), then ia_pal_isp_nntm_1_0_t. */
+enum {
+  RECORD_UUID = 46539,
+  RECORD_HEADER = 0x18,
+  KERNEL_SIZE = 0x12084,
+  AT_OFFSET = 0x8,
+  AT_YUV2RGB = 0x14,
+  AT_RGB2YUV = 0x38,
+  AT_INPUT_RESTRICTED = 0x5c,
+  AT_OUTPUT_RESTRICTED = 0x60,
+  AT_BLEND = 0x64,
+  AT_BLEND_W = 0x10064,
+  AT_BLEND_H = 0x10068,
+  AT_GTM = 0x10074,
 };
 
 typedef struct {
@@ -54,13 +66,17 @@ typedef struct {
 
 struct Nntm {
   int width, height;
-  bool restricted;
+  bool input_restricted, output_restricted;
   int gtm_a;
   float offset[3], yuv2rgb[9], rgb2yuv[9], bp1, c, c1;
+  bool have_depth;
+  int depth_weight, depth_bias;
   float *depth;
   CornerAlignedLerp rows, cols;
   uint8_t *uniform;
-  uint16_t *blend;
+  int blend_w, blend_h;
+  CornerAlignedLerp blend_rows, blend_cols;
+  float *blend;
   Reduce reduce_x, reduce_y;
 };
 
@@ -134,46 +150,86 @@ static Reduce reduce_new(int in) {
   return r;
 }
 
-void nntm_blend_q16(const NntmParams *p, int32_t *q16) {
-  int n = p->shading_w * p->shading_h;
+static void samsung_tuning(NntmParams *p) {
+  memcpy(p->offset, SAMSUNG_OFFSET, sizeof p->offset);
+  memcpy(p->yuv2rgb, SAMSUNG_YUV2RGB, sizeof p->yuv2rgb);
+  memcpy(p->rgb2yuv, SAMSUNG_RGB2YUV, sizeof p->rgb2yuv);
+  p->gtm_a = SAMSUNG_GTM_A;
+  p->gtm_b = SAMSUNG_GTM_B;
+  p->gtm_c = SAMSUNG_GTM_C;
+  p->guide_weight = SAMSUNG_GUIDE_WEIGHT;
+  p->guide_bias = SAMSUNG_GUIDE_BIAS;
+}
+
+void nntm_params_samsung(NntmParams *p, bool restricted, const float *shading, int shading_w, int shading_h,
+                         float strength, float radial) {
+  samsung_tuning(p);
+  p->input_restricted = p->output_restricted = restricted;
+  p->blend_w = shading_w;
+  p->blend_h = shading_h;
+  int n = shading_w * shading_h;
   float vmin = 2;
-  for (int i = 0; i < n; i++) vmin = p->shading[i] < vmin ? p->shading[i] : vmin;
+  for (int i = 0; i < n; i++) vmin = shading[i] < vmin ? shading[i] : vmin;
   for (int i = 0; i < n; i++) {
-    float b = vmin > 1e-4f ? ((1.0f / (p->shading[i] / vmin)) * p->radial + (1.0f - p->radial)) * p->strength : p->strength;
-    q16[i] = (int32_t)(b * 65536.0f);
+    float b = vmin > 1e-4f ? ((1.0f / (shading[i] / vmin)) * radial + (1.0f - radial)) * strength : strength;
+    p->blend[i] = (int32_t)(b * 65536.0f);
   }
 }
 
-static uint16_t *blend_new(const NntmParams *p, int w, int h) {
-  int bw = p->shading_w, bh = p->shading_h;
-  float *m = malloc(bw * bh * sizeof(float));
-  int32_t *q16 = malloc(bw * bh * sizeof(int32_t));
-  nntm_blend_q16(p, q16);
-  for (int i = 0; i < bw * bh; i++) m[i] = r1((float)q16[i] * (1.0f / 65536.0f));
-  free(q16);
-  CornerAlignedLerp ys = axis_new((float)(bh - 1) / (float)(h - 1), h, bh - 1), xs = axis_new((float)(bw - 1) / (float)(w - 1), w, bw - 1);
-  uint16_t *blend = malloc((size_t)w * h * sizeof(uint16_t));
-  for (int y = 0; y < h; y++) {
-    const float *m0 = m + ys.i0[y] * bw, *m1 = m + ys.i1[y] * bw;
-    for (int x = 0; x < w; x++) {
-      float b = r1(xs.w0[x] * r1(ys.w0[y] * m0[xs.i0[x]]));
-      b = r1(r1(xs.w1[x] * r1(ys.w0[y] * m0[xs.i1[x]])) + b);
-      b = r1(r1(xs.w0[x] * r1(ys.w1[y] * m1[xs.i0[x]])) + b);
-      b = r1(r1(xs.w1[x] * r1(ys.w1[y] * m1[xs.i1[x]])) + b);
-      blend[(size_t)y * w + x] = _cvtss_sh(b, RN);
-    }
-  }
-  axis_free(&ys);
-  axis_free(&xs);
-  free(m);
-  return blend;
+static int32_t word(const uint8_t *s, size_t at) {
+  int32_t v;
+  memcpy(&v, s + at, sizeof v);
+  return v;
 }
 
-Nntm *nntm_new(const NntmParams *p, int width, int height) {
+static void words(int *dst, const uint8_t *s, size_t at, int n) {
+  for (int i = 0; i < n; i++) dst[i] = word(s, at + 4 * (size_t)i);
+}
+
+bool nntm_params_from_record(NntmParams *p, const uint8_t *record, size_t size) {
+  if (size < RECORD_HEADER + KERNEL_SIZE || word(record, 0) != RECORD_UUID || (size_t)word(record, 4) != size) return false;
+  const uint8_t *s = record + RECORD_HEADER;
+  int w = word(s, AT_BLEND_W), h = word(s, AT_BLEND_H);
+  if (w < 1 || h < 1 || w > NNTM_BLEND_MAX || h > NNTM_BLEND_MAX / w) return false;
+  /* Windows' executor forwards everything but the guide weight and bias, which keep the graph's values:
+   * Samsung's tuning. */
+  samsung_tuning(p);
+  words(p->offset, s, AT_OFFSET, 3);
+  words(p->yuv2rgb, s, AT_YUV2RGB, 9);
+  words(p->rgb2yuv, s, AT_RGB2YUV, 9);
+  p->input_restricted = word(s, AT_INPUT_RESTRICTED) != 0;
+  p->output_restricted = word(s, AT_OUTPUT_RESTRICTED) != 0;
+  p->blend_w = w;
+  p->blend_h = h;
+  memcpy(p->blend, s + AT_BLEND, (size_t)w * h * sizeof(int32_t));
+  int gtm[3];
+  words(gtm, s, AT_GTM, 3);
+  p->gtm_a = gtm[0];
+  p->gtm_b = gtm[1];
+  p->gtm_c = gtm[2];
+  return true;
+}
+
+Nntm *nntm_new(int width, int height) {
   Nntm *t = calloc(1, sizeof(*t));
   t->width = width;
   t->height = height;
-  t->restricted = p->restricted;
+  t->depth = malloc((LUMA_ONE + 1) * sizeof(float));
+  t->blend = malloc(NNTM_BLEND_MAX * sizeof(float));
+  t->rows = axis_new(15.0f / (float)(height - 1), height, NNTM_GRID_Y - 1);
+  t->cols = axis_new(15.0f / (float)(width - 1), width, NNTM_GRID_X - 1);
+  t->uniform = malloc(width / 8);
+  for (int x = 0; x < width; x += 8) t->uniform[x / 8] = t->cols.i0[x] == t->cols.i0[x + 7];
+  for (int y = 0; y < height; y++) { t->rows.i0[y] <<= 8; t->rows.i1[y] <<= 8; }
+  for (int x = 0; x < width; x++) { t->cols.i0[x] <<= 4; t->cols.i1[x] <<= 4; }
+  t->reduce_x = reduce_new(width);
+  t->reduce_y = reduce_new(height);
+  return t;
+}
+
+void nntm_set_params(Nntm *t, const NntmParams *p) {
+  t->input_restricted = p->input_restricted;
+  t->output_restricted = p->output_restricted;
   t->gtm_a = p->gtm_a;
   float luma_row = (float)((p->rgb2yuv[1] + p->rgb2yuv[0]) + p->rgb2yuv[2]);
   for (int i = 0; i < 9; i++) {
@@ -185,29 +241,34 @@ Nntm *nntm_new(const NntmParams *p, int width, int height) {
   t->c = r1((float)p->gtm_c / 255.0f);
   t->c1 = r1(t->c + 1);
 
-  float weight = r1((float)p->guide_weight * (1.0f / 8192.0f)), bias = r1((float)p->guide_bias * (1.0f / 8192.0f));
-  t->depth = malloc((LUMA_ONE + 1) * sizeof(float));
-  for (int bits = 0; bits <= LUMA_ONE; bits++) {
-    float e = half_of_double(exp(-(double)r1(r1(_cvtsh_ss(bits) * weight) + bias)));
-    t->depth[bits] = r1(7 / r1(e + 1));
+  if (!t->have_depth || t->depth_weight != p->guide_weight || t->depth_bias != p->guide_bias) {
+    float weight = r1((float)p->guide_weight * (1.0f / 8192.0f)), bias = r1((float)p->guide_bias * (1.0f / 8192.0f));
+    for (int bits = 0; bits <= LUMA_ONE; bits++) {
+      float e = half_of_double(exp(-(double)r1(r1(_cvtsh_ss(bits) * weight) + bias)));
+      t->depth[bits] = r1(7 / r1(e + 1));
+    }
+    t->have_depth = true;
+    t->depth_weight = p->guide_weight;
+    t->depth_bias = p->guide_bias;
   }
 
-  t->rows = axis_new(15.0f / (float)(height - 1), height, NNTM_GRID_Y - 1);
-  t->cols = axis_new(15.0f / (float)(width - 1), width, NNTM_GRID_X - 1);
-  t->uniform = malloc(width / 8);
-  for (int x = 0; x < width; x += 8) t->uniform[x / 8] = t->cols.i0[x] == t->cols.i0[x + 7];
-  for (int y = 0; y < height; y++) { t->rows.i0[y] <<= 8; t->rows.i1[y] <<= 8; }
-  for (int x = 0; x < width; x++) { t->cols.i0[x] <<= 4; t->cols.i1[x] <<= 4; }
-  t->blend = blend_new(p, width, height);
-  t->reduce_x = reduce_new(width);
-  t->reduce_y = reduce_new(height);
-  return t;
+  if (t->blend_w != p->blend_w || t->blend_h != p->blend_h) {
+    axis_free(&t->blend_rows);
+    axis_free(&t->blend_cols);
+    t->blend_rows = axis_new((float)(p->blend_h - 1) / (float)(t->height - 1), t->height, p->blend_h - 1);
+    t->blend_cols = axis_new((float)(p->blend_w - 1) / (float)(t->width - 1), t->width, p->blend_w - 1);
+    t->blend_w = p->blend_w;
+    t->blend_h = p->blend_h;
+  }
+  for (int i = 0; i < p->blend_w * p->blend_h; i++) t->blend[i] = r1((float)p->blend[i] * (1.0f / 65536.0f));
 }
 
 void nntm_free(Nntm *t) {
   if (!t) return;
   axis_free(&t->rows);
   axis_free(&t->cols);
+  axis_free(&t->blend_rows);
+  axis_free(&t->blend_cols);
   free(t->depth); free(t->uniform); free(t->blend);
   free(t->reduce_x.index); free(t->reduce_x.coeff);
   free(t->reduce_y.index); free(t->reduce_y.coeff);
@@ -215,7 +276,7 @@ void nntm_free(Nntm *t) {
 }
 
 INLINE vf normalise(const Nntm *t, vf x, int ch, float k, float k0) {
-  if (t->restricted) x = clampv(add(mul(x, set(k)), set(k0)), 0, 255);
+  if (t->input_restricted) x = clampv(add(mul(x, set(k)), set(k0)), 0, 255);
   return mul(sub(x, set(t->offset[ch])), set(INV255));
 }
 
@@ -250,6 +311,17 @@ INLINE vf pick(const Nntm *t, const float *grid, int x, vi cell, vi depth, int c
               : _mm256_i32gather_ps(grid + 8 * coeff, _mm256_add_epi32(cell.l[n], depth.l[n]), 4));
 }
 
+INLINE vf blend_at(const Nntm *t, int y, int x) {
+  const float *m0 = t->blend + t->blend_rows.i0[y] * t->blend_w, *m1 = t->blend + t->blend_rows.i1[y] * t->blend_w;
+  vf wy0 = set(t->blend_rows.w0[y]), wy1 = set(t->blend_rows.w1[y]);
+  vf wx0 = loadf(t->blend_cols.w0 + x), wx1 = loadf(t->blend_cols.w1 + x);
+  vi x0 = loadi(t->blend_cols.i0 + x), x1 = loadi(t->blend_cols.i1 + x);
+  vf b = mul(wx0, mul(wy0, VF(_mm256_i32gather_ps(m0, x0.l[n], 4))));
+  b = add(mul(wx1, mul(wy0, VF(_mm256_i32gather_ps(m0, x1.l[n], 4)))), b);
+  b = add(mul(wx0, mul(wy1, VF(_mm256_i32gather_ps(m1, x0.l[n], 4)))), b);
+  return add(mul(wx1, mul(wy1, VF(_mm256_i32gather_ps(m1, x1.l[n], 4)))), b);
+}
+
 INLINE vf gain(const Nntm *t, const float *grid, int y, int x, vf luma) {
   vf z = VF(_mm256_i32gather_ps(t->depth, _mm256_cvtepu16_epi32(_mm256_cvtps_ph(luma.l[n], RN)), 4));
   vf lo = VF(_mm256_floor_ps(z.l[n]));
@@ -276,7 +348,7 @@ INLINE vf gain(const Nntm *t, const float *grid, int y, int x, vf luma) {
       }
     }
   vf mapped = clampv(add(acc[1], mul(acc[0], luma)), 0, 1);
-  vf blend = VF(_mm256_cvtph_ps(_mm_loadu_si128((const __m128i *)(t->blend + (size_t)y * t->width + x + 8 * n))));
+  vf blend = blend_at(t, y, x);
   vf out = clampv(add(luma, mul(blend, sub(mapped, luma))), 0, 1), zero = set(0);
   return both(dvd(out, luma), CMP(luma, zero, _CMP_GT_OQ));
 }
@@ -309,7 +381,7 @@ INLINE vbytes quantise(const Nntm *t, vf x, int ch) {
                                      _mm256_and_ps(sign, x.l[n]))),
     _mm256_set1_epi32((int)t->offset[ch])));
   q = clampi(q, 0, 255);
-  if (t->restricted) {
+  if (t->output_restricted) {
     vi scaled = VI(_mm256_add_epi32(_mm256_mullo_epi32(q.l[n], _mm256_set1_epi32(ch ? 224 : 220)), _mm256_set1_epi32(128)));
     vi tie = VI(_mm256_cmpeq_epi32(_mm256_and_si256(scaled.l[n], _mm256_set1_epi32(255)), _mm256_setzero_si256()));
     vi whole = VI(_mm256_andnot_si256(_mm256_and_si256(tie.l[n], _mm256_set1_epi32(1)), _mm256_srli_epi32(scaled.l[n], 8)));

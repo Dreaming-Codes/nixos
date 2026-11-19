@@ -1,0 +1,50 @@
+--- a/src/gstcamerasrcbufferpool.cpp
++++ b/src/gstcamerasrcbufferpool.cpp
+@@ -150,12 +150,39 @@
+   G_OBJECT_CLASS (parent_class)->finalize (object);
+ }
+ 
++/* The nntm element reads this meta: a GBytes field "record" holding camera_get_nntm_params' bytes. */
++#define NNTM_PARAMS_META "GstNntmParamsMeta"
++
++static void
++gst_camerasrc_attach_nntm_params(Gstcamerasrc *camerasrc, GstBuffer *gbuffer, int64_t sequence)
++{
++  GstCustomMeta *old = gst_buffer_get_custom_meta(gbuffer, NNTM_PARAMS_META);
++  if (old)
++    gst_buffer_remove_meta(gbuffer, (GstMeta *)old);
++
++  int size = camera_get_nntm_params(camerasrc->device_id, sequence, NULL, 0);
++  if (size <= 0)
++    return;
++  gpointer data = g_malloc(size);
++  if (camera_get_nntm_params(camerasrc->device_id, sequence, data, size) != size) {
++    g_free(data);
++    return;
++  }
++  GBytes *record = g_bytes_new_take(data, size);
++  GstCustomMeta *meta = gst_buffer_add_custom_meta(gbuffer, NNTM_PARAMS_META);
++  gst_structure_set(gst_custom_meta_get_structure(meta), "record", G_TYPE_BYTES, record, NULL);
++  g_bytes_unref(record);
++}
++
+ static void
+ gst_camerasrc_buffer_pool_class_init(GstCamerasrcBufferPoolClass *klass)
+ {
+   PERF_CAMERA_ATRACE();
+   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+   GstBufferPoolClass *bufferpool_class = GST_BUFFER_POOL_CLASS (klass);
++  static const gchar *nntm_tags[] = {NULL};
++
++  gst_meta_register_custom(NNTM_PARAMS_META, nntm_tags, NULL, NULL, NULL);
+ 
+   object_class->finalize = gst_camerasrc_buffer_pool_finalize;
+ 
+@@ -998,6 +1025,7 @@
+   }
+ 
+   GstClockTime timestamp = meta->buffer->timestamp;
++  gst_camerasrc_attach_nntm_params(camerasrc, gbuffer, meta->buffer->sequence);
+   camerasrc->streams[stream_id].time_end = meta->buffer->timestamp;
+ 
+   if (camerasrc->print_field)

@@ -51,11 +51,16 @@ static void luma_rows(Cpu *cpu, int row0, int row1) { nntm_luma_rows(cpu->tables
 
 static void apply_rows(Cpu *cpu, int row0, int row1) { nntm_apply_rows(cpu->tables, cpu->grid, cpu->frame, row0, row1); }
 
-static bool cpu_configure(NntmBackend *b, const NntmParams *params, int width, int height) {
+static bool cpu_configure(NntmBackend *b, int width, int height) {
   Cpu *cpu = (Cpu *)b;
   nntm_free(cpu->tables);
-  cpu->tables = nntm_new(params, width, height);
+  cpu->tables = nntm_new(width, height);
   cpu->narrow = g_realloc(cpu->narrow, (gsize)height * NNTM_NET_SIZE * sizeof(gfloat));
+  return true;
+}
+
+static bool cpu_set_params(NntmBackend *b, const NntmParams *params) {
+  nntm_set_params(((Cpu *)b)->tables, params);
   return true;
 }
 
@@ -90,6 +95,7 @@ static const NntmBackendClass cpu_class = {
   .net_key = "INFERENCE_NUM_THREADS",
   .net_value = "1",
   .configure = cpu_configure,
+  .set_params = cpu_set_params,
   .prepare = cpu_prepare,
   .apply = cpu_apply,
   .free = cpu_free,
