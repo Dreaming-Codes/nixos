@@ -1,3 +1,4 @@
+#define G_LOG_DOMAIN "nntm"
 #include <gst/gst.h>
 #include <gst/video/gstvideofilter.h>
 #include <gst/video/video.h>
@@ -127,7 +128,8 @@ static gboolean open_gpu(GstNntm *self) {
   if (self->backend_choice == BACKEND_GPU)
     GST_ELEMENT_ERROR(self, RESOURCE, OPEN_READ, ("GPU back end unavailable: %s", error), (NULL));
   else
-    GST_ELEMENT_WARNING(self, RESOURCE, OPEN_READ, ("GPU back end unavailable, tone mapping on the CPU: %s", error), (NULL));
+    /* v4l2-relayd drops warning messages from the bus; stderr reaches its journal. */
+    g_warning("%s: GPU back end unavailable, tone mapping on the CPU: %s", GST_OBJECT_NAME(self), error);
   free(error);
   release_network(self);
   if (self->backend) self->backend->klass->free(self->backend);
