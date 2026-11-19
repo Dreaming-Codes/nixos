@@ -37,7 +37,7 @@ class Params:
     gtm_c: int = 0
     guide_weight: int = 27955
     guide_bias: int = -12919
-    blend: np.ndarray = field(default=None, repr=False)  # blend * 65536, int32, rows x columns
+    blend: np.ndarray = field(default=None, repr=False)
 
     @classmethod
     def samsung(cls, shading, restricted=True, strength=STRENGTH, radial=RADIAL):

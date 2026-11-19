@@ -96,7 +96,6 @@ in {
           _STDBUF_O = "L";
         }
         // lib.optionalAttrs cfg.neuralToneMap {
-          # No OpenCL runtime is installed system-wide; without this the tone mapping falls back to the CPU.
           OCL_ICD_VENDORS = "${pkgs.intel-compute-runtime}/etc/OpenCL/vendors";
           # The unit has no HOME, so the runtime would recompile the GPU kernels on every camera open.
           NEO_CACHE_DIR = "/var/cache/v4l2-relayd-sc200pc";

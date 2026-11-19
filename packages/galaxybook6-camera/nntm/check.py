@@ -1,7 +1,5 @@
 """usage: check.py <datadir> <workdir> [cpu|gpu]      (GST_PLUGIN_PATH must reach libgstnntm.so, <workdir>/feed
-must be feed.c built)
-
-Without a GPU (the Nix build sandbox) the cpu back end is checked and `auto` must fall back to it."""
+must be feed.c built)"""
 import struct
 import subprocess
 import sys
@@ -37,7 +35,6 @@ def clip(restricted):
 
 
 def record(p, uuid=reference.RECORD_UUID):
-    """The PAL record the HAL would export for `p`; its guide fields hold zeros, which the stage must ignore."""
     body = bytearray(reference.KERNEL_SIZE)
     put = lambda at, values: struct.pack_into(f"<{len(values)}i", body, at, *values)
     put(0x8, p.offset)
@@ -52,7 +49,6 @@ def record(p, uuid=reference.RECORD_UUID):
 
 
 def per_frame_params(shading, restricted):
-    """Three frames that move every field the record carries: strength, blend map size, face cut, curve."""
     daylight = reference.Params.samsung(shading, restricted, strength=350 / 1023)
     ramp = np.add.outer(np.arange(7) * 4000, np.arange(9) * 2500) + 13000
     small = reference.Params(input_restricted=restricted, output_restricted=restricted, gtm_a=3, gtm_c=40,

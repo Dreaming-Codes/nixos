@@ -1,6 +1,5 @@
-/* usage: feed <width> <height> <in.nv12> <out.nv12> <records|-> [nntm property=value...]
- * Runs every frame of in.nv12 through nntm. With a records file (nntm_1_0 PAL records back to back), frame i
- * carries record i the way the camera source attaches it. */
+/* With a records file (nntm_1_0 PAL records back to back), frame i carries record i the way the camera
+ * source attaches it. */
 #include <gst/app/gstappsink.h>
 #include <gst/app/gstappsrc.h>
 #include <gst/gst.h>

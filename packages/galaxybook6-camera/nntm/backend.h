@@ -9,7 +9,6 @@ typedef struct NntmBackend NntmBackend;
 
 typedef struct {
   const char *name;
-  /* OpenVINO device for the network and one compile property. */
   const char *net_device, *net_key, *net_value;
   /* Called before the first frame and after every change of frame size. */
   bool (*configure)(NntmBackend *b, int width, int height);
