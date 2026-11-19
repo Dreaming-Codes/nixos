@@ -380,10 +380,10 @@ diff -ruN a/src/core/processingUnit/ShortExposureSource.h b/src/core/processingU
 +
 +    // PSYS does not snoop the CPU caches, and the driver skips its flush for the
 +    // HAL's own buffers, which it takes to be written by hardware only.
-+    static void flushCache(void* addr, size_t size) {
++    __attribute__((target("clflushopt"))) static void flushCache(void* addr, size_t size) {
 +        char* p = static_cast<char*>(addr);
 +        for (size_t i = 0U; i < size; i += 64U) {
-+            __builtin_ia32_clflush(p + i);
++            __builtin_ia32_clflushopt(p + i);
 +        }
 +        __builtin_ia32_mfence();
 +    }
