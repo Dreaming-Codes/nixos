@@ -94,13 +94,17 @@ in {
         {
           LD_PRELOAD = "${pkgs.coreutils}/libexec/coreutils/libstdbuf.so";
           _STDBUF_O = "L";
+          # The HAL's face detector runs on the NPU, whose Level Zero driver is not on the library path.
+          ZE_ENABLE_ALT_DRIVERS = "${pkgs.intel-npu-driver}/lib/libze_intel_npu.so.1";
+          # The NPU driver caches compiled models only under HOME, which the unit does not set.
+          HOME = "/var/cache/v4l2-relayd-sc200pc";
         }
         // lib.optionalAttrs cfg.neuralToneMap {
           OCL_ICD_VENDORS = "${pkgs.intel-compute-runtime}/etc/OpenCL/vendors";
           # The unit has no HOME, so the runtime would recompile the GPU kernels on every camera open.
           NEO_CACHE_DIR = "/var/cache/v4l2-relayd-sc200pc";
         };
-      serviceConfig.CacheDirectory = lib.mkIf cfg.neuralToneMap "v4l2-relayd-sc200pc";
+      serviceConfig.CacheDirectory = "v4l2-relayd-sc200pc";
     };
 
     services.pipewire.wireplumber.extraConfig = {

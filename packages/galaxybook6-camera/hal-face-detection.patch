@@ -111,7 +111,7 @@ diff -ruN a/src/fd/CMakeLists.txt b/src/fd/CMakeLists.txt
 diff -ruN a/src/fd/FaceCenterNet.cpp b/src/fd/FaceCenterNet.cpp
 --- a/src/fd/FaceCenterNet.cpp
 +++ b/src/fd/FaceCenterNet.cpp
-@@ -0,0 +1,220 @@
+@@ -0,0 +1,228 @@
 +/*
 + * Licensed under the Apache License, Version 2.0 (the "License");
 + * you may not use this file except in compliance with the License.
@@ -171,9 +171,17 @@ diff -ruN a/src/fd/FaceCenterNet.cpp b/src/fd/FaceCenterNet.cpp
 +    const std::string dir = PlatformData::getCameraCfgPath();
 +    try {
 +        ov::Core core;
-+        auto model = core.compile_model(dir + "centernet_face.xml", "CPU",
-+                                        ov::inference_num_threads(1),
-+                                        ov::hint::performance_mode(ov::hint::PerformanceMode::LATENCY));
++        ov::CompiledModel model;
++        try {
++            model = core.compile_model(dir + "centernet_face.xml", "NPU");
++        } catch (const std::exception& e) {
++            LOGW("<id%d> face model not on the NPU, on the CPU instead: %s", cameraId, e.what());
++            model = core.compile_model(dir + "centernet_face.xml", "CPU",
++                                       ov::inference_num_threads(1),
++                                       ov::hint::performance_mode(ov::hint::PerformanceMode::LATENCY));
++        }
++        LOGI("<id%d> face detection on the %s", cameraId,
++             model.get_property(ov::execution_devices).front().c_str());
 +        auto output = [&model](const char* head) {
 +            for (size_t i = 0; i < model.outputs().size(); i++) {
 +                if (model.outputs()[i].get_any_name().find(head) != std::string::npos) return i;
