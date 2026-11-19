@@ -42,6 +42,7 @@ in
       ./hal-yuv-range.patch
       ./hal-face-detection.patch
       ./hal-two-exposures.patch
+      ./hal-ae-frame-time.patch
     ];
 
     cmakeFlags = old.cmakeFlags ++ ["-DFACE_DETECTION=ON"];

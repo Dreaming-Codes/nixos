@@ -20,7 +20,7 @@
  #define SC200PC_VTS_DEF			0x08d4	/* 2260 lines/frame */
 -#define SC200PC_VTS_MIN			(SC200PC_HEIGHT + 8)
 -#define SC200PC_VTS_MAX			0x7fff
-+#define SC200PC_VTS_MAX			(2 * SC200PC_VTS_DEF)
++#define SC200PC_VTS_MAX			0x7ff0
  
  /*
   * The SC200PC uses internal column-parallel readout: multiple pixels are
@@ -44,8 +44,8 @@
 + *     another group opens before then, so of two control writes in one frame
 + *     the first is lost. Hence plain writes, one transfer per register so the
 + *     sensor never latches one half written.
-+ * VBLANK asks for a frame length and the driver lengthens it, down to 15 fps,
-+ * as far as the exposure needs.
++ * VBLANK asks for a frame length and the driver lengthens it as far as the
++ * exposure needs.
   */
 -#define SC200PC_FPS_MIN			24
 -#define SC200PC_VTS_AUTO_MAX		(SC200PC_VTS_DEF * SC200PC_FPS / SC200PC_FPS_MIN)

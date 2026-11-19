@@ -26,7 +26,7 @@
   *     register group (0x3812) they take a frame longer and are dropped when
   *     another group opens before then, so of two control writes in one frame
 @@ -126,6 +129,8 @@
-  * as far as the exposure needs.
+  * exposure needs.
   */
  #define SC200PC_SHORT_WINDOW		0x86
 +#define SC200PC_VTS_READOUT		(2 * SC200PC_HEIGHT + 56)

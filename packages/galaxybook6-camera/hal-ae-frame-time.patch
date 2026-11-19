@@ -1,0 +1,20 @@
+diff -ruN a/src/3a/intel3a/Intel3AParameter.cpp b/src/3a/intel3a/Intel3AParameter.cpp
+--- a/src/3a/intel3a/Intel3AParameter.cpp
++++ b/src/3a/intel3a/Intel3AParameter.cpp
+@@ -207,14 +207,8 @@
+     limit->manual_exposure_time_min = -1;
+     limit->manual_iso_min = -1;
+     limit->manual_iso_max = -1;
+-
+-    if ((param.aeFpsRange.min > 0.01) && (param.aeFpsRange.max >= param.aeFpsRange.min)) {
+-        limit->manual_frame_time_us_max = 1000000 / param.aeFpsRange.min;
+-        limit->manual_frame_time_us_min = 1000000 / param.aeFpsRange.max;
+-    } else if (param.fps > 0.01) {
+-        limit->manual_frame_time_us_max = 1000000 / param.fps;
+-        limit->manual_frame_time_us_min = 1000000 / param.fps;
+-    }
++    limit->manual_frame_time_us_max = -1;
++    limit->manual_frame_time_us_min = -1;
+ 
+     camera_range_t range = {-1, -1};
+     int ret = PlatformData::getSupportAeExposureTimeRange(mCameraId, param.sceneMode, range);

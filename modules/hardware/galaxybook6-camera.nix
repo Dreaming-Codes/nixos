@@ -59,7 +59,7 @@ in {
       input = {
         # Caps come from the relay's appsink, built from the fields below.
         pipeline =
-          "icamerasrc device-name=sc200pc-uf fps-range=15~30"
+          "icamerasrc device-name=sc200pc-uf"
           + lib.optionalString cfg.neuralToneMap " ! nntm range=limited";
         format = "NV12";
         width = 1920;
