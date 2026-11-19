@@ -15,6 +15,8 @@
   icamerasrc = pkgs.callPackage (pkgDir + "/icamerasrc.nix") {inherit hal;};
   nntm = pkgs.callPackage (pkgDir + "/nntm") {};
   cameraLabel = "Built-in Front Camera";
+  relay = config.services.v4l2-relayd.instances.sc200pc;
+  v4l2-ctl = "${pkgs.v4l-utils}/bin/v4l2-ctl";
 in {
   options.dreaming.hardware.galaxybook6-camera = {
     enable = lib.mkEnableOption ''
@@ -66,8 +68,6 @@ in {
         height = 1080;
         framerate = 30;
       };
-      # Pass the HAL's NV12 through; the default YUY2 costs a CPU conversion per frame.
-      output.format = "NV12";
     };
 
     # nixpkgs creates the loopback with exclusive caps, so it reports
@@ -77,15 +77,31 @@ in {
     systemd.services.v4l2-relayd-sc200pc = {
       preStart = lib.mkForce ''
         mkdir -p "$(dirname "$V4L2_DEVICE_FILE")"
+        device=
         for name in /sys/class/video4linux/*/name; do
           if [ "$(cat "$name")" = "${cameraLabel}" ]; then
-            echo "/dev/$(basename "$(dirname "$name")")" > "$V4L2_DEVICE_FILE"
-            exit 0
+            device="/dev/$(basename "$(dirname "$name")")"
+            break
           fi
         done
-        ${kernelPackages.v4l2loopback.bin}/bin/v4l2loopback-ctl add -x 0 \
-          -b ${toString config.services.v4l2-relayd.instances.sc200pc.bufferCount} \
-          -n "${cameraLabel}" > "$V4L2_DEVICE_FILE"
+        if [ -z "$device" ]; then
+          device=$(${kernelPackages.v4l2loopback.bin}/bin/v4l2loopback-ctl add -x 0 \
+            -b ${toString relay.bufferCount} -n "${cameraLabel}")
+        fi
+        # Fix the format the relay writes, BT.709 limited range included, so the device keeps reporting it
+        # while the relay restarts. v4l2loopback only takes new colour fields together with a new size or
+        # pixel format, so a reused device would otherwise keep whatever colours were written first.
+        ${v4l2-ctl} -d "$device" --set-ctrl=keep_format=0
+        ${v4l2-ctl} -d "$device" --set-fmt-video-out=width=640,height=480,pixelformat=YUYV
+        ${v4l2-ctl} -d "$device" --set-fmt-video-out=width=${toString relay.input.width},height=${toString relay.input.height},pixelformat=NV12,colorspace=rec709,xfer=rec709,ycbcr=709,quantization=lim-range
+        ${v4l2-ctl} -d "$device" --set-ctrl=keep_format=1
+        echo "$device" > "$V4L2_DEVICE_FILE"
+      '';
+      # The HAL emits BT.709 limited range. Unlabelled, v4l2sink takes the loopback's BT.601 default and
+      # videoconvert converts every frame; labelled, it passes the HAL's buffers through. icamerasrc frees
+      # those buffers when the camera stops, so the sink must not keep the last one past that.
+      script = lib.mkForce ''
+        exec ${pkgs.v4l2-relayd}/bin/v4l2-relayd -i "${relay.input.pipeline}" -o "appsrc name=appsrc caps=video/x-raw,format=${relay.input.format},colorimetry=bt709,width=${toString relay.input.width},height=${toString relay.input.height},framerate=${toString relay.input.framerate}/1 ! videoconvert ! v4l2sink name=v4l2sink enable-last-sample=false device=$(cat $V4L2_DEVICE_FILE)"
       '';
       postStop = lib.mkForce "";
       # The HAL logs to stdout, which is block-buffered into the journal: lines arrive in 4 KB
