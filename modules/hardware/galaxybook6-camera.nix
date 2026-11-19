@@ -24,7 +24,7 @@ in {
 
     neuralToneMap = lib.mkOption {
       type = lib.types.bool;
-      default = true;
+      default = false;
       description = ''
         Run the local tone mapping network of Samsung's Windows driver on every frame, as
         Windows does. It runs on the CPU and keeps most of one core busy while the camera is on.
