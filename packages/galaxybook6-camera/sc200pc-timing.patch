@@ -20,11 +20,11 @@
  #define SC200PC_VTS_DEF			0x08d4	/* 2260 lines/frame */
 -#define SC200PC_VTS_MIN			(SC200PC_HEIGHT + 8)
 -#define SC200PC_VTS_MAX			0x7fff
-+#define SC200PC_VTS_MAX			(2 * SC200PC_VTS_DEF)	/* 15 fps */
++#define SC200PC_VTS_MAX			(2 * SC200PC_VTS_DEF)
  
  /*
   * The SC200PC uses internal column-parallel readout: multiple pixels are
-@@ -119,19 +111,28 @@
+@@ -119,19 +111,26 @@
  #define SC200PC_PIXEL_RATE_DEFAULT	((u64)SC200PC_LLP * SC200PC_VTS_DEF * SC200PC_FPS)
  
  /*
@@ -33,14 +33,12 @@
 - * AE can trade frame rate for light without driving VBLANK itself. With AE
 - * raising exposure before gain, dim scenes drop towards 24 fps with 25% more
 - * light per frame, and bright scenes stay at 30 fps.
-+ * Frame timing. Measured on this sensor unless noted:
++ * Frame timing of the sensor:
 + *   - V4L2_CID_EXPOSURE counts rows, registers 0x3e00-0x3e02 count half rows.
 + *   - The init table runs a two-exposure readout whose short exposure owns
 + *     SC200PC_SHORT_WINDOW rows of every frame (0x3e23/0x3e24), so the
 + *     exposure register must not exceed SC200PC_EXPOSURE_REG_MAX(VTS). Past
 + *     that the sensor lengthens the frame on its own, whatever VTS says.
-+ *   - VTS is even and never below the init table's, as in the OEM Windows
-+ *     driver.
 + *   - Exposure, gain and VTS writes take effect on the next frame. Inside a
 + *     register group (0x3812) they take a frame longer and are dropped when
 + *     another group opens before then, so of two control writes in one frame
@@ -63,7 +61,7 @@
  #define SC200PC_ANALOGUE_GAIN_MIN	0x10
  #define SC200PC_ANALOGUE_GAIN_MAX	0xf8	/* 15.5x = octave 8.0x x fine 1.94x */
  /*
-@@ -365,8 +366,6 @@
+@@ -365,8 +364,6 @@
  	struct v4l2_ctrl *digital_gain;
  	struct v4l2_ctrl *test_pattern;
  
@@ -72,7 +70,7 @@
  	bool streaming;
  	u32 xclk_freq;
  	u32 mipi_lanes;
-@@ -428,21 +427,28 @@
+@@ -428,21 +425,28 @@
  	return 0;
  }
  
@@ -105,7 +103,7 @@
  static int sc200pc_write_array(struct sc200pc *sensor,
  			       const struct sc200pc_reg *regs)
  {
-@@ -466,22 +472,6 @@
+@@ -466,22 +470,6 @@
  	return 0;
  }
  
@@ -128,7 +126,7 @@
  static void sc200pc_log_key_regs(struct sc200pc *sensor, const char *tag)
  {
  	static const struct {
-@@ -515,76 +505,35 @@
+@@ -515,76 +503,37 @@
  	dev_info(sensor->dev, "%s: %s\n", tag, buf);
  }
  
@@ -149,15 +147,16 @@
 -}
 +struct sc200pc_timing {
 +	u16 vts;
-+	u16 exposure;	/* register value, in half rows */
++	u16 exposure_half_rows;
 +};
  
 -static int sc200pc_write_exposure(struct sc200pc *sensor, u32 exposure)
 +static struct sc200pc_timing sc200pc_timing(u32 vblank, u32 exposure)
  {
 -	int ret;
-+	struct sc200pc_timing t = { .exposure = 2 * exposure };
-+	u32 fit = DIV_ROUND_UP(t.exposure + 13, 2) + SC200PC_SHORT_WINDOW;
++	struct sc200pc_timing t = { .exposure_half_rows = 2 * exposure };
++	u32 fit = DIV_ROUND_UP(t.exposure_half_rows + 13, 2) +
++		  SC200PC_SHORT_WINDOW;
  
 -	/*
 -	 * SmartSens SC20x-family sensors encode coarse integration time as a
@@ -192,7 +191,8 @@
 +	struct sc200pc_timing t = sc200pc_timing(sensor->vblank->val,
 +						 sensor->exposure->val);
 +	/* The exposure registers hold a 12.4 fixed-point value. */
-+	u8 exposure[] = { t.exposure >> 12, t.exposure >> 4, t.exposure << 4 };
++	u8 exposure[] = { t.exposure_half_rows >> 12, t.exposure_half_rows >> 4,
++			  t.exposure_half_rows << 4 };
 +	u8 vts[] = { t.vts >> 8, t.vts };
  	int ret;
  
