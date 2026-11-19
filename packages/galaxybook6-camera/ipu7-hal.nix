@@ -101,7 +101,7 @@ in
                 open(f"{sys.argv[2]}/{names.pop(key)}", "wb").write(data)
         assert not names, names
         EOF
-        python3 $U/aiqb-ae-plan.py $W/SC200PC_KAFC917_PTL.aiqb $C/SC200PC_KAFC917_PTL.aiqb
+        install -m644 $W/SC200PC_KAFC917_PTL.aiqb $C/
         python3 $U/patch-hashes.py $W/graph_settings_SC200PC_KAFC917_PTL.bin $W/sc200pc_patched.bin
         python3 $U/gen-kernel-meta.py $H/Ipu75xaStaticGraphAutogen.cpp $W/kernel_meta.h \
           LbffDol2Inputs BbpsWithTnr
