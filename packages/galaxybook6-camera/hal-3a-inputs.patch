@@ -1,3 +1,15 @@
+diff -ruN a/src/3a/AiqUnit.cpp b/src/3a/AiqUnit.cpp
+--- a/src/3a/AiqUnit.cpp
++++ b/src/3a/AiqUnit.cpp
+@@ -159,7 +159,7 @@
+         CheckAndLogError(ret != OK, ret, "%s: Failed to calculate frame params", __func__);
+         AiqUtils::convertToAiqFrameParam(sensorParam, params->frameParams);
+ 
+-        params->frameUse = ia_aiq_frame_use_video;
++        params->frameUse = ia_aiq_frame_use_preview;
+         params->aiqStorageLen = MAX_SETTING_COUNT;
+         // handle AE delay in AiqEngine
+         params->aecFrameDelay = 0U;
 diff -ruN a/src/3a/intel3a/Intel3AParameter.cpp b/src/3a/intel3a/Intel3AParameter.cpp
 --- a/src/3a/intel3a/Intel3AParameter.cpp
 +++ b/src/3a/intel3a/Intel3AParameter.cpp
