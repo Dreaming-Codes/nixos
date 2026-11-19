@@ -81,7 +81,7 @@ diff -ruN a/src/fd/CMakeLists.txt b/src/fd/CMakeLists.txt
 diff -ruN a/src/fd/FaceCenterNet.cpp b/src/fd/FaceCenterNet.cpp
 --- a/src/fd/FaceCenterNet.cpp
 +++ b/src/fd/FaceCenterNet.cpp
-@@ -0,0 +1,184 @@
+@@ -0,0 +1,220 @@
 +/*
 + * Licensed under the Apache License, Version 2.0 (the "License");
 + * you may not use this file except in compliance with the License.
@@ -117,6 +117,9 @@ diff -ruN a/src/fd/FaceCenterNet.cpp b/src/fd/FaceCenterNet.cpp
 +constexpr int kGrid = kInput / kStride;
 +constexpr float kMinScore = 0.6f;
 +constexpr double kGamma = 0.6;
++constexpr float kMinSide = 0.05f;
++constexpr float kMinIou = 0.3f;
++constexpr int kLostRuns = 3;
 +
 +uint8_t clip(float v) {
 +    return static_cast<uint8_t>(std::clamp(std::lround(v), 0L, 255L));
@@ -169,7 +172,7 @@ diff -ruN a/src/fd/FaceCenterNet.cpp b/src/fd/FaceCenterNet.cpp
 +    const nsecs_t start = CameraUtils::systemTime();
 +    fillInput(y, y + stride * mHeight, stride);
 +    mRequest.infer();
-+    publish(decode(), camBuffer->getSequence());
++    publish(track(decode()), camBuffer->getSequence());
 +    LOG2("<seq%u> face detection took %ld us", camBuffer->getSequence(),
 +         static_cast<long>((CameraUtils::systemTime() - start) / 1000));
 +}
@@ -223,16 +226,49 @@ diff -ruN a/src/fd/FaceCenterNet.cpp b/src/fd/FaceCenterNet.cpp
 +            const float cx = ((gx + offset[kPlane + i]) * kStride - mLeft) / mScale;
 +            const float h = std::exp(size[i]) * kInput / mScale;
 +            const float w = std::exp(size[kPlane + i]) * kInput / mScale;
++            if (2 * std::max(w, h) < kMinSide * std::max(mWidth, mHeight)) continue;
 +            faces.push_back({score, std::max(cx - w, 0.f), std::max(cy - h, 0.f),
 +                             std::min(cx + w, static_cast<float>(mWidth)),
-+                             std::min(cy + h, static_cast<float>(mHeight))});
++                             std::min(cy + h, static_cast<float>(mHeight)), -1});
 +        }
 +    }
-+    std::sort(faces.begin(), faces.end(), [](const Face& a, const Face& b) {
-+        return (a.right - a.left) * (a.bottom - a.top) > (b.right - b.left) * (b.bottom - b.top);
-+    });
-+    if (faces.size() > mMaxFaceNum) faces.resize(mMaxFaceNum);
 +    return faces;
++}
++
++std::vector<FaceCenterNet::Face> FaceCenterNet::track(std::vector<Face> faces) {
++    const auto area = [](const Face& f) { return (f.right - f.left) * (f.bottom - f.top); };
++    const auto iou = [&area](const Face& a, const Face& b) {
++        const float w = std::min(a.right, b.right) - std::max(a.left, b.left);
++        const float h = std::min(a.bottom, b.bottom) - std::max(a.top, b.top);
++        const float common = std::max(w, 0.f) * std::max(h, 0.f);
++        return common / (area(a) + area(b) - common);
++    };
++    std::vector<bool> matched(mTracks.size());
++    std::vector<Track> next;
++    for (Face& f : faces) {
++        int best = -1;
++        float bestIou = kMinIou;
++        for (size_t i = 0; i < mTracks.size(); i++) {
++            const float o = iou(f, mTracks[i].face);
++            if (!matched[i] && o >= bestIou) {
++                best = i;
++                bestIou = o;
++            }
++        }
++        if (best >= 0) matched[best] = true;
++        f.id = best >= 0 ? mTracks[best].face.id : mNextId++;
++        next.push_back({f, 0});
++    }
++    for (size_t i = 0; i < mTracks.size(); i++) {
++        if (!matched[i] && mTracks[i].lost < kLostRuns) next.push_back({mTracks[i].face, mTracks[i].lost + 1});
++    }
++    mTracks = next;
++
++    std::vector<Face> out;
++    for (const Track& t : mTracks) out.push_back(t.face);
++    std::sort(out.begin(), out.end(), [&area](const Face& a, const Face& b) { return area(a) > area(b); });
++    if (out.size() > mMaxFaceNum) out.resize(mMaxFaceNum);
++    return out;
 +}
 +
 +void FaceCenterNet::publish(const std::vector<Face>& faces, int64_t sequence) {
@@ -250,11 +286,11 @@ diff -ruN a/src/fd/FaceCenterNet.cpp b/src/fd/FaceCenterNet.cpp
 +        ia_atbx_face& face = result->ccaFaceState.faces[i];
 +        face.face_area = {static_cast<int>(f.left), static_cast<int>(f.top),
 +                          static_cast<int>(f.right), static_cast<int>(f.bottom)};
-+        LOG2("<seq%ld> face %zu score %.2f box %d,%d,%d,%d", sequence, i, f.score,
++        LOG2("<seq%ld> face %zu id %d score %.2f box %d,%d,%d,%d", sequence, i, f.id, f.score,
 +             face.face_area.left, face.face_area.top, face.face_area.right, face.face_area.bottom);
 +        convertFaceCoordinate(iaCoord, &face.face_area.left, &face.face_area.top,
 +                              &face.face_area.right, &face.face_area.bottom);
-+        face.tracking_id = i;
++        face.tracking_id = f.id;
 +        face.confidence = std::lround(f.score * 100);
 +        face.person_id = -1;
 +    }
@@ -269,7 +305,7 @@ diff -ruN a/src/fd/FaceCenterNet.cpp b/src/fd/FaceCenterNet.cpp
 diff -ruN a/src/fd/FaceCenterNet.h b/src/fd/FaceCenterNet.h
 --- a/src/fd/FaceCenterNet.h
 +++ b/src/fd/FaceCenterNet.h
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,55 @@
 +/*
 + * Licensed under the Apache License, Version 2.0 (the "License");
 + * you may not use this file except in compliance with the License.
@@ -303,10 +339,16 @@ diff -ruN a/src/fd/FaceCenterNet.h b/src/fd/FaceCenterNet.h
 +    struct Face {
 +        float score;
 +        float left, top, right, bottom;
++        int id;
++    };
++    struct Track {
++        Face face;
++        int lost;
 +    };
 +
 +    void fillInput(const uint8_t* y, const uint8_t* uv, int stride);
 +    std::vector<Face> decode();
++    std::vector<Face> track(std::vector<Face> faces);
 +    void publish(const std::vector<Face>& faces, int64_t sequence);
 +
 +    ov::InferRequest mRequest;
@@ -314,6 +356,8 @@ diff -ruN a/src/fd/FaceCenterNet.h b/src/fd/FaceCenterNet.h
 +    uint8_t mGamma[256];
 +    float mScale;
 +    int mLeft, mTop, mInWidth, mInHeight;
++    std::vector<Track> mTracks;
++    int mNextId = 0;
 +};
 +
 +}  // namespace icamera

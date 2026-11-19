@@ -77,7 +77,7 @@ in
           --replace-fail 'availableFaceDetectModes" : [0]' 'availableFaceDetectModes" : [0, 1]' \
           --replace-fail '"psysBundleWithAic": false,' '"psysBundleWithAic": false,
                 "faceAeEnabled": true, "faceEngineVendor": 2, "runFaceWithSyncMode": true,
-                "faceEngineRunningInterval": 3,' \
+                "faceEngineRunningInterval": 2,' \
           --replace-fail '"link": [' '"control": [
               {
                 "name": "sc200pc $I2CBUS", "ctrlId": "V4L2_CID_WDR_MODE", "value": 1,
