@@ -9,7 +9,7 @@ typedef struct NntmBackend NntmBackend;
 
 typedef struct {
   const char *name;
-  const char *net_device, *net_key, *net_value;
+  const char *net_device, *net_property, *net_property_value;
   /* Called before the first frame and after every change of frame size. */
   bool (*configure)(NntmBackend *b, int width, int height);
   /* Called before every frame's prepare. */

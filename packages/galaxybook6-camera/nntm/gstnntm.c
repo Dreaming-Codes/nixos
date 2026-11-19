@@ -92,7 +92,7 @@ static gboolean load_network(GstNntm *self) {
   ov_model_t *model = NULL;
   ov_shape_t shape;
   gboolean ok = ov_core_create(&self->core) == OK && ov_core_read_model(self->core, xml, bin, &model) == OK &&
-                ov_core_compile_model(self->core, model, k->net_device, 2, &self->compiled, k->net_key, k->net_value) == OK &&
+                ov_core_compile_model(self->core, model, k->net_device, 2, &self->compiled, k->net_property, k->net_property_value) == OK &&
                 ov_compiled_model_create_infer_request(self->compiled, &self->request) == OK &&
                 ov_shape_create(4, dims, &shape) == OK;
   if (ok) {
@@ -128,6 +128,14 @@ static void release(GstNntm *self) {
   g_clear_pointer(&self->net_input, g_free);
 }
 
+/* v4l2-relayd drops warning messages from the bus; stderr reaches its journal. */
+static void G_GNUC_PRINTF(1, 2) warn_on_stderr(const gchar *format, ...) {
+  va_list args;
+  va_start(args, format);
+  g_logv(G_LOG_DOMAIN, G_LOG_LEVEL_WARNING, format, args);
+  va_end(args);
+}
+
 static gboolean open_gpu(GstNntm *self) {
   char *error = NULL;
   self->backend = nntm_gpu_new(self->data_dir, &error);
@@ -136,8 +144,7 @@ static gboolean open_gpu(GstNntm *self) {
   if (self->backend_choice == BACKEND_GPU)
     GST_ELEMENT_ERROR(self, RESOURCE, OPEN_READ, ("GPU back end unavailable: %s", error), (NULL));
   else
-    /* v4l2-relayd drops warning messages from the bus; stderr reaches its journal. */
-    g_warning("%s: GPU back end unavailable, tone mapping on the CPU: %s", GST_OBJECT_NAME(self), error);
+    warn_on_stderr("%s: GPU back end unavailable, tone mapping on the CPU: %s", GST_OBJECT_NAME(self), error);
   free(error);
   release_network(self);
   if (self->backend) self->backend->klass->free(self->backend);
@@ -196,9 +203,8 @@ static const NntmParams *params_for(GstNntm *self, GstBuffer *buffer) {
     return self->frame_params;
   }
   if (!self->warned) {
-    /* v4l2-relayd drops warning messages from the bus; stderr reaches its journal. */
-    g_warning("%s: %s, tone mapping with Samsung's constants", GST_OBJECT_NAME(self),
-              data ? "a frame's parameter record is not nntm_1_0's" : "frames carry no parameter record");
+    warn_on_stderr("%s: %s, tone mapping with Samsung's constants", GST_OBJECT_NAME(self),
+                   data ? "a frame's parameter record is not nntm_1_0's" : "frames carry no parameter record");
     self->warned = TRUE;
   }
   return self->fallback;

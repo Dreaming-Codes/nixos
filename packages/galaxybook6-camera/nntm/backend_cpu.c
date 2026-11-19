@@ -92,8 +92,8 @@ static void cpu_free(NntmBackend *b) {
 static const NntmBackendClass cpu_class = {
   .name = "cpu",
   .net_device = "CPU",
-  .net_key = "INFERENCE_NUM_THREADS",
-  .net_value = "1",
+  .net_property = "INFERENCE_NUM_THREADS",
+  .net_property_value = "1",
   .configure = cpu_configure,
   .set_params = cpu_set_params,
   .prepare = cpu_prepare,

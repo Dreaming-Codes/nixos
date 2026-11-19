@@ -37,7 +37,7 @@ class Params:
     gtm_c: int = 0
     guide_weight: int = 27955
     guide_bias: int = -12919
-    blend: np.ndarray = field(default=None, repr=False)
+    blend_q16: np.ndarray = field(default=None, repr=False)
 
     @classmethod
     def samsung(cls, shading, restricted=True, strength=STRENGTH, radial=RADIAL):
@@ -48,7 +48,7 @@ class Params:
             blend = ((F(1) / (v / vmin)) * radial + (F(1) - radial)) * strength
         else:
             blend = np.full_like(v, strength)
-        return cls(input_restricted=restricted, output_restricted=restricted, blend=(blend * F(65536)).astype(np.int32))
+        return cls(input_restricted=restricted, output_restricted=restricted, blend_q16=(blend * F(65536)).astype(np.int32))
 
     @classmethod
     def from_record(cls, record):
@@ -60,7 +60,7 @@ class Params:
         a, b, c = i(0x10074, 3)
         return cls(input_restricted=i(0x5c, 1)[0] != 0, output_restricted=i(0x60, 1)[0] != 0, offset=i(0x8, 3),
                    yuv2rgb=i(0x14, 9), rgb2yuv=i(0x38, 9), gtm_a=a, gtm_b=b, gtm_c=c,
-                   blend=np.array(i(0x64, w * h), np.int32).reshape(h, w))
+                   blend_q16=np.array(i(0x64, w * h), np.int32).reshape(h, w))
 
     def yuv2rgb_h(self):
         m = np.array(self.yuv2rgb, F)
@@ -69,7 +69,6 @@ class Params:
     def rgb2yuv_h(self):
         m = np.array(self.rgb2yuv, F)
         return (m / ((m[1] + m[0]) + m[2])).astype(H)
-
 
 
 def records(path):
@@ -209,7 +208,7 @@ def ltm_gain(luma, grid, p):
         coeff.append(acc)
     mapped = clamp(coeff[1] + coeff[0] * luma, 0, 1)
 
-    bmap = p.blend
+    bmap = p.blend_q16
     bh, bw = bmap.shape
     m = (bmap.astype(F) * F(1 / 65536)).astype(H)
     by0, by1, wby0, wby1 = axis(F(bh - 1) / F(h - 1), h, bh - 1)

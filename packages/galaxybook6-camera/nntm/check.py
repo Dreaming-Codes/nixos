@@ -41,8 +41,11 @@ def record(p, uuid=reference.RECORD_UUID):
     put(0x14, p.yuv2rgb)
     put(0x38, p.rgb2yuv)
     put(0x5c, (int(p.input_restricted), int(p.output_restricted)))
-    put(0x64, p.blend.ravel().tolist())
-    put(0x10064, (p.blend.shape[1], p.blend.shape[0], 0, 0, p.gtm_a, p.gtm_b, p.gtm_c))
+    put(0x64, p.blend_q16.ravel().tolist())
+    put(0x10064, (p.blend_q16.shape[1], p.blend_q16.shape[0]))
+    ignored_guide_weight_bias = (0, 0)
+    put(0x1006c, ignored_guide_weight_bias)
+    put(0x10074, (p.gtm_a, p.gtm_b, p.gtm_c))
     put(0x10080, [0x7fff] * 2049)
     size = reference.RECORD_HEADER + len(body) + 4
     return struct.pack("<6i", uuid, size, 257, 0, (1080 << 16) | 1920, 0) + bytes(body) + bytes(4)
@@ -52,9 +55,9 @@ def per_frame_params(shading, restricted):
     daylight = reference.Params.samsung(shading, restricted, strength=350 / 1023)
     ramp = np.add.outer(np.arange(7) * 4000, np.arange(9) * 2500) + 13000
     small = reference.Params(input_restricted=restricted, output_restricted=restricted, gtm_a=3, gtm_c=40,
-                             blend=ramp.astype(np.int32))
+                             blend_q16=ramp.astype(np.int32))
     face = reference.Params.samsung(shading, restricted)
-    face.blend[10:30, 20:40] = (face.blend[10:30, 20:40] * np.float32(1 - 306 / 1023)).astype(np.int32)
+    face.blend_q16[10:30, 20:40] = (face.blend_q16[10:30, 20:40] * np.float32(1 - 306 / 1023)).astype(np.int32)
     return [daylight, small, face]
 
 

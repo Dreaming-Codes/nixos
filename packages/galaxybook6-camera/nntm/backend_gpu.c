@@ -248,8 +248,8 @@ static bool gpu_apply(NntmBackend *b, const NntmGrid grid, NntmFrame *f) { retur
 static const NntmBackendClass gpu_class = {
   .name = "gpu",
   .net_device = "GPU",
-  .net_key = "INFERENCE_PRECISION_HINT",
-  .net_value = "f16",
+  .net_property = "INFERENCE_PRECISION_HINT",
+  .net_property_value = "f16",
   .configure = gpu_configure,
   .set_params = gpu_set_params,
   .prepare = gpu_prepare,
