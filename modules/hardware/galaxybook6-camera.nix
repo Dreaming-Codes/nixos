@@ -86,6 +86,12 @@ in {
           -n "${cameraLabel}" > "$V4L2_DEVICE_FILE"
       '';
       postStop = lib.mkForce "";
+      # The HAL logs to stdout, which is block-buffered into the journal: lines arrive in 4 KB
+      # blocks, up to an hour late.
+      environment = {
+        LD_PRELOAD = "${pkgs.coreutils}/libexec/coreutils/libstdbuf.so";
+        _STDBUF_O = "L";
+      };
     };
 
     services.pipewire.wireplumber.extraConfig = {
