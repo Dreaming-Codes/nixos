@@ -1,10 +1,9 @@
 --- a/src/gstcamerasrcbufferpool.cpp
 +++ b/src/gstcamerasrcbufferpool.cpp
-@@ -150,12 +150,39 @@
+@@ -150,12 +150,38 @@
    G_OBJECT_CLASS (parent_class)->finalize (object);
  }
  
-+/* The nntm element reads this meta: a GBytes field "record" holding camera_get_nntm_params' bytes. */
 +#define NNTM_PARAMS_META "GstNntmParamsMeta"
 +
 +static void
@@ -40,7 +39,7 @@
  
    object_class->finalize = gst_camerasrc_buffer_pool_finalize;
  
-@@ -998,6 +1025,7 @@
+@@ -998,6 +1024,7 @@
    }
  
    GstClockTime timestamp = meta->buffer->timestamp;

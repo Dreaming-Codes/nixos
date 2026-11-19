@@ -134,7 +134,7 @@ diff -ruN a/src/core/IpuPacAdaptor.cpp b/src/core/IpuPacAdaptor.cpp
  
      {
          AutoMutex l(mIpuParamLock);
-@@ -125,6 +129,67 @@
+@@ -130,6 +134,64 @@
      return OK;
  }
  
@@ -152,11 +152,8 @@ diff -ruN a/src/core/IpuPacAdaptor.cpp b/src/core/IpuPacAdaptor.cpp
 +    cca::cca_aic_terminal_config termConfig{};
 +    termConfig.cb_num = 1;
 +    termConfig.cb_terminal_buf[0].group_id = groupId;
-+    const uint32_t graphMode = kernels->operationMode;
-+    kernels->operationMode = 0;
 +    const status_t ret = pacConfig(streamId, aicConfig, offset, nullptr, &termConfig,
 +                                   CBLayoutUtils::getStatsBufToTermIds());
-+    kernels->operationMode = graphMode;
 +    if (ret == OK) {
 +        AutoMutex l(mPacAdaptorLock);
 +        mNntmGroup[streamId] = groupId;
@@ -169,7 +166,7 @@ diff -ruN a/src/core/IpuPacAdaptor.cpp b/src/core/IpuPacAdaptor.cpp
 +}
 +
 +// The kernel takes faces in pixels of the sensor frame and maps them through its own resolution
-+// history; a face left of or above that history's crop fails the kernel run.
++// history.
 +void IpuPacAdaptor::setNntmFaces(int streamId, cca::cca_pal_input_params* params) {
 +    params->face_roi.num_faces = 0;
 +    params->face_roi.faces = mNntmFaces;
@@ -202,7 +199,7 @@ diff -ruN a/src/core/IpuPacAdaptor.cpp b/src/core/IpuPacAdaptor.cpp
  void IpuPacAdaptor::clearAicResult() {
      AutoMutex l(mPacAdaptorLock);
      mPacRunHistMap.clear();
-@@ -424,7 +489,11 @@
+@@ -429,7 +491,11 @@
  
      // TODO: Set camera_params
  
@@ -214,7 +211,7 @@ diff -ruN a/src/core/IpuPacAdaptor.cpp b/src/core/IpuPacAdaptor.cpp
      {
          PERF_CAMERA_ATRACE_PARAM1_IMAGING("pac_run", 1);
  
-@@ -434,11 +503,20 @@
+@@ -439,11 +505,20 @@
          }
          // HDR_FEATURE_E
  
