@@ -70,6 +70,7 @@ in
 
         # The sensor applies exposure and gain written as plain registers on the next frame.
         # v4l2loopback consumers assume limited-range YUV.
+        # faceEngineRunningInterval is milliseconds of frame time.
         substitute $U/sc200pc-uf.json $C/sensors/sc200pc-uf.json \
           --replace-fail '"exposureLag":  2' '"exposureLag": 1' \
           --replace-fail '"gainLag": 2' '"gainLag": 1' \
@@ -78,7 +79,7 @@ in
           --replace-fail 'availableFaceDetectModes" : [0]' 'availableFaceDetectModes" : [0, 1]' \
           --replace-fail '"psysBundleWithAic": false,' '"psysBundleWithAic": false,
                 "faceAeEnabled": true, "faceEngineVendor": 2, "runFaceWithSyncMode": true,
-                "faceEngineRunningInterval": 2,' \
+                "faceEngineRunningInterval": 66,' \
           --replace-fail '"link": [' '"control": [
               {
                 "name": "sc200pc $I2CBUS", "ctrlId": "V4L2_CID_WDR_MODE", "value": 1,

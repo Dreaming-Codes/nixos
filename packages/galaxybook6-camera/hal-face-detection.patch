@@ -56,6 +56,36 @@ diff -ruN a/src/core/CameraDevice.cpp b/src/core/CameraDevice.cpp
  
      return OK;
  }
+diff -ruN a/src/core/processingUnit/FaceStage.cpp b/src/core/processingUnit/FaceStage.cpp
+--- a/src/core/processingUnit/FaceStage.cpp
++++ b/src/core/processingUnit/FaceStage.cpp
+@@ -145,7 +145,7 @@
+ 
+     int64_t sequence = camBuffer->getSequence();
+     if (mIsPrivate) {
+-        if (isFaceEnabled(sequence) && mFaceDetection->needRunFace(sequence) &&
++        if (isFaceEnabled(sequence) && mFaceDetection->needRunFace(camBuffer->getTimestamp()) &&
+             !PlatformData::runFaceWithSyncMode(mCameraId)) {
+             AutoMutex l(mBufferPoolLock);
+             LOG2("<seq%ld>%s, run face with ASYNC mode. mIsPrivate: %d",
+@@ -154,7 +154,7 @@
+             return OK;
+         }
+ 
+-        if (isFaceEnabled(sequence) && mFaceDetection->needRunFace(sequence)) {
++        if (isFaceEnabled(sequence) && mFaceDetection->needRunFace(camBuffer->getTimestamp())) {
+             LOG2("<seq%ld>%s, run face with SYNC mode. mIsPrivate: %d",
+                  sequence, __func__, mIsPrivate);
+             mFaceDetection->runFaceDetection(camBuffer);
+@@ -166,7 +166,7 @@
+         }
+         mAvailableBufferQ.push(camBuffer);
+     } else {
+-        if (isFaceEnabled(sequence) && mFaceDetection->needRunFace(sequence)) {
++        if (isFaceEnabled(sequence) && mFaceDetection->needRunFace(camBuffer->getTimestamp())) {
+             if (PlatformData::runFaceWithSyncMode(mCameraId)) {
+                 LOG2("<seq%ld>%s, run face with SYNC mode. mIsPrivate: %d",
+                      sequence, __func__, mIsPrivate);
 diff -ruN a/src/fd/CMakeLists.txt b/src/fd/CMakeLists.txt
 --- a/src/fd/CMakeLists.txt
 +++ b/src/fd/CMakeLists.txt
@@ -361,6 +391,111 @@ diff -ruN a/src/fd/FaceCenterNet.h b/src/fd/FaceCenterNet.h
 +};
 +
 +}  // namespace icamera
+diff -ruN a/src/fd/FaceDetection.cpp b/src/fd/FaceDetection.cpp
+--- a/src/fd/FaceDetection.cpp
++++ b/src/fd/FaceDetection.cpp
+@@ -32,11 +32,9 @@
+           mMaxFaceNum(PlatformData::getMaxFaceDetectionNumber(cameraId)),
+           mMemoryType(memoryType),
+           mLastFaceNum(-1),
+-          mDefaultInterval(PlatformData::faceEngineRunningInterval(cameraId)),
+-          mNoFaceInterval(PlatformData::faceEngineRunningIntervalNoFace(cameraId)),
+-          mRunInterval(PlatformData::faceEngineRunningInterval(cameraId)) {
+-    LOG1("<id%d> default interval:%d, no face interval:%d", cameraId,
+-         mDefaultInterval, mNoFaceInterval);
++          mIntervalUs(PlatformData::faceEngineRunningInterval(cameraId) * 1000LL),
++          mLastRunUs(-1) {
++    LOG1("<id%d> interval %ld us", cameraId, mIntervalUs);
+     initRatioInfo(&mRatioInfo);
+ }
+ 
+@@ -76,46 +74,19 @@
+                   imageRotationChanged};
+ }
+ 
+-bool FaceDetection::needRunFace(int64_t sequence) {
++bool FaceDetection::needRunFace(const struct timeval& frameTime) {
+     if (!mInitialized) {
+         return false;
+     }
+ 
+-    int lastFaceNum = getFaceNum();
+-
+-    /*
+-     * FD runs 1 frame every mRunInterval frames.
+-     * And the default value of mRunInterval is mDefaultInterval
+-     */
+-    if (sequence % mRunInterval == 0) {
+-        LOG2("%s, Running face detection for sequence: %ld faceNum %d",
+-             __func__, sequence, lastFaceNum);
+-        return true;
+-    }
+-
+-    /*
+-     * When face doesn't be detected during mFDRunIntervalNoFace's frame,
+-     * we may change FD running's interval frames.
+-     */
+-    if (mNoFaceInterval > mDefaultInterval) {
+-        if (lastFaceNum == 0) {
+-            if (sequence % mNoFaceInterval == 0) {
+-                // Change the interval if there isn't face detected for mNoFaceInterval frames
+-                // (mNoFaceInterval / mDefaultInterval) times.
+-                mRunInterval = mNoFaceInterval;
+-            }
+-        } else if (mRunInterval != mDefaultInterval) {
+-            // Recovery to default normal interval
+-            mRunInterval = mDefaultInterval;
+-        }
++    const int64_t us = static_cast<int64_t>(TIMEVAL2USECS(frameTime));
++    // FaceStage's private path asks twice for one frame and needs the same answer both times.
++    const bool run = (mLastRunUs < 0) || (us <= mLastRunUs) || (us - mLastRunUs >= mIntervalUs);
++    LOG2("%s, frame time %ld us, run %d", __func__, us, run);
++    if (run) {
++        mLastRunUs = us;
+     }
+-
+-    return false;
+-}
+-
+-int FaceDetection::getFaceNum() {
+-    AutoMutex l(mFaceResultLock);
+-    return mLastFaceNum;
++    return run;
+ }
+ 
+ void FaceDetection::printfFDRunRate() {
+diff -ruN a/src/fd/FaceDetection.h b/src/fd/FaceDetection.h
+--- a/src/fd/FaceDetection.h
++++ b/src/fd/FaceDetection.h
+@@ -36,7 +36,7 @@
+     FaceDetection(int cameraId, int width, int height, int memoryType = V4L2_MEMORY_USERPTR);
+     virtual ~FaceDetection();
+ 
+-    bool needRunFace(int64_t sequence);
++    bool needRunFace(const struct timeval& frameTime);
+     virtual void runFaceDetection(const std::shared_ptr<CameraBuffer>& camBuffer) = 0;
+     int getMemoryType() { return mMemoryType; }
+ 
+@@ -47,7 +47,6 @@
+ 
+  private:
+     void initRatioInfo(struct RatioInfo* ratioInfo);
+-    int getFaceNum();
+ 
+  protected:
+     int mCameraId;
+@@ -63,9 +62,8 @@
+     struct RatioInfo mRatioInfo;
+ 
+  private:
+-    unsigned int mDefaultInterval;  // FD running's interval frames.
+-    unsigned int mNoFaceInterval;   // FD running's interval frames without face.
+-    unsigned int mRunInterval;      // run 1 frame every mFDRunInterval frames.
++    int64_t mIntervalUs;
++    int64_t mLastRunUs;
+ };
+ 
+ }  // namespace icamera
 diff -ruN a/src/fd/IFaceDetection.cpp b/src/fd/IFaceDetection.cpp
 --- a/src/fd/IFaceDetection.cpp
 +++ b/src/fd/IFaceDetection.cpp
