@@ -116,23 +116,25 @@ diff -ruN a/src/3a/AiqResultStorage.h b/src/3a/AiqResultStorage.h
 diff -ruN a/src/core/IpuPacAdaptor.cpp b/src/core/IpuPacAdaptor.cpp
 --- a/src/core/IpuPacAdaptor.cpp
 +++ b/src/core/IpuPacAdaptor.cpp
-@@ -31,6 +31,7 @@
+@@ -31,6 +31,8 @@
  #include "AiqResultStorage.h"
  #include "PlatformData.h"
  #include "ia_pal_types_isp_ids_autogen.h"
 +#include "CBLayoutUtils.h"
++#include "AiqUtils.h"
  
  namespace icamera {
  
-@@ -92,6 +93,7 @@
+@@ -92,6 +94,8 @@
          mIntelCca->freeMem(it.second);
      }
      mStreamIdToInputParams.clear();
 +    mNntmGroup.clear();
++    mNntmHistory.clear();
  
      {
          AutoMutex l(mIpuParamLock);
-@@ -125,6 +127,32 @@
+@@ -125,6 +129,67 @@
      return OK;
  }
  
@@ -158,23 +160,61 @@ diff -ruN a/src/core/IpuPacAdaptor.cpp b/src/core/IpuPacAdaptor.cpp
 +    if (ret == OK) {
 +        AutoMutex l(mPacAdaptorLock);
 +        mNntmGroup[streamId] = groupId;
++        const ia_isp_bxt_resolution_info_t* history = kernels->kernelList[0].run_kernel.resolution_history;
++        if (history != nullptr) {
++            mNntmHistory[streamId] = *history;
++        }
 +    }
 +    return ret;
++}
++
++// The kernel takes faces in pixels of the sensor frame and maps them through its own resolution
++// history; a face left of or above that history's crop fails the kernel run.
++void IpuPacAdaptor::setNntmFaces(int streamId, cca::cca_pal_input_params* params) {
++    params->face_roi.num_faces = 0;
++    params->face_roi.faces = mNntmFaces;
++    const auto history = mNntmHistory.find(streamId);
++    const FaceDetectionResult* result = mAiqResultStorage->getFaceResult();
++    if ((history == mNntmHistory.end()) || (result == nullptr)) {
++        return;
++    }
++    const ia_isp_bxt_resolution_info_t& h = history->second;
++    const camera_coordinate_system_t ia = {IA_COORDINATE_LEFT, IA_COORDINATE_TOP,
++                                           IA_COORDINATE_RIGHT, IA_COORDINATE_BOTTOM};
++    const camera_coordinate_system_t sensor = {h.input_crop.left, h.input_crop.top,
++                                               h.input_width - h.input_crop.right,
++                                               h.input_height - h.input_crop.bottom};
++    const uint32_t count = std::min<uint32_t>(result->ccaFaceState.num_faces, cca::MAX_FACE_NUM);
++    for (uint32_t i = 0U; i < count; i++) {
++        const ia_rectangle& area = result->ccaFaceState.faces[i].face_area;
++        const camera_coordinate_t lt =
++            AiqUtils::convertCoordinateSystem(ia, sensor, {area.left, area.top});
++        const camera_coordinate_t rb =
++            AiqUtils::convertCoordinateSystem(ia, sensor, {area.right, area.bottom});
++        ia_face_roi& roi = mNntmFaces[i];
++        CLEAR(roi);
++        roi.face_area = {lt.x, lt.y, rb.x, rb.y};
++        roi.tracking_id = result->ccaFaceState.faces[i].tracking_id;
++    }
++    params->face_roi.num_faces = count;
 +}
 +
  void IpuPacAdaptor::clearAicResult() {
      AutoMutex l(mPacAdaptorLock);
      mPacRunHistMap.clear();
-@@ -425,6 +453,8 @@
+@@ -424,7 +489,11 @@
+ 
      // TODO: Set camera_params
  
++    setNntmFaces(streamId, inputParams);
++
      ia_err iaErr = ia_err_none;
 +    cca::cca_multi_pal_output output = {};
 +    output.cb_num = cca::MAX_PG_NUM;
      {
          PERF_CAMERA_ATRACE_PARAM1_IMAGING("pac_run", 1);
  
-@@ -434,11 +464,20 @@
+@@ -434,11 +503,20 @@
          }
          // HDR_FEATURE_E
  
@@ -207,11 +247,21 @@ diff -ruN a/src/core/IpuPacAdaptor.h b/src/core/IpuPacAdaptor.h
      status_t updateResolutionSettings(int streamId, const cca::cca_aic_config& aicConfig,
                                        bool isKeyResChanged);
  
-@@ -114,6 +115,7 @@
+@@ -81,6 +82,7 @@
+                           ia_media_format* mediaFormat, bool* useLinearGamma,
+                           int64_t sequence);
+     bool isStatsUsed(int streamId, int64_t sequence);
++    void setNntmFaces(int streamId, cca::cca_pal_input_params* params);
+     void dumpAicOutput(int64_t sequence, int streamId, cca::cca_multi_pal_output pacOutput);
+ 
+     DISALLOW_COPY_AND_ASSIGN(IpuPacAdaptor);
+@@ -114,6 +116,9 @@
  
      std::map<std::pair<int, uint8_t>, std::vector<CBTerminalResult> > mTerminalResult;
      std::map<int, cca::cca_pal_input_params*> mStreamIdToInputParams;
 +    std::map<int, int32_t> mNntmGroup;
++    std::map<int, ia_isp_bxt_resolution_info_t> mNntmHistory;
++    ia_face_roi mNntmFaces[cca::MAX_FACE_NUM];
  
      int64_t mLastStatsSequence;
      static const uint8_t MAX_CACHE_PAC_HIST = 6;

@@ -255,7 +255,15 @@ Measured on the camera: the global weight follows sensor gain (350/1023 at gain 
 blend map is flatter than the one built from the F11 table: the relative shading at the
 corners is 0.25 where the table gives 0.16, the same at every gain, so the map differs by up to
 5 percent of its maximum at the corners. The kernel's map is the one Windows applies: it is
-built from the shading grid of the frame. The HAL does not hand the kernel faces yet.
+built from the shading grid of the frame.
+
+The HAL hands the kernel the detector's faces in `face_roi` as Windows does: rectangle and
+tracking id, in pixels of the sensor frame (the detector's 0..8192 coordinates mapped onto the
+crop of the kernel's resolution history, 1928x1088 cropped by 4, 3, 4, 5). Windows also passes
+the faces' rotation angles; the Linux detector has none, so they are 0. Measured with a
+synthetic face: inside an ellipse around the largest face the map drops to 1 - 408/1023 of
+its value in the dim room, ramps in over 2 s, follows a moving face at once, and after the
+face is gone holds for 1 to 2 s before ramping out over 2 s.
 
 ## 8. Where the reference could differ from Windows
 
@@ -268,6 +276,7 @@ built from the shading grid of the frame. The HAL does not hand the kernel faces
 5. Without a parameter record: the weights are those of sensor gain 2 to 8, the lens-shading
    grid is the plain F11 table (flatter on the camera, see section 7) and there is no face
    region.
+6. Faces carry no rotation angles.
 
 ## 9. The element
 
