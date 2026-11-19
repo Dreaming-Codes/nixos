@@ -70,7 +70,6 @@ in
 
         # The sensor applies exposure and gain written as plain registers on the next frame.
         # v4l2loopback consumers assume limited-range YUV.
-        # faceEngineRunningInterval is milliseconds of frame time.
         substitute $U/sc200pc-uf.json $C/sensors/sc200pc-uf.json \
           --replace-fail '"exposureLag":  2' '"exposureLag": 1' \
           --replace-fail '"gainLag": 2' '"gainLag": 1' \

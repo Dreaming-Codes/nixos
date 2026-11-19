@@ -88,18 +88,17 @@ in {
           device=$(${kernelPackages.v4l2loopback.bin}/bin/v4l2loopback-ctl add -x 0 \
             -b ${toString relay.bufferCount} -n "${cameraLabel}")
         fi
-        # Fix the format the relay writes, BT.709 limited range included, so the device keeps reporting it
-        # while the relay restarts. v4l2loopback only takes new colour fields together with a new size or
-        # pixel format, so a reused device would otherwise keep whatever colours were written first.
+        # Without keep_format v4l2loopback falls back to its default format between relay runs. It takes new
+        # colour fields only together with a new size or pixel format, so a reused device would otherwise
+        # keep whatever colours were written first.
         ${v4l2-ctl} -d "$device" --set-ctrl=keep_format=0
         ${v4l2-ctl} -d "$device" --set-fmt-video-out=width=640,height=480,pixelformat=YUYV
         ${v4l2-ctl} -d "$device" --set-fmt-video-out=width=${toString relay.input.width},height=${toString relay.input.height},pixelformat=NV12,colorspace=rec709,xfer=rec709,ycbcr=709,quantization=lim-range
         ${v4l2-ctl} -d "$device" --set-ctrl=keep_format=1
         echo "$device" > "$V4L2_DEVICE_FILE"
       '';
-      # The HAL emits BT.709 limited range. Unlabelled, v4l2sink takes the loopback's BT.601 default and
-      # videoconvert converts every frame; labelled, it passes the HAL's buffers through. icamerasrc frees
-      # those buffers when the camera stops, so the sink must not keep the last one past that.
+      # videoconvert passes icamerasrc's buffers through, and icamerasrc frees them when the camera stops,
+      # so the sink must not keep the last one.
       script = lib.mkForce ''
         exec ${pkgs.v4l2-relayd}/bin/v4l2-relayd -i "${relay.input.pipeline}" -o "appsrc name=appsrc caps=video/x-raw,format=${relay.input.format},colorimetry=bt709,width=${toString relay.input.width},height=${toString relay.input.height},framerate=${toString relay.input.framerate}/1 ! videoconvert ! v4l2sink name=v4l2sink enable-last-sample=false device=$(cat $V4L2_DEVICE_FILE)"
       '';
@@ -112,12 +111,11 @@ in {
           _STDBUF_O = "L";
           # The HAL's face detector runs on the NPU, whose Level Zero driver is not on the library path.
           ZE_ENABLE_ALT_DRIVERS = "${pkgs.intel-npu-driver}/lib/libze_intel_npu.so.1";
-          # The NPU driver caches compiled models only under HOME, which the unit does not set.
+          # The NPU driver caches compiled models only under HOME, and a unit without User= has none.
           HOME = "/var/cache/v4l2-relayd-sc200pc";
         }
         // lib.optionalAttrs cfg.neuralToneMap {
           OCL_ICD_VENDORS = "${pkgs.intel-compute-runtime}/etc/OpenCL/vendors";
-          # The unit has no HOME, so the runtime would recompile the GPU kernels on every camera open.
           NEO_CACHE_DIR = "/var/cache/v4l2-relayd-sc200pc";
         };
       serviceConfig.CacheDirectory = "v4l2-relayd-sc200pc";
