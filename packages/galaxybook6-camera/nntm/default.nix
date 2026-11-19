@@ -2,12 +2,14 @@
   stdenv,
   fetchurl,
   gst_all_1,
+  ocl-icd,
+  opencl-headers,
   openvino,
   pkg-config,
   python3,
   unzip,
 }: let
-  # The network and the tuning file are proprietary: they are extracted at build time and
+  # The network, the kernels and the tuning file are proprietary: they are extracted at build time and
   # never enter this repository.
   windowsDriver = import ../windows-driver.nix {inherit fetchurl;};
 in
@@ -25,6 +27,8 @@ in
     buildInputs = [
       gst_all_1.gstreamer
       gst_all_1.gst-plugins-base
+      ocl-icd
+      opencl-headers
       openvino
     ];
 
@@ -34,8 +38,8 @@ in
       runHook preBuild
       $CC -O3 -mavx2 -mf16c -ffp-contract=off -Wall -Werror -fPIC -shared \
         -DPACKAGE='"nntm"' -DNNTM_DATA_DIR="\"$out/share/nntm\"" \
-        $(pkg-config --cflags gstreamer-video-1.0 openvino) gstnntm.c backend_cpu.c nntm.c \
-        $(pkg-config --libs gstreamer-video-1.0) $(pkg-config --libs-only-L openvino) -lopenvino_c -lm \
+        $(pkg-config --cflags gstreamer-video-1.0 openvino) gstnntm.c backend_cpu.c backend_gpu.c nntm.c \
+        $(pkg-config --libs gstreamer-video-1.0 OpenCL) $(pkg-config --libs-only-L openvino) -lopenvino_c -lm \
         -o libgstnntm.so
       runHook postBuild
     '';

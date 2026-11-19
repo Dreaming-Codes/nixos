@@ -84,8 +84,9 @@ OpenVINO IR v11, `static_coeff_aug25_strongest_haigh_fr_L2_br_p_fp16`, input
 reshape a `1x16x16x16` map (channels, rows, columns) so that the output index is
 `[row][column][depth][coefficient]`, which is how `ltm_gain` reads it.
 
-Windows runs it through oneDNN on the GPU in FP16. The element runs the same file through
-OpenVINO's CPU plugin.
+Windows runs it on the GPU in FP16 by replaying kernels that OpenVINO's GPU plugin generated.
+The element's GPU back end runs the same file through OpenVINO's GPU plugin in FP16; its CPU
+back end and the reference run it through OpenVINO's CPU plugin.
 
 ## 4. Temporal filter (`temporal_filter`)
 
@@ -242,7 +243,7 @@ Constants are Samsung's. For what varies with things the element cannot see:
    does neither. Expected effect: under one code value.
 2. `exp` in the guide is computed exactly and rounded once; the GPU's `exp` is an
    approximation of unknown rounding.
-3. The network runs in FP32 on the CPU plugin instead of FP16 through oneDNN on the GPU.
+3. The reference runs the network in FP32 on the CPU plugin instead of FP16 on the GPU.
 4. The grid is assumed to be applied to the frame it was computed from.
 5. The interpolation variable of the weight curves is taken to be total sensor gain.
 6. The lens-shading grid given to the parameter kernel is taken to be the plain table for
@@ -260,6 +261,19 @@ allows one code value because OpenVINO's output can change with its thread count
 and the reference both use one inference thread.
 
 Frames are processed 64 pixels at a time, so the width must be a multiple of 64.
+
+The element has two back ends, chosen by the `backend` property. The CPU back end is
+`nntm.c`. The GPU back end (`backend_gpu.c`) runs Samsung's own SPIR-V kernels, extracted from
+the driver at build time, through OpenCL, and the network through OpenVINO's GPU plugin in
+FP16, as Windows does. Both use the same parameters, blend map and temporal filter. The GPU
+output differs from the reference by at most one code value: Intel's compiler fuses
+multiply-adds where the kernels' fast-math flags allow it (item 1 above), and in 5 percent of
+bytes on recorded frames the result rounds the other way. `check.py <datadir> <workdir> gpu`
+checks it on a machine with the GPU.
+
+The GPU back end works on the frame's own memory. A frame from a buffer pool is wrapped once
+and reused; the host rewrites it between uses, so each use starts with a map that tells the
+OpenCL runtime the contents changed.
 
 An identity grid does not return every pixel unchanged. Step 3 of preprocess clamps RGB, so a
 pixel whose YUV lies outside the RGB gamut comes back inside it. On the recorded clips that is

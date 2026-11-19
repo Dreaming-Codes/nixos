@@ -2,6 +2,7 @@
 #include <gst/video/gstvideofilter.h>
 #include <gst/video/video.h>
 #include <openvino/c/openvino.h>
+#include <string.h>
 
 #include "backend.h"
 
@@ -12,12 +13,13 @@ GST_DEBUG_CATEGORY_STATIC(nntm_debug);
 #define GST_CAT_DEFAULT nntm_debug
 
 enum { RANGE_FULL, RANGE_LIMITED };
-enum { PROP_0, PROP_RANGE, PROP_STRENGTH, PROP_RADIAL, PROP_BYPASS, PROP_THREADS, PROP_IDENTITY_GRID, PROP_DATA_DIR };
+enum { BACKEND_AUTO, BACKEND_GPU, BACKEND_CPU };
+enum { PROP_0, PROP_RANGE, PROP_STRENGTH, PROP_RADIAL, PROP_BYPASS, PROP_THREADS, PROP_IDENTITY_GRID, PROP_DATA_DIR, PROP_BACKEND };
 
 struct _GstNntm {
   GstVideoFilter parent;
 
-  gint range;
+  gint range, backend_choice;
   gfloat strength, radial;
   gboolean bypass, identity_grid;
   guint threads;
@@ -48,6 +50,16 @@ static GType range_type(void) {
     {RANGE_FULL, "Y 0..255", "full"}, {RANGE_LIMITED, "Y 16..235", "limited"}, {0, NULL, NULL}};
   static GType type;
   if (g_once_init_enter(&type)) g_once_init_leave(&type, g_enum_register_static("GstNntmRange", values));
+  return type;
+}
+
+static GType backend_type(void) {
+  static const GEnumValue values[] = {{BACKEND_AUTO, "GPU when it initialises, else CPU", "auto"},
+                                      {BACKEND_GPU, "OpenCL GPU, Samsung's kernels", "gpu"},
+                                      {BACKEND_CPU, "CPU", "cpu"},
+                                      {0, NULL, NULL}};
+  static GType type;
+  if (g_once_init_enter(&type)) g_once_init_leave(&type, g_enum_register_static("GstNntmBackend", values));
   return type;
 }
 
@@ -107,15 +119,43 @@ static void release(GstNntm *self) {
   g_clear_pointer(&self->net_input, g_free);
 }
 
+static gboolean open_gpu(GstNntm *self) {
+  char *error = NULL;
+  self->backend = nntm_gpu_new(self->data_dir, &error);
+  if (self->backend && !load_network(self)) error = strdup("OpenVINO cannot compile the network for the GPU");
+  if (!error) return TRUE;
+  if (self->backend_choice == BACKEND_GPU)
+    GST_ELEMENT_ERROR(self, RESOURCE, OPEN_READ, ("GPU back end unavailable: %s", error), (NULL));
+  else
+    GST_ELEMENT_WARNING(self, RESOURCE, OPEN_READ, ("GPU back end unavailable, tone mapping on the CPU: %s", error), (NULL));
+  free(error);
+  release_network(self);
+  if (self->backend) self->backend->klass->free(self->backend);
+  self->backend = NULL;
+  return FALSE;
+}
+
 static gboolean gst_nntm_start(GstBaseTransform *trans) {
   GstNntm *self = GST_NNTM(trans);
   self->net_input = g_new(guint16, NNTM_NET_SIZE * NNTM_NET_SIZE);
-  self->backend = nntm_cpu_new(self->threads);
-  if (!load_shading(self) || !load_network(self)) {
+  if (!load_shading(self)) {
     GST_ELEMENT_ERROR(self, RESOURCE, OPEN_READ, ("cannot load tone-mapping data from %s", self->data_dir), (NULL));
     release(self);
     return FALSE;
   }
+  if (self->backend_choice != BACKEND_CPU && !open_gpu(self) && self->backend_choice == BACKEND_GPU) {
+    release(self);
+    return FALSE;
+  }
+  if (!self->backend) {
+    self->backend = nntm_cpu_new(self->threads);
+    if (!load_network(self)) {
+      GST_ELEMENT_ERROR(self, RESOURCE, OPEN_READ, ("cannot load the tone-mapping network from %s", self->data_dir), (NULL));
+      release(self);
+      return FALSE;
+    }
+  }
+  GST_INFO_OBJECT(self, "tone mapping on the %s", self->backend->klass->name);
   self->grid = g_new(gfloat, NNTM_GRID_LEN);
   self->first = self->stale = TRUE;
   self->frames = self->usec[0] = self->usec[1] = self->usec[2] = 0;
@@ -165,7 +205,8 @@ static GstFlowReturn gst_nntm_transform_frame_ip(GstVideoFilter *filter, GstVide
   }
 
   t[0] = g_get_monotonic_time();
-  if (!k->prepare(self->backend, &f, frame->buffer->pool != NULL, identity_grid ? NULL : self->net_input)) goto failed;
+  gboolean pooled = frame->buffer->pool != NULL;
+  if (!k->prepare(self->backend, &f, pooled, identity_grid ? NULL : self->net_input)) goto failed;
   t[1] = g_get_monotonic_time();
   if (identity_grid) {
     nntm_grid_identity(identity);
@@ -187,8 +228,8 @@ static GstFlowReturn gst_nntm_transform_frame_ip(GstVideoFilter *filter, GstVide
 
   self->frames++;
   for (int i = 0; i < 3; i++) self->usec[i] += t[i + 1] - t[i];
-  GST_LOG_OBJECT(self, "luma %" G_GINT64_FORMAT " network %" G_GINT64_FORMAT " apply %" G_GINT64_FORMAT " us",
-                 t[1] - t[0], t[2] - t[1], t[3] - t[2]);
+  GST_LOG_OBJECT(self, "luma %" G_GINT64_FORMAT " network %" G_GINT64_FORMAT " apply %" G_GINT64_FORMAT " us, pooled %d",
+                 t[1] - t[0], t[2] - t[1], t[3] - t[2], pooled);
   return GST_FLOW_OK;
 
 failed:
@@ -213,6 +254,7 @@ static void gst_nntm_set_property(GObject *object, guint id, const GValue *value
     case PROP_THREADS: self->threads = g_value_get_uint(value); break;
     case PROP_IDENTITY_GRID: self->identity_grid = g_value_get_boolean(value); break;
     case PROP_DATA_DIR: g_free(self->data_dir); self->data_dir = g_value_dup_string(value); break;
+    case PROP_BACKEND: self->backend_choice = g_value_get_enum(value); break;
     default: G_OBJECT_WARN_INVALID_PROPERTY_ID(object, id, pspec);
   }
   self->stale = TRUE;
@@ -230,6 +272,7 @@ static void gst_nntm_get_property(GObject *object, guint id, GValue *value, GPar
     case PROP_THREADS: g_value_set_uint(value, self->threads); break;
     case PROP_IDENTITY_GRID: g_value_set_boolean(value, self->identity_grid); break;
     case PROP_DATA_DIR: g_value_set_string(value, self->data_dir); break;
+    case PROP_BACKEND: g_value_set_enum(value, self->backend_choice); break;
     default: G_OBJECT_WARN_INVALID_PROPERTY_ID(object, id, pspec);
   }
 }
@@ -266,14 +309,17 @@ static void gst_nntm_class_init(GstNntmClass *klass) {
   g_object_class_install_property(object, PROP_BYPASS,
       g_param_spec_boolean("bypass", "Bypass", "Pass frames through untouched", FALSE, flags));
   g_object_class_install_property(object, PROP_THREADS,
-      g_param_spec_uint("threads", "Threads", "Threads sharing the per-pixel work, read when the element starts", 1, 64,
+      g_param_spec_uint("threads", "Threads", "CPU back end: threads sharing the per-pixel work, read when the element starts", 1, 64,
                         4, flags));
   g_object_class_install_property(object, PROP_IDENTITY_GRID,
       g_param_spec_boolean("identity-grid", "Identity grid",
                            "Test hook: skip the network and use a grid that maps luma to itself", FALSE, flags));
   g_object_class_install_property(object, PROP_DATA_DIR,
-      g_param_spec_string("data-dir", "Data directory", "Directory holding nntm.xml, nntm.bin and shading.f32",
+      g_param_spec_string("data-dir", "Data directory", "Directory holding nntm.xml, nntm.bin, nntm.spv, resize.spv and shading.f32",
                           NNTM_DATA_DIR, flags));
+  g_object_class_install_property(object, PROP_BACKEND,
+      g_param_spec_enum("backend", "Back end", "Where the pixel stages and the network run, read when the element starts",
+                        backend_type(), BACKEND_AUTO, flags));
 
   gst_element_class_set_static_metadata(element, "Neural tone mapping", "Filter/Effect/Video",
                                         "Local tone mapping of the Galaxy Book6 camera as its Windows driver does it",

@@ -1,4 +1,6 @@
-"""usage: check.py <datadir> <workdir>      (GST_PLUGIN_PATH must reach libgstnntm.so)"""
+"""usage: check.py <datadir> <workdir> [cpu|gpu]      (GST_PLUGIN_PATH must reach libgstnntm.so)
+
+Without a GPU (the Nix build sandbox) the cpu back end is checked and `auto` must fall back to it."""
 import subprocess
 import sys
 
@@ -47,13 +49,14 @@ def worst(a, b):
 
 def main():
     datadir, workdir = sys.argv[1:3]
+    backend = sys.argv[3] if len(sys.argv) > 3 else "cpu"
     shading = reference.load_shading(f"{datadir}/shading.f32")
     checks = []
     for rng in ("limited", "full"):
         src = f"{workdir}/in-{rng}.nv12"
         frames = clip(rng == "limited")
         frames.tofile(src)
-        props = [f"range={rng}", f"data-dir={datadir}"]
+        props = [f"range={rng}", f"data-dir={datadir}", f"backend={backend}"]
         for grid in ("network", "identity"):
             params = reference.Params(restricted=rng == "limited", shading=shading)
             ref = reference.Reference(datadir, params, grid == "identity")
@@ -63,6 +66,9 @@ def main():
             checks.append((f"{rng} {grid}: element vs input", worst(got, frames), *((2, 255) if grid == "network" else (0, 1))))
         got = element(workdir, f"bypass-{rng}", src, props + ["bypass=true"])
         checks.append((f"{rng} bypass: element vs input", worst(got, frames), 0, 0))
+        if backend == "cpu":
+            auto = element(workdir, f"auto-{rng}", src, props[:2] + ["backend=auto"])
+            checks.append((f"{rng} auto without a GPU: element vs cpu", worst(auto, np.fromfile(f"{workdir}/network-{rng}.nv12", np.uint8)), 0, 0))
     failed = False
     for name, value, lo, hi in checks:
         print(f"{name}: max difference {value} (allowed {lo}..{hi})")

@@ -2,7 +2,8 @@
 
 usage: extract.py <intelic_data.bin> <SC200PC_KAFC917_PTL.aiqb> <outdir>
 
-Writes nntm.xml and nntm.bin (the tone-mapping network, OpenVINO IR) and shading.f32
+Writes nntm.xml and nntm.bin (the tone-mapping network, OpenVINO IR), nntm.spv and resize.spv
+(Samsung's SPIR-V pixel and resize kernels) and shading.f32
 (u32 width, u32 height, then width*height float32: the normalised lens-shading gain
 the Windows tone-mapping parameter kernel derives its blend map from).
 """
@@ -13,6 +14,9 @@ import numpy as np
 
 MODEL_XML = "15056516632857880773"
 MODEL_BIN = "10459174756635267373"
+PIXEL_KERNELS = "5536108348999601368"
+RESIZE_KERNELS = "18038158106866911913"
+OUTPUTS = {MODEL_XML: "nntm.xml", MODEL_BIN: "nntm.bin", PIXEL_KERNELS: "nntm.spv", RESIZE_KERNELS: "resize.spv"}
 LENS_SHADING_RECORD = 28
 LIGHT_SOURCE_F11 = 19
 
@@ -70,9 +74,9 @@ def shading(aiqb):
 
 def main():
     intelic, aiqb, out = sys.argv[1:4]
-    found = dict((k, b) for k, b in blobs(open(intelic, "rb").read()) if k in (MODEL_XML, MODEL_BIN))
-    open(f"{out}/nntm.xml", "wb").write(found[MODEL_XML])
-    open(f"{out}/nntm.bin", "wb").write(found[MODEL_BIN])
+    found = dict((k, b) for k, b in blobs(open(intelic, "rb").read()) if k in OUTPUTS)
+    for key, name in OUTPUTS.items():
+        open(f"{out}/{name}", "wb").write(found[key])
     w, h, v = shading(open(aiqb, "rb").read())
     with open(f"{out}/shading.f32", "wb") as f:
         f.write(struct.pack("<II", w, h))
