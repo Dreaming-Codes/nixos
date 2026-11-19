@@ -43,6 +43,7 @@ in
       ./hal-face-detection.patch
       ./hal-two-exposures.patch
       ./hal-3a-inputs.patch
+      ./hal-nntm-params.patch
     ];
 
     cmakeFlags = old.cmakeFlags ++ ["-DFACE_DETECTION=ON"];
