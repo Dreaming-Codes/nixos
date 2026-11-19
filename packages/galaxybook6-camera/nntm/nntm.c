@@ -134,14 +134,23 @@ static Reduce reduce_new(int in) {
   return r;
 }
 
+void nntm_blend_q16(const NntmParams *p, int32_t *q16) {
+  int n = p->shading_w * p->shading_h;
+  float vmin = 2;
+  for (int i = 0; i < n; i++) vmin = p->shading[i] < vmin ? p->shading[i] : vmin;
+  for (int i = 0; i < n; i++) {
+    float b = vmin > 1e-4f ? ((1.0f / (p->shading[i] / vmin)) * p->radial + (1.0f - p->radial)) * p->strength : p->strength;
+    q16[i] = (int32_t)(b * 65536.0f);
+  }
+}
+
 static uint16_t *blend_new(const NntmParams *p, int w, int h) {
   int bw = p->shading_w, bh = p->shading_h;
-  float *m = malloc(bw * bh * sizeof(float)), vmin = 2;
-  for (int i = 0; i < bw * bh; i++) vmin = p->shading[i] < vmin ? p->shading[i] : vmin;
-  for (int i = 0; i < bw * bh; i++) {
-    float b = vmin > 1e-4f ? ((1.0f / (p->shading[i] / vmin)) * p->radial + (1.0f - p->radial)) * p->strength : p->strength;
-    m[i] = r1((float)(int)(b * 65536.0f) * (1.0f / 65536.0f));
-  }
+  float *m = malloc(bw * bh * sizeof(float));
+  int32_t *q16 = malloc(bw * bh * sizeof(int32_t));
+  nntm_blend_q16(p, q16);
+  for (int i = 0; i < bw * bh; i++) m[i] = r1((float)q16[i] * (1.0f / 65536.0f));
+  free(q16);
   CornerAlignedLerp ys = axis_new((float)(bh - 1) / (float)(h - 1), h, bh - 1), xs = axis_new((float)(bw - 1) / (float)(w - 1), w, bw - 1);
   uint16_t *blend = malloc((size_t)w * h * sizeof(uint16_t));
   for (int y = 0; y < h; y++) {
@@ -378,12 +387,19 @@ void nntm_grid_identity(uint16_t *fresh) {
   for (int i = 0; i < NNTM_GRID_LEN; i++) fresh[i] = i & 1 ? 0 : LUMA_ONE;
 }
 
+static inline int state_index(int cell, int c) { return (cell >> 3) * 16 + 8 * c + (cell & 7); }
+
 void nntm_grid_filter(NntmGrid state, const uint16_t *fresh, bool first) {
   const float a = r1((float)FILTER_STRENGTH);
   for (int cell = 0; cell < NNTM_GRID_LEN / 2; cell++)
     for (int c = 0; c < 2; c++) {
       float value = _cvtsh_ss(fresh[2 * cell + c]);
-      float *s = &state[(cell >> 3) * 16 + 8 * c + (cell & 7)];
+      float *s = &state[state_index(cell, c)];
       *s = first ? value : r1((1.0f - a) * *s + r1(value * a));
     }
+}
+
+void nntm_grid_halves(const NntmGrid state, uint16_t *halves) {
+  for (int cell = 0; cell < NNTM_GRID_LEN / 2; cell++)
+    for (int c = 0; c < 2; c++) halves[2 * cell + c] = _cvtss_sh(state[state_index(cell, c)], RN);
 }

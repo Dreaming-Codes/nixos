@@ -51,9 +51,14 @@ void nntm_luma_rows(const Nntm *t, const NntmFrame *f, float *narrow, int row0, 
 /* Vertical reduction of all narrow rows into NNTM_NET_SIZE * NNTM_NET_SIZE halves. */
 void nntm_luma_finish(const Nntm *t, const float *narrow, uint16_t *net_input);
 
+/* Blend map at the shading grid's size, as the Windows parameter kernel stores it: blend * 65536. */
+void nntm_blend_q16(const NntmParams *params, int32_t *q16);
+
 /* `fresh` is a network output: NNTM_GRID_LEN halves, [row][column][depth][coefficient]. */
 void nntm_grid_identity(uint16_t *fresh);
 void nntm_grid_filter(NntmGrid state, const uint16_t *fresh, bool first);
+/* The filtered grid as halves in the network's order, which is how Samsung's ltm_gain kernel reads it. */
+void nntm_grid_halves(const NntmGrid state, uint16_t *halves);
 
 /* Tone-map rows [row0, row1) in place; row0 and row1 are even. */
 void nntm_apply_rows(const Nntm *t, const NntmGrid grid, NntmFrame *f, int row0, int row1);

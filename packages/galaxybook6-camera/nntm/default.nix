@@ -34,7 +34,7 @@ in
       runHook preBuild
       $CC -O3 -mavx2 -mf16c -ffp-contract=off -Wall -Werror -fPIC -shared \
         -DPACKAGE='"nntm"' -DNNTM_DATA_DIR="\"$out/share/nntm\"" \
-        $(pkg-config --cflags gstreamer-video-1.0 openvino) gstnntm.c nntm.c \
+        $(pkg-config --cflags gstreamer-video-1.0 openvino) gstnntm.c backend_cpu.c nntm.c \
         $(pkg-config --libs gstreamer-video-1.0) $(pkg-config --libs-only-L openvino) -lopenvino_c -lm \
         -o libgstnntm.so
       runHook postBuild

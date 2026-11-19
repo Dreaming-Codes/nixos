@@ -3,7 +3,7 @@
 #include <gst/video/video.h>
 #include <openvino/c/openvino.h>
 
-#include "nntm.h"
+#include "backend.h"
 
 #define GST_TYPE_NNTM (gst_nntm_get_type())
 G_DECLARE_FINAL_TYPE(GstNntm, gst_nntm, GST, NNTM, GstVideoFilter)
@@ -11,17 +11,8 @@ G_DECLARE_FINAL_TYPE(GstNntm, gst_nntm, GST, NNTM, GstVideoFilter)
 GST_DEBUG_CATEGORY_STATIC(nntm_debug);
 #define GST_CAT_DEFAULT nntm_debug
 
-enum { SWEEP_ROWS = 16 };
 enum { RANGE_FULL, RANGE_LIMITED };
 enum { PROP_0, PROP_RANGE, PROP_STRENGTH, PROP_RADIAL, PROP_BYPASS, PROP_THREADS, PROP_IDENTITY_GRID, PROP_DATA_DIR };
-
-typedef struct {
-  GstNntm *self;
-  void (*rows)(GstNntm *self, int row0, int row1);
-  gint next, running;
-  GMutex lock;
-  GCond done;
-} Sweep;
 
 struct _GstNntm {
   GstVideoFilter parent;
@@ -34,17 +25,15 @@ struct _GstNntm {
 
   NntmParams params;
   gfloat *shading;
-  Nntm *tables;
+  NntmBackend *backend;
   gboolean stale, first;
-  NntmFrame frame;
-  gfloat *grid, *narrow;
+  gfloat *grid;
   guint16 *net_input;
 
   ov_core_t *core;
   ov_compiled_model_t *compiled;
   ov_infer_request_t *request;
   ov_tensor_t *input;
-  GThreadPool *pool;
   guint64 frames, usec[3];
 };
 
@@ -62,37 +51,6 @@ static GType range_type(void) {
   return type;
 }
 
-static void sweep_work(gpointer data, gpointer unused) {
-  Sweep *s = data;
-  int height = s->self->frame.height;
-  for (int row; (row = g_atomic_int_add(&s->next, SWEEP_ROWS)) < height;)
-    s->rows(s->self, row, MIN(row + SWEEP_ROWS, height));
-  g_mutex_lock(&s->lock);
-  if (--s->running == 0) g_cond_signal(&s->done);
-  g_mutex_unlock(&s->lock);
-}
-
-static void sweep(GstNntm *self, void (*rows)(GstNntm *, int, int)) {
-  Sweep s = {.self = self, .rows = rows, .running = self->threads};
-  g_mutex_init(&s.lock);
-  g_cond_init(&s.done);
-  for (guint i = 1; i < self->threads; i++) g_thread_pool_push(self->pool, &s, NULL);
-  sweep_work(&s, NULL);
-  g_mutex_lock(&s.lock);
-  while (s.running) g_cond_wait(&s.done, &s.lock);
-  g_mutex_unlock(&s.lock);
-  g_mutex_clear(&s.lock);
-  g_cond_clear(&s.done);
-}
-
-static void luma_rows(GstNntm *self, int row0, int row1) {
-  nntm_luma_rows(self->tables, &self->frame, self->narrow, row0, row1);
-}
-
-static void apply_rows(GstNntm *self, int row0, int row1) {
-  nntm_apply_rows(self->tables, self->grid, &self->frame, row0, row1);
-}
-
 static gboolean load_shading(GstNntm *self) {
   g_autofree gchar *path = g_build_filename(self->data_dir, "shading.f32", NULL);
   g_autofree gchar *data = NULL;
@@ -108,14 +66,14 @@ static gboolean load_shading(GstNntm *self) {
 }
 
 static gboolean load_network(GstNntm *self) {
+  const NntmBackendClass *k = self->backend->klass;
   g_autofree gchar *xml = g_build_filename(self->data_dir, "nntm.xml", NULL);
   g_autofree gchar *bin = g_build_filename(self->data_dir, "nntm.bin", NULL);
   int64_t dims[4] = {1, 1, NNTM_NET_SIZE, NNTM_NET_SIZE};
-  self->net_input = g_new(guint16, NNTM_NET_SIZE * NNTM_NET_SIZE);
   ov_model_t *model = NULL;
   ov_shape_t shape;
   gboolean ok = ov_core_create(&self->core) == OK && ov_core_read_model(self->core, xml, bin, &model) == OK &&
-                ov_core_compile_model(self->core, model, "CPU", 2, &self->compiled, "INFERENCE_NUM_THREADS", "1") == OK &&
+                ov_core_compile_model(self->core, model, k->net_device, 2, &self->compiled, k->net_key, k->net_value) == OK &&
                 ov_compiled_model_create_infer_request(self->compiled, &self->request) == OK &&
                 ov_shape_create(4, dims, &shape) == OK;
   if (ok) {
@@ -127,13 +85,37 @@ static gboolean load_network(GstNntm *self) {
   return ok;
 }
 
+static void release_network(GstNntm *self) {
+  if (self->input) ov_tensor_free(self->input);
+  if (self->request) ov_infer_request_free(self->request);
+  if (self->compiled) ov_compiled_model_free(self->compiled);
+  if (self->core) ov_core_free(self->core);
+  self->input = NULL;
+  self->request = NULL;
+  self->compiled = NULL;
+  self->core = NULL;
+}
+
+static void release(GstNntm *self) {
+  /* OpenVINO's GPU plugin runs threads on an OpenCL context of its own. Releasing it after the back
+   * end's OpenCL objects, or not at all before exit, can crash the process at exit. */
+  release_network(self);
+  if (self->backend) self->backend->klass->free(self->backend);
+  self->backend = NULL;
+  g_clear_pointer(&self->shading, g_free);
+  g_clear_pointer(&self->grid, g_free);
+  g_clear_pointer(&self->net_input, g_free);
+}
+
 static gboolean gst_nntm_start(GstBaseTransform *trans) {
   GstNntm *self = GST_NNTM(trans);
+  self->net_input = g_new(guint16, NNTM_NET_SIZE * NNTM_NET_SIZE);
+  self->backend = nntm_cpu_new(self->threads);
   if (!load_shading(self) || !load_network(self)) {
     GST_ELEMENT_ERROR(self, RESOURCE, OPEN_READ, ("cannot load tone-mapping data from %s", self->data_dir), (NULL));
+    release(self);
     return FALSE;
   }
-  if (self->threads > 1) self->pool = g_thread_pool_new(sweep_work, NULL, self->threads - 1, TRUE, NULL);
   self->grid = g_new(gfloat, NNTM_GRID_LEN);
   self->first = self->stale = TRUE;
   self->frames = self->usec[0] = self->usec[1] = self->usec[2] = 0;
@@ -143,67 +125,52 @@ static gboolean gst_nntm_start(GstBaseTransform *trans) {
 static gboolean gst_nntm_stop(GstBaseTransform *trans) {
   GstNntm *self = GST_NNTM(trans);
   if (self->frames)
-    GST_INFO_OBJECT(self, "%" G_GUINT64_FORMAT " frames, mean ms: luma %.2f network %.2f apply %.2f", self->frames,
-                    self->usec[0] / 1e3 / self->frames, self->usec[1] / 1e3 / self->frames,
-                    self->usec[2] / 1e3 / self->frames);
-  if (self->pool) g_thread_pool_free(self->pool, FALSE, TRUE);
-  if (self->input) ov_tensor_free(self->input);
-  if (self->request) ov_infer_request_free(self->request);
-  if (self->compiled) ov_compiled_model_free(self->compiled);
-  if (self->core) ov_core_free(self->core);
-  nntm_free(self->tables);
-  g_free(self->shading);
-  g_free(self->narrow);
-  g_free(self->grid);
-  g_free(self->net_input);
-  self->pool = NULL;
-  self->input = NULL;
-  self->request = NULL;
-  self->compiled = NULL;
-  self->core = NULL;
-  self->tables = NULL;
-  self->shading = self->narrow = self->grid = NULL;
-  self->net_input = NULL;
+    GST_INFO_OBJECT(self, "%s: %" G_GUINT64_FORMAT " frames, mean ms: luma %.2f network %.2f apply %.2f",
+                    self->backend->klass->name, self->frames, self->usec[0] / 1e3 / self->frames,
+                    self->usec[1] / 1e3 / self->frames, self->usec[2] / 1e3 / self->frames);
+  release(self);
   return TRUE;
 }
 
 static GstFlowReturn gst_nntm_transform_frame_ip(GstVideoFilter *filter, GstVideoFrame *frame) {
   GstNntm *self = GST_NNTM(filter);
+  const NntmBackendClass *k = self->backend->klass;
+  NntmFrame f = {
+    .y = GST_VIDEO_FRAME_PLANE_DATA(frame, 0),
+    .uv = GST_VIDEO_FRAME_PLANE_DATA(frame, 1),
+    .y_stride = GST_VIDEO_FRAME_PLANE_STRIDE(frame, 0),
+    .uv_stride = GST_VIDEO_FRAME_PLANE_STRIDE(frame, 1),
+    .width = GST_VIDEO_FRAME_WIDTH(frame),
+    .height = GST_VIDEO_FRAME_HEIGHT(frame),
+  };
   guint16 identity[NNTM_GRID_LEN];
   const guint16 *fresh = identity;
   ov_tensor_t *output = NULL;
   gint64 t[4];
 
   GST_OBJECT_LOCK(self);
-  gboolean bypass = self->bypass, identity_grid = self->identity_grid;
+  gboolean bypass = self->bypass, identity_grid = self->identity_grid, configured = TRUE;
   if (self->stale && !bypass) {
     self->params.restricted = self->range == RANGE_LIMITED;
     self->params.strength = self->strength;
     self->params.radial = self->radial;
-    self->frame.width = GST_VIDEO_FRAME_WIDTH(frame);
-    self->frame.height = GST_VIDEO_FRAME_HEIGHT(frame);
-    nntm_free(self->tables);
-    self->tables = nntm_new(&self->params, self->frame.width, self->frame.height);
-    self->narrow = g_realloc(self->narrow, (gsize)self->frame.height * NNTM_NET_SIZE * sizeof(gfloat));
+    configured = k->configure(self->backend, &self->params, f.width, f.height);
     self->stale = FALSE;
   }
   GST_OBJECT_UNLOCK(self);
   if (bypass) return GST_FLOW_OK;
-
-  self->frame.y = GST_VIDEO_FRAME_PLANE_DATA(frame, 0);
-  self->frame.uv = GST_VIDEO_FRAME_PLANE_DATA(frame, 1);
-  self->frame.y_stride = GST_VIDEO_FRAME_PLANE_STRIDE(frame, 0);
-  self->frame.uv_stride = GST_VIDEO_FRAME_PLANE_STRIDE(frame, 1);
+  if (!configured) {
+    GST_ELEMENT_ERROR(self, LIBRARY, INIT, ("%s back end cannot take %dx%d frames", k->name, f.width, f.height), (NULL));
+    return GST_FLOW_ERROR;
+  }
 
   t[0] = g_get_monotonic_time();
+  if (!k->prepare(self->backend, &f, frame->buffer->pool != NULL, identity_grid ? NULL : self->net_input)) goto failed;
+  t[1] = g_get_monotonic_time();
   if (identity_grid) {
     nntm_grid_identity(identity);
-    t[1] = t[0];
   } else {
     void *data;
-    sweep(self, luma_rows);
-    nntm_luma_finish(self->tables, self->narrow, self->net_input);
-    t[1] = g_get_monotonic_time();
     if (ov_infer_request_infer(self->request) != OK || ov_infer_request_get_output_tensor(self->request, &output) != OK ||
         ov_tensor_data(output, &data) != OK) {
       GST_ELEMENT_ERROR(self, LIBRARY, FAILED, ("tone-mapping network failed"), (NULL));
@@ -215,7 +182,7 @@ static GstFlowReturn gst_nntm_transform_frame_ip(GstVideoFilter *filter, GstVide
   if (output) ov_tensor_free(output);
   self->first = FALSE;
   t[2] = g_get_monotonic_time();
-  sweep(self, apply_rows);
+  if (!k->apply(self->backend, self->grid, &f)) goto failed;
   t[3] = g_get_monotonic_time();
 
   self->frames++;
@@ -223,6 +190,10 @@ static GstFlowReturn gst_nntm_transform_frame_ip(GstVideoFilter *filter, GstVide
   GST_LOG_OBJECT(self, "luma %" G_GINT64_FORMAT " network %" G_GINT64_FORMAT " apply %" G_GINT64_FORMAT " us",
                  t[1] - t[0], t[2] - t[1], t[3] - t[2]);
   return GST_FLOW_OK;
+
+failed:
+  GST_ELEMENT_ERROR(self, LIBRARY, FAILED, ("%s back end failed on a frame", k->name), (NULL));
+  return GST_FLOW_ERROR;
 }
 
 static gboolean gst_nntm_set_info(GstVideoFilter *filter, GstCaps *in, GstVideoInfo *in_info, GstCaps *out,
@@ -264,6 +235,7 @@ static void gst_nntm_get_property(GObject *object, guint id, GValue *value, GPar
 }
 
 static void gst_nntm_finalize(GObject *object) {
+  release(GST_NNTM(object));
   g_free(GST_NNTM(object)->data_dir);
   G_OBJECT_CLASS(gst_nntm_parent_class)->finalize(object);
 }
