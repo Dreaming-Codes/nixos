@@ -89,6 +89,7 @@ in {
         llmAgents.grok
         llmAgents.opencode2
         llmAgents.grok-bot
+        llmAgents.cursor-agent
         t3code
         t3code.desktop
         rio
