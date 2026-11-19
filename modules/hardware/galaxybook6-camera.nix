@@ -24,10 +24,12 @@ in {
 
     neuralToneMap = lib.mkOption {
       type = lib.types.bool;
-      default = false;
+      default = true;
       description = ''
         Run the local tone mapping network of Samsung's Windows driver on every frame, as
-        Windows does. It runs on the CPU and keeps most of one core busy while the camera is on.
+        Windows does: Samsung's kernels and the network on the integrated GPU through OpenCL and
+        OpenVINO. If the GPU back end cannot start it falls back to the CPU, which keeps most of
+        one core busy while the camera is on.
       '';
     };
   };
@@ -88,10 +90,15 @@ in {
       postStop = lib.mkForce "";
       # The HAL logs to stdout, which is block-buffered into the journal: lines arrive in 4 KB
       # blocks, up to an hour late.
-      environment = {
-        LD_PRELOAD = "${pkgs.coreutils}/libexec/coreutils/libstdbuf.so";
-        _STDBUF_O = "L";
-      };
+      environment =
+        {
+          LD_PRELOAD = "${pkgs.coreutils}/libexec/coreutils/libstdbuf.so";
+          _STDBUF_O = "L";
+        }
+        // lib.optionalAttrs cfg.neuralToneMap {
+          # No OpenCL runtime is installed system-wide; without this the tone mapping falls back to the CPU.
+          OCL_ICD_VENDORS = "${pkgs.intel-compute-runtime}/etc/OpenCL/vendors";
+        };
     };
 
     services.pipewire.wireplumber.extraConfig = {
