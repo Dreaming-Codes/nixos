@@ -1,0 +1,366 @@
+diff -ruN a/include/api/ICamera.h b/include/api/ICamera.h
+--- a/include/api/ICamera.h
++++ b/include/api/ICamera.h
+@@ -536,6 +536,17 @@
+  **/
+ int camera_get_parameters(int camera_id, Parameters& param, int64_t sequence = -1);
+ 
++/**
++ * \brief
++ *   Get the tone-mapping parameter kernel's output (PAL record of nntm_1_0) for one frame.
++ *
++ * \param[in] int camera_id, int64_t sequence: the frame, as camera_buffer_t carries it
++ * \param[out] void* data: size bytes; NULL asks for the size only
++ *
++ * \return the record's size in bytes; <0 when the frame has none or size is too small
++ */
++int camera_get_nntm_params(int camera_id, int64_t sequence, void* data, size_t size);
++
+ /**************************************Optional API ******************************
+  * The API defined in this section is optional.
+  */
+diff -ruN a/modules/algowrapper/IntelCca.cpp b/modules/algowrapper/IntelCca.cpp
+--- a/modules/algowrapper/IntelCca.cpp
++++ b/modules/algowrapper/IntelCca.cpp
+@@ -237,9 +237,8 @@
+ }
+ 
+ ia_err IntelCca::runAIC(uint64_t frameId, const cca::cca_pal_input_params* params,
+-                         uint8_t bitmap, int32_t aicId) {
+-    cca::cca_multi_pal_output output = {};
+-    const ia_err ret = getIntelCCA()->runAIC(frameId, *params, output, bitmap, aicId);
++                         uint8_t bitmap, int32_t aicId, cca::cca_multi_pal_output* output) {
++    const ia_err ret = getIntelCCA()->runAIC(frameId, *params, *output, bitmap, aicId);
+     LOG2("@%s, ret:%d", __func__, ret);
+ 
+     return ret;
+diff -ruN a/modules/algowrapper/IntelCca.h b/modules/algowrapper/IntelCca.h
+--- a/modules/algowrapper/IntelCca.h
++++ b/modules/algowrapper/IntelCca.h
+@@ -67,7 +67,7 @@
+     ia_err decodeStats(int32_t groupId, int64_t sequence, int32_t aicId,
+                        cca::cca_out_stats* outStats);
+     ia_err runAIC (uint64_t frameId, const cca::cca_pal_input_params* params,
+-                   uint8_t bitmap, int32_t aicId);
++                   uint8_t bitmap, int32_t aicId, cca::cca_multi_pal_output* output);
+ 
+     ia_err updateConfigurationResolutions(const cca::cca_aic_config& aicConf,
+                                           int32_t aicId, bool isKeyResChanged);
+diff -ruN a/src/3a/AiqResultStorage.cpp b/src/3a/AiqResultStorage.cpp
+--- a/src/3a/AiqResultStorage.cpp
++++ b/src/3a/AiqResultStorage.cpp
+@@ -154,5 +154,27 @@
+     return &mFaceResult[mCurrentFaceResultIndex];
+ }
+ 
++void AiqResultStorage::storeNntmParams(int64_t sequence, const void* data, size_t size) {
++    std::lock_guard<std::mutex> l(mNntmLock);
++    NntmParams& slot = mNntmParams[static_cast<size_t>(sequence) % kStorageSize];
++    slot.sequence = sequence;
++    slot.data.assign(static_cast<const uint8_t*>(data), static_cast<const uint8_t*>(data) + size);
++}
++
++int AiqResultStorage::copyNntmParams(int64_t sequence, void* data, size_t size) {
++    std::lock_guard<std::mutex> l(mNntmLock);
++    const NntmParams& slot = mNntmParams[static_cast<size_t>(sequence) % kStorageSize];
++    if ((sequence < 0) || (slot.sequence != sequence)) {
++        return NAME_NOT_FOUND;
++    }
++    if (data == nullptr) {
++        return static_cast<int>(slot.data.size());
++    }
++    CheckAndLogError(size < slot.data.size(), BAD_VALUE, "%s: %zu bytes needed, %zu given", __func__,
++                     slot.data.size(), size);
++    MEMCPY_S(data, size, slot.data.data(), slot.data.size());
++    return static_cast<int>(slot.data.size());
++}
++
+ } //namespace icamera
+ 
+diff -ruN a/src/3a/AiqResultStorage.h b/src/3a/AiqResultStorage.h
+--- a/src/3a/AiqResultStorage.h
++++ b/src/3a/AiqResultStorage.h
+@@ -17,6 +17,8 @@
+ #pragma once
+ 
+ #include <map>
++#include <mutex>
++#include <vector>
+ 
+ #include "AiqResult.h"
+ 
+@@ -122,6 +124,9 @@
+      */
+     FaceDetectionResult* getFaceResult();
+ 
++    void storeNntmParams(int64_t sequence, const void* data, size_t size);
++    int copyNntmParams(int64_t sequence, void* data, size_t size);
++
+     AiqResultStorage(int cameraId);
+     ~AiqResultStorage();
+ 
+@@ -141,6 +146,13 @@
+     int mCurrentFaceResultIndex = -1;
+     FaceDetectionResult mFaceResult[kFaceResultStorageSize];
+     RWLock mFaceLock;
++
++    struct NntmParams {
++        int64_t sequence = -1;
++        std::vector<uint8_t> data;
++    };
++    NntmParams mNntmParams[kStorageSize];
++    std::mutex mNntmLock;
+ };
+ 
+ } //namespace icamera
+diff -ruN a/src/core/IpuPacAdaptor.cpp b/src/core/IpuPacAdaptor.cpp
+--- a/src/core/IpuPacAdaptor.cpp
++++ b/src/core/IpuPacAdaptor.cpp
+@@ -31,6 +31,8 @@
+ #include "AiqResultStorage.h"
+ #include "PlatformData.h"
+ #include "ia_pal_types_isp_ids_autogen.h"
++#include "CBLayoutUtils.h"
++#include "AiqUtils.h"
+ 
+ namespace icamera {
+ 
+@@ -92,6 +94,8 @@
+         mIntelCca->freeMem(it.second);
+     }
+     mStreamIdToInputParams.clear();
++    mNntmGroup.clear();
++    mNntmHistory.clear();
+ 
+     {
+         AutoMutex l(mIpuParamLock);
+@@ -130,6 +134,64 @@
+     return OK;
+ }
+ 
++// The parameter kernel of a software node has no terminals: its output exists only in the
++// group's PAL output, which runAIC returns.
++status_t IpuPacAdaptor::configNntm(int streamId, uint8_t groupId, aic::ImagingKernelGroup* kernels) {
++    cca::cca_aic_config aicConfig{};
++    aicConfig.cb_num = 1;
++    aicConfig.cb_config[0].group_id = groupId;
++    aicConfig.cb_config[0].fragment_count = 0;
++    aicConfig.cb_config[0].kernel_group = kernels;
++    cca::cca_aic_kernel_offset offset{};
++    offset.cb_num = 1;
++    offset.cb_kernel_offset[0].group_id = groupId;
++    cca::cca_aic_terminal_config termConfig{};
++    termConfig.cb_num = 1;
++    termConfig.cb_terminal_buf[0].group_id = groupId;
++    const status_t ret = pacConfig(streamId, aicConfig, offset, nullptr, &termConfig,
++                                   CBLayoutUtils::getStatsBufToTermIds());
++    if (ret == OK) {
++        AutoMutex l(mPacAdaptorLock);
++        mNntmGroup[streamId] = groupId;
++        const ia_isp_bxt_resolution_info_t* history = kernels->kernelList[0].run_kernel.resolution_history;
++        if (history != nullptr) {
++            mNntmHistory[streamId] = *history;
++        }
++    }
++    return ret;
++}
++
++// The kernel takes faces in pixels of the sensor frame and maps them through its own resolution
++// history.
++void IpuPacAdaptor::setNntmFaces(int streamId, cca::cca_pal_input_params* params) {
++    params->face_roi.num_faces = 0;
++    params->face_roi.faces = mNntmFaces;
++    const auto history = mNntmHistory.find(streamId);
++    const FaceDetectionResult* result = mAiqResultStorage->getFaceResult();
++    if ((history == mNntmHistory.end()) || (result == nullptr)) {
++        return;
++    }
++    const ia_isp_bxt_resolution_info_t& h = history->second;
++    const camera_coordinate_system_t ia = {IA_COORDINATE_LEFT, IA_COORDINATE_TOP,
++                                           IA_COORDINATE_RIGHT, IA_COORDINATE_BOTTOM};
++    const camera_coordinate_system_t sensor = {h.input_crop.left, h.input_crop.top,
++                                               h.input_width - h.input_crop.right,
++                                               h.input_height - h.input_crop.bottom};
++    const uint32_t count = std::min<uint32_t>(result->ccaFaceState.num_faces, cca::MAX_FACE_NUM);
++    for (uint32_t i = 0U; i < count; i++) {
++        const ia_rectangle& area = result->ccaFaceState.faces[i].face_area;
++        const camera_coordinate_t lt =
++            AiqUtils::convertCoordinateSystem(ia, sensor, {area.left, area.top});
++        const camera_coordinate_t rb =
++            AiqUtils::convertCoordinateSystem(ia, sensor, {area.right, area.bottom});
++        ia_face_roi& roi = mNntmFaces[i];
++        CLEAR(roi);
++        roi.face_area = {lt.x, lt.y, rb.x, rb.y};
++        roi.tracking_id = result->ccaFaceState.faces[i].tracking_id;
++    }
++    params->face_roi.num_faces = count;
++}
++
+ void IpuPacAdaptor::clearAicResult() {
+     AutoMutex l(mPacAdaptorLock);
+     mPacRunHistMap.clear();
+@@ -429,7 +491,11 @@
+ 
+     // TODO: Set camera_params
+ 
++    setNntmFaces(streamId, inputParams);
++
+     ia_err iaErr = ia_err_none;
++    cca::cca_multi_pal_output output = {};
++    output.cb_num = cca::MAX_PG_NUM;
+     {
+         PERF_CAMERA_ATRACE_PARAM1_IMAGING("pac_run", 1);
+ 
+@@ -439,11 +505,20 @@
+         }
+         // HDR_FEATURE_E
+ 
+-        iaErr = mIntelCca->runAIC(aiqResults->mFrameId, inputParams, 0xffU, streamId);
++        iaErr = mIntelCca->runAIC(aiqResults->mFrameId, inputParams, 0xffU, streamId, &output);
+     }
+     CheckAndLogError((iaErr != ia_err_none) && (iaErr != ia_err_not_run), UNKNOWN_ERROR,
+                      "Pac parameter adaptation has failed %d", iaErr);
+ 
++    const auto nntm = mNntmGroup.find(streamId);
++    for (uint32_t i = 0U; (nntm != mNntmGroup.end()) && (i < cca::MAX_PG_NUM); i++) {
++        const cca::cca_pal_output& o = output.cb_output[i];
++        if ((o.group_id == nntm->second) && (o.bin.data != nullptr)) {
++            mAiqResultStorage->storeNntmParams(settingSequence, o.bin.data, o.bin.size);
++            break;
++        }
++    }
++
+     (void)storeTerminalResult(settingSequence, streamId);
+ 
+     mPacRunHistMap[pacItem] = false;
+diff -ruN a/src/core/IpuPacAdaptor.h b/src/core/IpuPacAdaptor.h
+--- a/src/core/IpuPacAdaptor.h
++++ b/src/core/IpuPacAdaptor.h
+@@ -65,6 +65,7 @@
+                                 const PacTerminalBufMap& bufferMap);
+     status_t registerBuffer(int streamId, const cca::cca_aic_terminal_config& termCfg);
+     status_t runAIC(const IspSettings* ispSettings, int64_t settingSequence, int32_t streamId);
++    status_t configNntm(int streamId, uint8_t groupId, aic::ImagingKernelGroup* kernels);
+     status_t updateResolutionSettings(int streamId, const cca::cca_aic_config& aicConfig,
+                                       bool isKeyResChanged);
+ 
+@@ -81,6 +82,7 @@
+                           ia_media_format* mediaFormat, bool* useLinearGamma,
+                           int64_t sequence);
+     bool isStatsUsed(int streamId, int64_t sequence);
++    void setNntmFaces(int streamId, cca::cca_pal_input_params* params);
+     void dumpAicOutput(int64_t sequence, int streamId, cca::cca_multi_pal_output pacOutput);
+ 
+     DISALLOW_COPY_AND_ASSIGN(IpuPacAdaptor);
+@@ -114,6 +116,9 @@
+ 
+     std::map<std::pair<int, uint8_t>, std::vector<CBTerminalResult> > mTerminalResult;
+     std::map<int, cca::cca_pal_input_params*> mStreamIdToInputParams;
++    std::map<int, int32_t> mNntmGroup;
++    std::map<int, ia_isp_bxt_resolution_info_t> mNntmHistory;
++    ia_face_roi mNntmFaces[cca::MAX_FACE_NUM];
+ 
+     int64_t mLastStatsSequence;
+     static const uint8_t MAX_CACHE_PAC_HIST = 6;
+diff -ruN a/src/core/processingUnit/PipeLine.cpp b/src/core/processingUnit/PipeLine.cpp
+--- a/src/core/processingUnit/PipeLine.cpp
++++ b/src/core/processingUnit/PipeLine.cpp
+@@ -306,11 +306,28 @@
+         }
+     }
+ 
++    configureNntmParams(numLinks, links);
+     dumpPSysGraph();
+ 
+     return OK;
+ }
+ 
++void PipeLine::configureNntmParams(int32_t numLinks, GraphLink** links) {
++    static constexpr uint32_t kNntmKernelUuid = 46539U;
++    for (int32_t i = 0; i < numLinks; i++) {
++        OuterNode* node = links[i]->destNode;
++        if (node == nullptr || node->type != NodeTypes::Sw || node->nodeKernels.kernelCount != 1U ||
++            node->nodeKernels.kernelList[0].run_kernel.kernel_uuid != kNntmKernelUuid) {
++            continue;
++        }
++        const status_t ret = mPacAdaptor->configNntm(mStreamId, node->contextId, &node->nodeKernels);
++        if (ret != OK) {
++            LOGW("%s: tone-mapping parameter kernel not configured, ret %d", __func__, ret);
++        }
++        return;
++    }
++}
++
+ status_t PipeLine::updateConfigurationSettingForPtz(bool isKeyResChanged) {
+     cca::cca_aic_config aicConfig{};
+ 
+diff -ruN a/src/core/processingUnit/PipeLine.h b/src/core/processingUnit/PipeLine.h
+--- a/src/core/processingUnit/PipeLine.h
++++ b/src/core/processingUnit/PipeLine.h
+@@ -96,6 +96,7 @@
+ 
+     status_t createPipeStages();
+     status_t configurePipeStages();
++    void configureNntmParams(int32_t numLinks, GraphLink** links);
+     status_t createPSysGraph(int32_t numLinks, GraphLink** links);
+ 
+     void dumpPSysGraph();
+diff -ruN a/src/hal/hal_adaptor/HalAdaptor.cpp b/src/hal/hal_adaptor/HalAdaptor.cpp
+--- a/src/hal/hal_adaptor/HalAdaptor.cpp
++++ b/src/hal/hal_adaptor/HalAdaptor.cpp
+@@ -142,6 +142,7 @@
+     GET_FUNC_CALL(cameraStreamDqbuf, camera_stream_dqbuf);
+     GET_FUNC_CALL(cameraSetParameters, camera_set_parameters);
+     GET_FUNC_CALL(cameraGetParameters, camera_get_parameters);
++    GET_FUNC_CALL(cameraGetNntmParams, camera_get_nntm_params);
+     GET_FUNC_CALL(getHalFrameSize, get_frame_size);
+ }
+ 
+@@ -239,6 +240,11 @@
+     return gCameraHalAdaptor.cameraGetParameters(camera_id, param, sequence);
+ }
+ 
++int camera_get_nntm_params(int camera_id, int64_t sequence, void* data, size_t size) {
++    CheckFuncCall(gCameraHalAdaptor.cameraGetNntmParams);
++    return gCameraHalAdaptor.cameraGetNntmParams(camera_id, sequence, data, size);
++}
++
+ int get_frame_size(int camera_id, int format, int width, int height, int field, int* bpp) {
+     CheckFuncCall(gCameraHalAdaptor.getHalFrameSize);
+     return gCameraHalAdaptor.getHalFrameSize(camera_id, format, width, height, field, bpp);
+diff -ruN a/src/hal/hal_adaptor/HalAdaptor.h b/src/hal/hal_adaptor/HalAdaptor.h
+--- a/src/hal/hal_adaptor/HalAdaptor.h
++++ b/src/hal/hal_adaptor/HalAdaptor.h
+@@ -43,6 +43,7 @@
+                   Parameters* settings);
+     _DEF_HAL_FUNC(int, cameraSetParameters, int camera_id, const Parameters& param);
+     _DEF_HAL_FUNC(int, cameraGetParameters, int camera_id, Parameters& param, int64_t sequence);
++    _DEF_HAL_FUNC(int, cameraGetNntmParams, int camera_id, int64_t sequence, void* data, size_t size);
+     _DEF_HAL_FUNC(int, getHalFrameSize, int camera_id, int format, int width, int height,
+                   int field, int* bpp);
+ };
+diff -ruN a/src/hal/ICamera.cpp b/src/hal/ICamera.cpp
+--- a/src/hal/ICamera.cpp
++++ b/src/hal/ICamera.cpp
+@@ -19,6 +19,8 @@
+ #include "ICamera.h"
+ 
+ #include "CameraHal.h"
++#include "CameraContext.h"
++#include "AiqResultStorage.h"
+ #include "ParameterConvert.h"
+ #include "PlatformData.h"
+ #include "iutils/CameraDump.h"
+@@ -323,6 +325,12 @@
+     return gCameraHal->getParameters(camera_id, param, sequence);
+ }
+ 
++int camera_get_nntm_params(int camera_id, int64_t sequence, void* data, size_t size) {
++    CheckCameraId(camera_id, BAD_VALUE);
++    return CameraContext::getInstance(camera_id)->getAiqResultStorage()->copyNntmParams(
++        sequence, data, size);
++}
++
+ int get_frame_size(int camera_id, int format, int width, int height, int field, int* bpp) {
+     CheckAndLogError(width <= 0, BAD_VALUE, "width <= 0");
+     CheckAndLogError(height <= 0, BAD_VALUE, "height <= 0");

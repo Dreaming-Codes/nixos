@@ -1,0 +1,534 @@
+diff -ruN a/config/linux/ipu75xa/pipe_scheduler_profiles.json b/config/linux/ipu75xa/pipe_scheduler_profiles.json
+--- a/config/linux/ipu75xa/pipe_scheduler_profiles.json
++++ b/config/linux/ipu75xa/pipe_scheduler_profiles.json
+@@ -99,6 +99,33 @@
+           },
+         ],
+       },
++      {
++        "id": 3, "graphId": 100032,
++        "pipe_executors": [
++          {
++            "name": "video_lb",
++            "nodes": [
++              "lbff",
++              "bbps",
++            ],
++          },
++          {
++            "name": "video_bb",
++            "nodes": [
++              "post_1",
++              "post_2",
++            ],
++          },
++          {
++            "name": "still_full",
++            "nodes": [
++              "lbff1",
++              "bbps1",
++              "post_0",
++            ],
++          },
++        ],
++      },
+     ],
+   }
+ }
+diff -ruN a/modules/v4l2/v4l2_device.cc b/modules/v4l2/v4l2_device.cc
+--- a/modules/v4l2/v4l2_device.cc
++++ b/modules/v4l2/v4l2_device.cc
+@@ -227,6 +227,17 @@
+     return ::ioctl(fd_, VIDIOC_S_EXT_CTRLS, &controls);
+ }
+ 
++int V4L2Device::SetControls(struct v4l2_ext_control* ext_controls, uint32_t count) {
++    if (!IsOpened()) {
++        LOGE("%s: Device node %s is not opened!", __func__, name_.c_str());
++        return -EINVAL;
++    }
++    struct v4l2_ext_controls controls = {};
++    controls.count = count;
++    controls.controls = ext_controls;
++    return ::ioctl(fd_, VIDIOC_S_EXT_CTRLS, &controls);
++}
++
+ int V4L2Device::SetControl(int id, int32_t value) {
+     LOG1("@%s", __func__);
+ 
+diff -ruN a/modules/v4l2/v4l2_device.h b/modules/v4l2/v4l2_device.h
+--- a/modules/v4l2/v4l2_device.h
++++ b/modules/v4l2/v4l2_device.h
+@@ -169,6 +169,8 @@
+     int SetControl(int id, const std::string& value);
+     int SetControl(struct v4l2_control* control);
+ 
++    int SetControls(struct v4l2_ext_control* ext_controls, uint32_t count);
++
+     // These methods gets the control of V4L2 device.
+     //
+     // Args:
+diff -ruN a/src/3a/AiqCore.cpp b/src/3a/AiqCore.cpp
+--- a/src/3a/AiqCore.cpp
++++ b/src/3a/AiqCore.cpp
+@@ -327,6 +327,11 @@
+         mSaParams.lsc_on = mLensShadingMapMode == LENS_SHADING_MAP_MODE_ON ? true : false;
+         mAiqParams->sa_input = mSaParams;
+     }
++
++    // The stitched statistics of a two-exposure frame are decoded from this run's BCOMP result.
++    if (mIntel3AParameter->mAeParams.num_exposures > 1U) {
++        mAiqParams->bitmap |= cca::CCA_MODULE_BCOM;
++    }
+     LOG2("bitmap:%d, mAiqRunTime:%lu", mAiqParams->bitmap, mAiqRunTime);
+ 
+     // runAIQ for awb/af/gbce/pa/sa
+@@ -430,6 +435,8 @@
+     IntelCca* intelCca = getIntelCca(mTuningMode);
+     CheckAndLogError(intelCca == nullptr, UNKNOWN_ERROR, "%s, intelCca is null, m:%d",
+                      __func__, mTuningMode);
++    const ia_aiq_bracket_mode lastBracketMode = newAeResults->multiframe;
++    const ia_aiq_ae_flicker_reduction lastFlicker = newAeResults->flicker_reduction_mode;
+     {
+         PERF_CAMERA_ATRACE_PARAM1_IMAGING("intelCca->runAEC", 1U);
+         const ia_err iaErr = intelCca->runAEC(ccaId, mIntel3AParameter->mAeParams, newAeResults);
+@@ -437,6 +444,18 @@
+         CheckAndLogError(ret != OK, ret, "Error running AE, ret: %d", ret);
+     }
+ 
++    if ((newAeResults->num_exposures > 1U) &&
++        ((newAeResults->multiframe != lastBracketMode) ||
++         (newAeResults->flicker_reduction_mode != lastFlicker))) {
++        LOGI("<cca%ld>AE bracket mode 0x%x long only %d (shdr_ldr_mode %u), flicker %d, "
++             "short %u us long %u us",
++             ccaId, newAeResults->multiframe,
++             (newAeResults->multiframe & ia_aiq_bracket_mode_shdr_ldr_switch) != 0,
++             newAeResults->shdr_ldr_mode, newAeResults->flicker_reduction_mode,
++             newAeResults->exposures[0].exposure[0].exposure_time_us,
++             newAeResults->exposures[1].exposure[0].exposure_time_us);
++    }
++
+     if (!mAeForceLock) {
+         // Save exposure results if unlocked
+         mLockedExposureTimeUs = newAeResults->exposures[0].exposure[0].exposure_time_us;
+diff -ruN a/src/3a/AiqEngine.cpp b/src/3a/AiqEngine.cpp
+--- a/src/3a/AiqEngine.cpp
++++ b/src/3a/AiqEngine.cpp
+@@ -328,6 +328,10 @@
+         LOG2("@%s, sensor ae is enabled", __func__);
+         statsParams.using_rgbs_for_aec = true;
+     }
++    if (PlatformData::getExposureNum(
++            mCameraId, PlatformData::isMultiExposureCase(mCameraId, aiqParams.tuningMode)) > 1) {
++        statsParams.using_rgbs_for_aec = true;
++    }
+ 
+     mAiqCore->setStatsParams(statsParams, aiqStats);
+ 
+diff -ruN a/src/3a/AiqUnit.cpp b/src/3a/AiqUnit.cpp
+--- a/src/3a/AiqUnit.cpp
++++ b/src/3a/AiqUnit.cpp
+@@ -172,6 +172,14 @@
+             params->bitmap |= cca::CCA_MODULE_AF;
+         }
+ 
++        const int exposureNum = PlatformData::getExposureNum(
++            mCameraId, PlatformData::isMultiExposureCase(mCameraId, tuningMode));
++        if (exposureNum > 1) {
++            params->bitmap |= cca::CCA_MODULE_BCOM;
++            params->dolMode = ia_bcomp_staggered_hdr_mode;
++            params->num_exposures = exposureNum;
++        }
++
+         std::shared_ptr<GraphConfig> graphConfig =
+             CameraContext::getInstance(mCameraId)->getGraphConfig(cfg);
+         if (graphConfig != nullptr) {
+diff -ruN a/src/core/processingUnit/PipeManager.cpp b/src/core/processingUnit/PipeManager.cpp
+--- a/src/core/processingUnit/PipeManager.cpp
++++ b/src/core/processingUnit/PipeManager.cpp
+@@ -90,6 +90,18 @@
+ int PipeManager::start() {
+     int ret = OK;
+ 
++#ifdef DOL_FEATURE
++    std::string shortNode;
++    if (!mDolCopyBuffers.empty() &&
++        (PlatformData::getDevNameByType(mCameraId, VIDEO_GENERIC_SHORT_EXPO, shortNode) == OK) &&
++        !shortNode.empty()) {
++        const stream_t& s = mInputFrameInfo.at(mDefaultMainInputPort);
++        ret = mShortSource.start(shortNode.c_str(), s.width, s.height, s.format);
++        CheckAndLogError(ret != OK, ret, "Failed to capture the short exposure from %s",
++                         shortNode.c_str());
++    }
++#endif
++
+     for (auto& pipeLine : mPipeLines) {
+         ret = pipeLine.second->start();
+         CheckAndLogError(ret != OK, ret, "Failed to start pipeline");
+@@ -98,6 +110,10 @@
+ }
+ 
+ int PipeManager::stop() {
++#ifdef DOL_FEATURE
++    mShortSource.stop();
++    mLastShortFrame = nullptr;
++#endif
+     for (auto& pipeLine : mPipeLines) {
+         pipeLine.second->stop();
+     }
+@@ -670,6 +686,33 @@
+                      sequence, inputMap.mStreamId, inputMap.mStagePort, inputFrame.first);
+ #ifdef DOL_FEATURE
+                 auto copies = mDolCopyBuffers.find(inputMap.mStagePort);
++                if (mShortSource.isStarted()) {
++                    // The node's long input takes the frame as captured; its main input takes
++                    // the short exposure.
++                    if (copies != mDolCopyBuffers.end()) {
++                        inputMap.mPipeStage->onBufferAvailable(inputMap.mStagePort,
++                                                               inputFrame.second);
++                        continue;
++                    }
++                    const auto& src = inputFrame.second;
++                    auto& ring = mDolCopyBuffers.begin()->second;
++                    auto& dst = ring[static_cast<size_t>(sequence) % ring.size()];
++                    if (mShortSource.copyFrame(src->getTimestamp(), dst->getBufferAddr(),
++                                               dst->getBufferSize())) {
++                        mLastShortFrame = dst;
++                    } else if ((mLastShortFrame != nullptr) && (mLastShortFrame != dst)) {
++                        LOG2("<seq%ld>no short exposure, the last one again", sequence);
++                        MEMCPY_S(dst->getBufferAddr(), dst->getBufferSize(),
++                                 mLastShortFrame->getBufferAddr(),
++                                 mLastShortFrame->getBufferSize());
++                        ShortExposureSource::flushCache(dst->getBufferAddr(),
++                                                        dst->getBufferSize());
++                    }
++                    dst->setSequence(src->getSequence());
++                    dst->setTimestamp(src->getTimestamp());
++                    inputMap.mPipeStage->onBufferAvailable(inputMap.mStagePort, dst);
++                    continue;
++                }
+                 if (copies != mDolCopyBuffers.end()) {
+                     const auto& src = inputFrame.second;
+                     auto& dst = copies->second[static_cast<size_t>(sequence) % copies->second.size()];
+diff -ruN a/src/core/processingUnit/PipeManager.h b/src/core/processingUnit/PipeManager.h
+--- a/src/core/processingUnit/PipeManager.h
++++ b/src/core/processingUnit/PipeManager.h
+@@ -26,6 +26,9 @@
+ #include "IpuPacAdaptor.h"
+ #include "PipeLine.h"
+ #include "PlatformData.h"
++#ifdef DOL_FEATURE
++#include "ShortExposureSource.h"
++#endif
+ 
+ namespace icamera {
+ 
+@@ -100,6 +103,8 @@
+     // Stage input ports fed from an already-bound frame (DOL long input with a
+     // linear sensor), each with its own ring of buffers holding a copy.
+     std::map<uuid, std::vector<std::shared_ptr<CameraBuffer>>> mDolCopyBuffers;
++    ShortExposureSource mShortSource;
++    std::shared_ptr<CameraBuffer> mLastShortFrame;
+ #endif
+ 
+     // pair of streamid and pipeLine for YUV reprocessing
+diff -ruN a/src/core/processingUnit/ShortExposureSource.h b/src/core/processingUnit/ShortExposureSource.h
+--- a/src/core/processingUnit/ShortExposureSource.h
++++ b/src/core/processingUnit/ShortExposureSource.h
+@@ -0,0 +1,221 @@
++/*
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#pragma once
++
++#include <fcntl.h>
++#include <linux/videodev2.h>
++#include <poll.h>
++#include <sys/ioctl.h>
++#include <sys/mman.h>
++#include <sys/time.h>
++#include <unistd.h>
++
++#include <algorithm>
++#include <atomic>
++#include <chrono>
++#include <condition_variable>
++#include <cstring>
++#include <deque>
++#include <mutex>
++#include <thread>
++#include <vector>
++
++namespace icamera {
++
++/**
++ * The sensor ends the short frame of an exposure pair a fixed number of rows
++ * after the long one, less than half a frame period, so frames pair by timestamp.
++ */
++class ShortExposureSource {
++ public:
++    ~ShortExposureSource() { stop(); }
++
++    bool isStarted() const { return mFd >= 0; }
++
++    int start(const char* devName, uint32_t width, uint32_t height, uint32_t pixelFormat) {
++        stop();
++
++        mFd = open(devName, O_RDWR | O_NONBLOCK);
++        if (mFd < 0) return -1;
++
++        struct v4l2_format fmt = {};
++        fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++        fmt.fmt.pix.width = width;
++        fmt.fmt.pix.height = height;
++        fmt.fmt.pix.pixelformat = pixelFormat;
++        fmt.fmt.pix.field = V4L2_FIELD_NONE;
++
++        struct v4l2_requestbuffers req = {};
++        req.count = kBufferCount;
++        req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++        req.memory = V4L2_MEMORY_MMAP;
++
++        if ((ioctl(mFd, VIDIOC_S_FMT, &fmt) != 0) || (ioctl(mFd, VIDIOC_REQBUFS, &req) != 0)) {
++            stop();
++            return -1;
++        }
++
++        for (uint32_t i = 0U; i < req.count; i++) {
++            struct v4l2_buffer buf = {};
++            buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++            buf.memory = V4L2_MEMORY_MMAP;
++            buf.index = i;
++            if (ioctl(mFd, VIDIOC_QUERYBUF, &buf) != 0) break;
++
++            void* addr = mmap(nullptr, buf.length, PROT_READ, MAP_SHARED, mFd, buf.m.offset);
++            if (addr == MAP_FAILED) break;
++            mBuffers.push_back({addr, buf.length});
++
++            if (ioctl(mFd, VIDIOC_QBUF, &buf) != 0) break;
++        }
++
++        int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++        if ((mBuffers.size() != req.count) || (ioctl(mFd, VIDIOC_STREAMON, &type) != 0)) {
++            stop();
++            return -1;
++        }
++
++        mRun = true;
++        mThread = std::thread(&ShortExposureSource::captureLoop, this);
++        return 0;
++    }
++
++    void stop() {
++        if (mThread.joinable()) {
++            mRun = false;
++            mThread.join();
++        }
++        if (mFd >= 0) {
++            int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++            (void)ioctl(mFd, VIDIOC_STREAMOFF, &type);
++        }
++        for (auto& buf : mBuffers) {
++            (void)munmap(buf.addr, buf.length);
++        }
++        mBuffers.clear();
++        mReady.clear();
++        if (mFd >= 0) {
++            (void)close(mFd);
++            mFd = -1;
++        }
++    }
++
++    /**
++     * Copy the short frame that pairs with the long frame stamped longTime.
++     * Returns false when the sensor or ISYS dropped it; dst is left alone.
++     */
++    bool copyFrame(const struct timeval& longTime, void* dst, size_t size) {
++        const int64_t longUs = toUs(longTime);
++        const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(50);
++
++        std::unique_lock<std::mutex> lock(mLock);
++        while (true) {
++            while (!mReady.empty() && (mReady.front().us < longUs - kPairJitterUs)) {
++                queueBuffer(mReady.front().index);
++                mReady.pop_front();
++            }
++            if (!mReady.empty()) break;
++            if (mArrived.wait_until(lock, deadline) == std::cv_status::timeout) return false;
++        }
++
++        const Frame frame = mReady.front();
++        if (frame.us - longUs > mPeriodUs / 2) return false;
++
++        mReady.pop_front();
++        (void)memcpy(dst, mBuffers[frame.index].addr, std::min(size, frame.bytes));
++        flushCache(dst, std::min(size, frame.bytes));
++        queueBuffer(frame.index);
++        return true;
++    }
++
++    // PSYS does not snoop the CPU caches, and the driver skips its flush for the
++    // HAL's own buffers, which it takes to be written by hardware only.
++    __attribute__((target("clflushopt"))) static void flushCache(void* addr, size_t size) {
++        char* p = static_cast<char*>(addr);
++        for (size_t i = 0U; i < size; i += 64U) {
++            __builtin_ia32_clflushopt(p + i);
++        }
++        __builtin_ia32_mfence();
++    }
++
++ private:
++    struct Buffer {
++        void* addr;
++        size_t length;
++    };
++    struct Frame {
++        uint32_t index;
++        int64_t us;
++        size_t bytes;
++    };
++
++    static int64_t toUs(const struct timeval& t) {
++        return static_cast<int64_t>(t.tv_sec) * 1000000 + t.tv_usec;
++    }
++
++    void queueBuffer(uint32_t index) {
++        struct v4l2_buffer buf = {};
++        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++        buf.memory = V4L2_MEMORY_MMAP;
++        buf.index = index;
++        (void)ioctl(mFd, VIDIOC_QBUF, &buf);
++    }
++
++    void captureLoop() {
++        int64_t lastUs = 0;
++
++        while (mRun) {
++            struct pollfd pfd = {mFd, POLLIN, 0};
++            if (poll(&pfd, 1, 100) <= 0) continue;
++
++            struct v4l2_buffer buf = {};
++            buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++            buf.memory = V4L2_MEMORY_MMAP;
++            if (ioctl(mFd, VIDIOC_DQBUF, &buf) != 0) continue;
++
++            std::lock_guard<std::mutex> lock(mLock);
++            if ((buf.flags & V4L2_BUF_FLAG_ERROR) != 0U) {
++                queueBuffer(buf.index);
++                continue;
++            }
++
++            const int64_t us = toUs(buf.timestamp);
++            if (lastUs != 0) mPeriodUs = us - lastUs;
++            lastUs = us;
++
++            mReady.push_back({buf.index, us, buf.bytesused});
++            if (mReady.size() > kHeldFrames) {
++                queueBuffer(mReady.front().index);
++                mReady.pop_front();
++            }
++            mArrived.notify_all();
++        }
++    }
++
++    static const uint32_t kBufferCount = 8U;
++    static const size_t kHeldFrames = 4U;
++    static const int64_t kPairJitterUs = 1000;
++
++    int mFd = -1;
++    std::vector<Buffer> mBuffers;
++    std::deque<Frame> mReady;
++    int64_t mPeriodUs = 33333;
++    std::mutex mLock;
++    std::condition_variable mArrived;
++    std::thread mThread;
++    std::atomic<bool> mRun{false};
++};
++
++}  // namespace icamera
+diff -ruN a/src/core/SensorHwCtrl.cpp b/src/core/SensorHwCtrl.cpp
+--- a/src/core/SensorHwCtrl.cpp
++++ b/src/core/SensorHwCtrl.cpp
+@@ -150,6 +150,22 @@
+     CheckAndLogError((coarseExposures.empty() || fineExposures.empty()), BAD_VALUE,
+                      "No exposure data!");
+ 
++#ifdef DOL_FEATURE
++    if (coarseExposures.size() > 1) {
++        // AE lists the short exposure first.
++        struct v4l2_ext_control exposures[2] = {};
++        exposures[0].id = CRL_CID_EXPOSURE_SHS1;
++        exposures[0].value = coarseExposures[0];
++        exposures[1].id = V4L2_CID_EXPOSURE;
++        exposures[1].value = coarseExposures[1];
++        LOG2("SENSORCTRLINFO: exposure_value=%d exposure_short=%d", coarseExposures[1],
++             coarseExposures[0]);
++        const int status = mPixelArraySubdev->SetControls(exposures, 2U);
++        CheckAndLogError((status != 0), status, "failed to set exposures %d and %d.",
++                         coarseExposures[1], coarseExposures[0]);
++        return OK;
++    }
++#endif
+     // CRL_MODULE_S
+     if (coarseExposures.size() > 1) {
+         if (PlatformData::getSensorExposureType(mCameraId) == SENSOR_MULTI_EXPOSURES) {
+@@ -242,9 +258,10 @@
+     }
+     // CRL_MODULE_E
+ 
+-    LOG2("%s analogGain=%d", __func__, analogGains[0]);
+-    int status = mPixelArraySubdev->SetControl(V4L2_CID_ANALOGUE_GAIN, analogGains[0]);
+-    CheckAndLogError((status != 0), status, "failed to set analog gain %d.", analogGains[0]);
++    // AE lists the long exposure last.
++    LOG2("%s analogGain=%d", __func__, analogGains.back());
++    int status = mPixelArraySubdev->SetControl(V4L2_CID_ANALOGUE_GAIN, analogGains.back());
++    CheckAndLogError((status != 0), status, "failed to set analog gain %d.", analogGains.back());
+ 
+     return OK;
+ }
+@@ -274,9 +291,10 @@
+     }
+     // CRL_MODULE_E
+ 
+-    LOG2("%s digitalGain=%d", __func__, digitalGains[0]);
+-    int status = mPixelArraySubdev->SetControl(V4L2_CID_DIGITAL_GAIN, digitalGains[0]);
+-    CheckAndLogError((status != 0), status, "failed to set digitalGain gain %d.", digitalGains[0]);
++    LOG2("%s digitalGain=%d", __func__, digitalGains.back());
++    int status = mPixelArraySubdev->SetControl(V4L2_CID_DIGITAL_GAIN, digitalGains.back());
++    CheckAndLogError((status != 0), status, "failed to set digitalGain gain %d.",
++                     digitalGains.back());
+ 
+     return OK;
+ }
+diff -ruN a/src/platformdata/PlatformData.cpp b/src/platformdata/PlatformData.cpp
+--- a/src/platformdata/PlatformData.cpp
++++ b/src/platformdata/PlatformData.cpp
+@@ -319,6 +319,9 @@
+ // HDR_FEATURE_E
+ 
+ bool PlatformData::isMultiExposureCase(int cameraId, TuningMode tuningMode) {
++#ifdef DOL_FEATURE
++    return true;
++#else
+     // HDR_FEATURE_S
+     if ((tuningMode == TUNING_MODE_VIDEO_HDR) || (tuningMode == TUNING_MODE_VIDEO_HDR2) ||
+         (tuningMode == TUNING_MODE_VIDEO_HLC)) {
+@@ -329,6 +332,7 @@
+     // HDR_FEATURE_E
+ 
+     return false;
++#endif
+ }
+ 
+ int PlatformData::getSensorExposureType(int cameraId) {

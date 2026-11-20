@@ -247,6 +247,7 @@ in {
 
         # Secrets management
         sops
+        git-crypt
       ]
       # x86_64-only apps with no native aarch64 build.
       ++ lib.optionals isX86 [

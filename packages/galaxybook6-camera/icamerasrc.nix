@@ -16,7 +16,7 @@ in
       hash = "sha256-BYURJfNz4D8bXbSeuWyUYnoifozFOq6rSfG9GBKVoHo=";
     };
 
-    patches = ["${upstream}/ipu7-hal/icamerasrc-4fb31db.patch"];
+    patches = ["${upstream}/ipu7-hal/icamerasrc-4fb31db.patch" ./icamerasrc-nntm-params.patch];
 
     # Upstream builds without --enable-gstdrmformat, so no gst-plugins-bad or libva.
     configureFlags = [];

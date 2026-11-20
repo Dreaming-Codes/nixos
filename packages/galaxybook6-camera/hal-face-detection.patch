@@ -1,0 +1,540 @@
+diff -ruN a/CMakeLists.txt b/CMakeLists.txt
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -148,13 +148,8 @@
+ if(FACE_DETECTION)
+     add_definitions(-DFACE_DETECTION)
+     set(LIBCAMHAL_SRCS ${LIBCAMHAL_SRCS} ${FACE_DETECTION_SRCS})
+-    set(LIBCAMHAL_LINK_LIBS
+-        ${LIBCAMHAL_LINK_LIBS}
+-        pvl_eye_detection
+-        pvl_face_detection
+-        pvl_mouth_detection
+-        ${WORK_DIR_TMP}/src/fd/libface_detection.a
+-    )
++    find_package(OpenVINO REQUIRED COMPONENTS Runtime)
++    set(LIBCAMHAL_LINK_LIBS ${LIBCAMHAL_LINK_LIBS} openvino::runtime)
+ endif() #FACE_DETECTION
+ 
+ if (DYNAMIC_PAC_BUFFERS)
+diff -ruN a/src/core/CameraDevice.cpp b/src/core/CameraDevice.cpp
+--- a/src/core/CameraDevice.cpp
++++ b/src/core/CameraDevice.cpp
+@@ -34,6 +34,9 @@
+ #include "CaptureUnit.h"
+ #include "CameraContext.h"
+ #include "StageDescriptor.h"
++#ifdef FACE_DETECTION
++#include "FaceStage.h"
++#endif
+ 
+ using std::vector;
+ 
+@@ -600,6 +603,12 @@
+              CameraUtils::pixelCode2String(streamConf.format), streamConf.width, streamConf.height);
+ 
+         CameraStream* stream = nullptr;
++#ifdef FACE_DETECTION
++        if (PlatformData::isFaceDetectionSupported(mCameraId) &&
++            (streamConf.usage == CAMERA_STREAM_PREVIEW) && (streamConf.format != V4L2_PIX_FMT_JPEG))
++            stream = new FaceStage(mCameraId, streamId, streamConf, false);
++        else
++#endif
+             // Create a normal CameraStream
+             stream = new CameraStream(mCameraId, streamId, streamConf);
+ 
+@@ -679,10 +688,8 @@
+         mSortedStreamIds.push_back(opaqueRawStreamId);
+     }
+ 
+-    // Don't create stream for face if it is not supported
+-    if (!PlatformData::isFaceDetectionSupported(mCameraId)) {
+-        *preStreamIdForFace = -1;
+-    }
++    // The static graph has no spare output to bind a face stream to.
++    *preStreamIdForFace = -1;
+ 
+     return OK;
+ }
+diff -ruN a/src/core/processingUnit/FaceStage.cpp b/src/core/processingUnit/FaceStage.cpp
+--- a/src/core/processingUnit/FaceStage.cpp
++++ b/src/core/processingUnit/FaceStage.cpp
+@@ -145,7 +145,7 @@
+ 
+     int64_t sequence = camBuffer->getSequence();
+     if (mIsPrivate) {
+-        if (isFaceEnabled(sequence) && mFaceDetection->needRunFace(sequence) &&
++        if (isFaceEnabled(sequence) && mFaceDetection->needRunFace(camBuffer->getTimestamp()) &&
+             !PlatformData::runFaceWithSyncMode(mCameraId)) {
+             AutoMutex l(mBufferPoolLock);
+             LOG2("<seq%ld>%s, run face with ASYNC mode. mIsPrivate: %d",
+@@ -154,7 +154,7 @@
+             return OK;
+         }
+ 
+-        if (isFaceEnabled(sequence) && mFaceDetection->needRunFace(sequence)) {
++        if (isFaceEnabled(sequence) && mFaceDetection->needRunFace(camBuffer->getTimestamp())) {
+             LOG2("<seq%ld>%s, run face with SYNC mode. mIsPrivate: %d",
+                  sequence, __func__, mIsPrivate);
+             mFaceDetection->runFaceDetection(camBuffer);
+@@ -166,7 +166,7 @@
+         }
+         mAvailableBufferQ.push(camBuffer);
+     } else {
+-        if (isFaceEnabled(sequence) && mFaceDetection->needRunFace(sequence)) {
++        if (isFaceEnabled(sequence) && mFaceDetection->needRunFace(camBuffer->getTimestamp())) {
+             if (PlatformData::runFaceWithSyncMode(mCameraId)) {
+                 LOG2("<seq%ld>%s, run face with SYNC mode. mIsPrivate: %d",
+                      sequence, __func__, mIsPrivate);
+diff -ruN a/src/fd/CMakeLists.txt b/src/fd/CMakeLists.txt
+--- a/src/fd/CMakeLists.txt
++++ b/src/fd/CMakeLists.txt
+@@ -18,15 +18,8 @@
+ # Use -DFACE_DETECTION to enable the face detection feature
+ set(FACE_DETECTION_SRCS
+     ${SRC_ROOT_DIR}/fd/FaceDetection.cpp
+-    ${ALGOWRAPPER_DIR}/IntelFaceDetection.cpp
++    ${SRC_ROOT_DIR}/fd/IFaceDetection.cpp
++    ${SRC_ROOT_DIR}/fd/FaceCenterNet.cpp
++    ${SRC_ROOT_DIR}/core/processingUnit/FaceStage.cpp
+     CACHE INTERNAL "Face detect sources"
+     )
+-#---------------------------- include the header ----------------------------
+-include_directories(${USR_INCLUDE_HEADER}/ia_imaging
+-                    ${ALGOWRAPPER_DIR}/IntelFaceDetection.h
+-                    ${IUTILS_DIR}
+-                    include/utils)
+-#---------------------------- static library ----------------------------
+-add_library(face_detection STATIC ${FACE_DETECTION_SRCS})
+-
+-include_directories(${MODULES_DIR}/v4l2)
+diff -ruN a/src/fd/FaceCenterNet.cpp b/src/fd/FaceCenterNet.cpp
+--- a/src/fd/FaceCenterNet.cpp
++++ b/src/fd/FaceCenterNet.cpp
+@@ -0,0 +1,228 @@
++/*
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#define LOG_TAG FaceDetection
++#include "src/fd/FaceCenterNet.h"
++
++#include <algorithm>
++#include <cmath>
++
++#include "AiqResultStorage.h"
++#include "CameraContext.h"
++#include "PlatformData.h"
++#include "iutils/CameraLog.h"
++#include "iutils/Utils.h"
++
++namespace icamera {
++
++namespace {
++
++constexpr int kInput = 256;
++constexpr int kStride = 4;
++constexpr int kGrid = kInput / kStride;
++constexpr float kMinScore = 0.6f;
++constexpr double kGamma = 0.6;
++constexpr float kMinSide = 0.05f;
++constexpr float kMinIou = 0.3f;
++constexpr int kLostRuns = 3;
++
++uint8_t clip(float v) {
++    return static_cast<uint8_t>(std::clamp(std::lround(v), 0L, 255L));
++}
++
++}  // namespace
++
++FaceCenterNet::FaceCenterNet(int cameraId, int width, int height)
++        : FaceDetection(cameraId, width, height) {
++    mScale = static_cast<float>(kInput) / std::max(width, height);
++    mInWidth = std::lround(width * mScale);
++    mInHeight = std::lround(height * mScale);
++    mLeft = (kInput - mInWidth) / 2;
++    mTop = (kInput - mInHeight) / 2;
++    for (int i = 0; i < 256; i++) {
++        mGamma[i] = clip(255.0 * std::pow(i / 255.0, kGamma));
++    }
++
++    const std::string dir = PlatformData::getCameraCfgPath();
++    try {
++        ov::Core core;
++        ov::CompiledModel model;
++        try {
++            model = core.compile_model(dir + "centernet_face.xml", "NPU");
++        } catch (const std::exception& e) {
++            LOGW("<id%d> face model not on the NPU, on the CPU instead: %s", cameraId, e.what());
++            model = core.compile_model(dir + "centernet_face.xml", "CPU",
++                                       ov::inference_num_threads(1),
++                                       ov::hint::performance_mode(ov::hint::PerformanceMode::LATENCY));
++        }
++        LOGI("<id%d> face detection on the %s", cameraId,
++             model.get_property(ov::execution_devices).front().c_str());
++        auto output = [&model](const char* head) {
++            for (size_t i = 0; i < model.outputs().size(); i++) {
++                if (model.outputs()[i].get_any_name().find(head) != std::string::npos) return i;
++            }
++            throw std::runtime_error(std::string("no output ") + head);
++        };
++        mHeatmap = output("HeatMapHead");
++        mOffset = output("OffsetHead");
++        mSize = output("DimensionHead");
++        mRequest = model.create_infer_request();
++    } catch (const std::exception& e) {
++        LOGE("<id%d> face model in %s not loaded: %s", cameraId, dir.c_str(), e.what());
++        return;
++    }
++    uint8_t* in = mRequest.get_input_tensor().data<uint8_t>();
++    std::fill(in, in + kInput * kInput * 4, 127);
++    mInitialized = true;
++}
++
++void FaceCenterNet::runFaceDetection(const std::shared_ptr<CameraBuffer>& camBuffer) {
++    CameraBufferMapper mapper(camBuffer);
++    const auto* y = static_cast<const uint8_t*>(mapper.addr());
++    CheckAndLogError(!y || camBuffer->getFormat() != V4L2_PIX_FMT_NV12, VOID_VALUE,
++                     "@%s, need a mapped NV12 buffer", __func__);
++    const int stride = camBuffer->getStride();
++    const nsecs_t start = CameraUtils::systemTime();
++    fillInput(y, y + stride * mHeight, stride);
++    mRequest.infer();
++    publish(track(decode()), camBuffer->getSequence());
++    LOG2("<seq%u> face detection took %ld us", camBuffer->getSequence(),
++         static_cast<long>((CameraUtils::systemTime() - start) / 1000));
++}
++
++void FaceCenterNet::fillInput(const uint8_t* y, const uint8_t* uv, int stride) {
++    uint8_t* in = mRequest.get_input_tensor().data<uint8_t>();
++    for (int j = 0; j < mInHeight; j++) {
++        const int y0 = j * mHeight / mInHeight, y1 = (j + 1) * mHeight / mInHeight;
++        uint8_t* px = in + ((mTop + j) * kInput + mLeft) * 4;
++        for (int i = 0; i < mInWidth; i++, px += 4) {
++            const int x0 = i * mWidth / mInWidth, x1 = (i + 1) * mWidth / mInWidth;
++            int sy = 0, su = 0, sv = 0, n = 0, m = 0;
++            for (int r = y0; r < y1; r += 2) {
++                for (int c = x0; c < x1; c += 2, n++) sy += y[r * stride + c];
++                const uint8_t* chroma = uv + r / 2 * stride;
++                for (int c = x0 & ~1; c < x1; c += 2, m++) {
++                    su += chroma[c];
++                    sv += chroma[c + 1];
++                }
++            }
++            const float l = 1.164f * (static_cast<float>(sy) / n - 16.f);
++            const float u = static_cast<float>(su) / m - 128.f;
++            const float v = static_cast<float>(sv) / m - 128.f;
++            px[0] = mGamma[clip(l + 1.596f * v)];
++            px[1] = mGamma[clip(l - 0.392f * u - 0.813f * v)];
++            px[2] = mGamma[clip(l + 2.017f * u)];
++        }
++    }
++}
++
++std::vector<FaceCenterNet::Face> FaceCenterNet::decode() {
++    const float* heat = mRequest.get_output_tensor(mHeatmap).data<float>();
++    const float* offset = mRequest.get_output_tensor(mOffset).data<float>();
++    const float* size = mRequest.get_output_tensor(mSize).data<float>();
++    constexpr int kPlane = kGrid * kGrid;
++    std::vector<Face> faces;
++    for (int gy = 0; gy < kGrid; gy++) {
++        for (int gx = 0; gx < kGrid; gx++) {
++            const int i = gy * kGrid + gx;
++            const float score = heat[i];
++            if (score < kMinScore) continue;
++            bool peak = true;
++            for (int ny = std::max(gy - 1, 0); ny <= std::min(gy + 1, kGrid - 1); ny++) {
++                for (int nx = std::max(gx - 1, 0); nx <= std::min(gx + 1, kGrid - 1); nx++) {
++                    peak = peak && heat[ny * kGrid + nx] <= score;
++                }
++            }
++            if (!peak) continue;
++            // The size head is the log of half the box size as a fraction of the input.
++            const float cy = ((gy + offset[i]) * kStride - mTop) / mScale;
++            const float cx = ((gx + offset[kPlane + i]) * kStride - mLeft) / mScale;
++            const float h = std::exp(size[i]) * kInput / mScale;
++            const float w = std::exp(size[kPlane + i]) * kInput / mScale;
++            if (2 * std::max(w, h) < kMinSide * std::max(mWidth, mHeight)) continue;
++            faces.push_back({score, std::max(cx - w, 0.f), std::max(cy - h, 0.f),
++                             std::min(cx + w, static_cast<float>(mWidth)),
++                             std::min(cy + h, static_cast<float>(mHeight)), -1});
++        }
++    }
++    return faces;
++}
++
++std::vector<FaceCenterNet::Face> FaceCenterNet::track(std::vector<Face> faces) {
++    const auto area = [](const Face& f) { return (f.right - f.left) * (f.bottom - f.top); };
++    const auto iou = [&area](const Face& a, const Face& b) {
++        const float w = std::min(a.right, b.right) - std::max(a.left, b.left);
++        const float h = std::min(a.bottom, b.bottom) - std::max(a.top, b.top);
++        const float common = std::max(w, 0.f) * std::max(h, 0.f);
++        return common / (area(a) + area(b) - common);
++    };
++    std::vector<bool> matched(mTracks.size());
++    std::vector<Track> next;
++    for (Face& f : faces) {
++        int best = -1;
++        float bestIou = kMinIou;
++        for (size_t i = 0; i < mTracks.size(); i++) {
++            const float o = iou(f, mTracks[i].face);
++            if (!matched[i] && o >= bestIou) {
++                best = i;
++                bestIou = o;
++            }
++        }
++        if (best >= 0) matched[best] = true;
++        f.id = best >= 0 ? mTracks[best].face.id : mNextId++;
++        next.push_back({f, 0});
++    }
++    for (size_t i = 0; i < mTracks.size(); i++) {
++        if (!matched[i] && mTracks[i].lost < kLostRuns) next.push_back({mTracks[i].face, mTracks[i].lost + 1});
++    }
++    mTracks = next;
++
++    std::vector<Face> out;
++    for (const Track& t : mTracks) out.push_back(t.face);
++    std::sort(out.begin(), out.end(), [&area](const Face& a, const Face& b) { return area(a) > area(b); });
++    if (out.size() > mMaxFaceNum) out.resize(mMaxFaceNum);
++    return out;
++}
++
++void FaceCenterNet::publish(const std::vector<Face>& faces, int64_t sequence) {
++    camera_coordinate_system_t iaCoord = {IA_COORDINATE_LEFT, IA_COORDINATE_TOP,
++                                          IA_COORDINATE_RIGHT, IA_COORDINATE_BOTTOM};
++    auto storage = CameraContext::getInstance(mCameraId)->getAiqResultStorage();
++    FaceDetectionResult* result = storage->acquireFaceResult();
++    CLEAR(*result);
++    result->ccaFaceState.num_faces = faces.size();
++    result->ccaFaceState.updated = true;
++    result->ccaFaceState.is_video_conf = true;
++    result->ccaFaceState.fd_algo = CENTERNET_FD;
++    for (size_t i = 0; i < faces.size(); i++) {
++        const Face& f = faces[i];
++        ia_atbx_face& face = result->ccaFaceState.faces[i];
++        face.face_area = {static_cast<int>(f.left), static_cast<int>(f.top),
++                          static_cast<int>(f.right), static_cast<int>(f.bottom)};
++        LOG2("<seq%ld> face %zu id %d score %.2f box %d,%d,%d,%d", sequence, i, f.id, f.score,
++             face.face_area.left, face.face_area.top, face.face_area.right, face.face_area.bottom);
++        convertFaceCoordinate(iaCoord, &face.face_area.left, &face.face_area.top,
++                              &face.face_area.right, &face.face_area.bottom);
++        face.tracking_id = f.id;
++        face.confidence = std::lround(f.score * 100);
++        face.person_id = -1;
++    }
++    {
++        AutoMutex l(mFaceResultLock);
++        mLastFaceNum = faces.size();
++    }
++    storage->updateFaceResult(sequence);
++}
++
++}  // namespace icamera
+diff -ruN a/src/fd/FaceCenterNet.h b/src/fd/FaceCenterNet.h
+--- a/src/fd/FaceCenterNet.h
++++ b/src/fd/FaceCenterNet.h
+@@ -0,0 +1,55 @@
++/*
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#pragma once
++
++#include <openvino/openvino.hpp>
++
++#include <vector>
++
++#include "FaceDetection.h"
++
++namespace icamera {
++
++class FaceCenterNet : public FaceDetection {
++ public:
++    FaceCenterNet(int cameraId, int width, int height);
++    void runFaceDetection(const std::shared_ptr<CameraBuffer>& camBuffer) override;
++
++ private:
++    struct Face {
++        float score;
++        float left, top, right, bottom;
++        int id;
++    };
++    struct Track {
++        Face face;
++        int lost;
++    };
++
++    void fillInput(const uint8_t* y, const uint8_t* uv, int stride);
++    std::vector<Face> decode();
++    std::vector<Face> track(std::vector<Face> faces);
++    void publish(const std::vector<Face>& faces, int64_t sequence);
++
++    ov::InferRequest mRequest;
++    size_t mHeatmap, mOffset, mSize;
++    uint8_t mGamma[256];
++    float mScale;
++    int mLeft, mTop, mInWidth, mInHeight;
++    std::vector<Track> mTracks;
++    int mNextId = 0;
++};
++
++}  // namespace icamera
+diff -ruN a/src/fd/FaceDetection.cpp b/src/fd/FaceDetection.cpp
+--- a/src/fd/FaceDetection.cpp
++++ b/src/fd/FaceDetection.cpp
+@@ -32,11 +32,9 @@
+           mMaxFaceNum(PlatformData::getMaxFaceDetectionNumber(cameraId)),
+           mMemoryType(memoryType),
+           mLastFaceNum(-1),
+-          mDefaultInterval(PlatformData::faceEngineRunningInterval(cameraId)),
+-          mNoFaceInterval(PlatformData::faceEngineRunningIntervalNoFace(cameraId)),
+-          mRunInterval(PlatformData::faceEngineRunningInterval(cameraId)) {
+-    LOG1("<id%d> default interval:%d, no face interval:%d", cameraId,
+-         mDefaultInterval, mNoFaceInterval);
++          mIntervalUs(PlatformData::faceEngineRunningInterval(cameraId) * 1000LL),
++          mLastRunUs(-1) {
++    LOG1("<id%d> interval %ld us", cameraId, mIntervalUs);
+     initRatioInfo(&mRatioInfo);
+ }
+ 
+@@ -76,46 +74,19 @@
+                   imageRotationChanged};
+ }
+ 
+-bool FaceDetection::needRunFace(int64_t sequence) {
++bool FaceDetection::needRunFace(const struct timeval& frameTime) {
+     if (!mInitialized) {
+         return false;
+     }
+ 
+-    int lastFaceNum = getFaceNum();
+-
+-    /*
+-     * FD runs 1 frame every mRunInterval frames.
+-     * And the default value of mRunInterval is mDefaultInterval
+-     */
+-    if (sequence % mRunInterval == 0) {
+-        LOG2("%s, Running face detection for sequence: %ld faceNum %d",
+-             __func__, sequence, lastFaceNum);
+-        return true;
+-    }
+-
+-    /*
+-     * When face doesn't be detected during mFDRunIntervalNoFace's frame,
+-     * we may change FD running's interval frames.
+-     */
+-    if (mNoFaceInterval > mDefaultInterval) {
+-        if (lastFaceNum == 0) {
+-            if (sequence % mNoFaceInterval == 0) {
+-                // Change the interval if there isn't face detected for mNoFaceInterval frames
+-                // (mNoFaceInterval / mDefaultInterval) times.
+-                mRunInterval = mNoFaceInterval;
+-            }
+-        } else if (mRunInterval != mDefaultInterval) {
+-            // Recovery to default normal interval
+-            mRunInterval = mDefaultInterval;
+-        }
++    const int64_t us = static_cast<int64_t>(TIMEVAL2USECS(frameTime));
++    // FaceStage's private path asks twice for one frame and needs the same answer both times.
++    const bool run = (mLastRunUs < 0) || (us <= mLastRunUs) || (us - mLastRunUs >= mIntervalUs);
++    LOG2("%s, frame time %ld us, run %d", __func__, us, run);
++    if (run) {
++        mLastRunUs = us;
+     }
+-
+-    return false;
+-}
+-
+-int FaceDetection::getFaceNum() {
+-    AutoMutex l(mFaceResultLock);
+-    return mLastFaceNum;
++    return run;
+ }
+ 
+ void FaceDetection::printfFDRunRate() {
+diff -ruN a/src/fd/FaceDetection.h b/src/fd/FaceDetection.h
+--- a/src/fd/FaceDetection.h
++++ b/src/fd/FaceDetection.h
+@@ -36,7 +36,7 @@
+     FaceDetection(int cameraId, int width, int height, int memoryType = V4L2_MEMORY_USERPTR);
+     virtual ~FaceDetection();
+ 
+-    bool needRunFace(int64_t sequence);
++    bool needRunFace(const struct timeval& frameTime);
+     virtual void runFaceDetection(const std::shared_ptr<CameraBuffer>& camBuffer) = 0;
+     int getMemoryType() { return mMemoryType; }
+ 
+@@ -47,7 +47,6 @@
+ 
+  private:
+     void initRatioInfo(struct RatioInfo* ratioInfo);
+-    int getFaceNum();
+ 
+  protected:
+     int mCameraId;
+@@ -63,9 +62,8 @@
+     struct RatioInfo mRatioInfo;
+ 
+  private:
+-    unsigned int mDefaultInterval;  // FD running's interval frames.
+-    unsigned int mNoFaceInterval;   // FD running's interval frames without face.
+-    unsigned int mRunInterval;      // run 1 frame every mFDRunInterval frames.
++    int64_t mIntervalUs;
++    int64_t mLastRunUs;
+ };
+ 
+ }  // namespace icamera
+diff -ruN a/src/fd/IFaceDetection.cpp b/src/fd/IFaceDetection.cpp
+--- a/src/fd/IFaceDetection.cpp
++++ b/src/fd/IFaceDetection.cpp
+@@ -17,7 +17,7 @@
+ #define LOG_TAG IFaceDetection
+ #include "src/fd/IFaceDetection.h"
+ 
+-#include "FaceSSD.h"
++#include "FaceCenterNet.h"
+ #include "PlatformData.h"
+ #include "iutils/CameraLog.h"
+ 
+@@ -26,8 +26,8 @@
+ FaceDetection* IFaceDetection::createFaceDetection(int cameraId, int width, int height) {
+     FaceDetection* fd = nullptr;
+     int fdVendor = PlatformData::faceEngineVendor(cameraId);
+-    if (fdVendor == FACE_ENGINE_GOOGLE_FACESSD) {
+-        fd = new FaceSSD(cameraId, width, height);
++    if (fdVendor == FACE_ENGINE_INTEL_CENTERNET) {
++        fd = new FaceCenterNet(cameraId, width, height);
+     }
+ 
+     return fd;
+diff -ruN a/src/platformdata/PlatformData.h b/src/platformdata/PlatformData.h
+--- a/src/platformdata/PlatformData.h
++++ b/src/platformdata/PlatformData.h
+@@ -52,6 +52,7 @@
+ 
+ #define FACE_ENGINE_INTEL_PVL 0
+ #define FACE_ENGINE_GOOGLE_FACESSD 1
++#define FACE_ENGINE_INTEL_CENTERNET 2
+ 
+ #define DEFAULT_TNR_EXTRA_FRAME_NUM 2
+ 

@@ -1,0 +1,32 @@
+diff -ruN a/src/3a/AiqUnit.cpp b/src/3a/AiqUnit.cpp
+--- a/src/3a/AiqUnit.cpp
++++ b/src/3a/AiqUnit.cpp
+@@ -159,7 +159,7 @@
+         CheckAndLogError(ret != OK, ret, "%s: Failed to calculate frame params", __func__);
+         AiqUtils::convertToAiqFrameParam(sensorParam, params->frameParams);
+ 
+-        params->frameUse = ia_aiq_frame_use_video;
++        params->frameUse = ia_aiq_frame_use_preview;
+         params->aiqStorageLen = MAX_SETTING_COUNT;
+         // handle AE delay in AiqEngine
+         params->aecFrameDelay = 0U;
+diff -ruN a/src/3a/intel3a/Intel3AParameter.cpp b/src/3a/intel3a/Intel3AParameter.cpp
+--- a/src/3a/intel3a/Intel3AParameter.cpp
++++ b/src/3a/intel3a/Intel3AParameter.cpp
+@@ -207,14 +207,8 @@
+     limit->manual_exposure_time_min = -1;
+     limit->manual_iso_min = -1;
+     limit->manual_iso_max = -1;
+-
+-    if ((param.aeFpsRange.min > 0.01) && (param.aeFpsRange.max >= param.aeFpsRange.min)) {
+-        limit->manual_frame_time_us_max = 1000000 / param.aeFpsRange.min;
+-        limit->manual_frame_time_us_min = 1000000 / param.aeFpsRange.max;
+-    } else if (param.fps > 0.01) {
+-        limit->manual_frame_time_us_max = 1000000 / param.fps;
+-        limit->manual_frame_time_us_min = 1000000 / param.fps;
+-    }
++    limit->manual_frame_time_us_max = -1;
++    limit->manual_frame_time_us_min = -1;
+ 
+     camera_range_t range = {-1, -1};
+     int ret = PlatformData::getSupportAeExposureTimeRange(mCameraId, param.sceneMode, range);
