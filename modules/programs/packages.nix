@@ -28,6 +28,17 @@
         --prefix LD_PRELOAD " " "${pkgs.boringssl}/lib/libcrypto.so ${pkgs.boringssl}/lib/libssl.so"
     '';
   };
+  # Discord's VA-API encoder reads Mesa's compressed Xe2+ buffers as zeros, so viewers see green frames.
+  discord = pkgs.symlinkJoin {
+    name = "discord";
+    paths = [pkgs.discord];
+    buildInputs = [pkgs.makeWrapper];
+    postBuild = ''
+      for bin in discord Discord; do
+        wrapProgram $out/bin/$bin --set INTEL_DEBUG noccs
+      done
+    '';
+  };
 in {
   options.dreaming.programs.packages.enable =
     lib.mkEnableOption "common system packages and program defaults"
