@@ -180,6 +180,7 @@
   claudeSettingsWith = prefix: extraEnv: extra:
     pkgs.writeText "claude-${prefix}-settings.json" (builtins.toJSON (extra // {
       apiKeyHelper = keyCommand;
+      autoMemoryEnabled = false;
       env =
         {
           ANTHROPIC_BASE_URL = cfg.url;
